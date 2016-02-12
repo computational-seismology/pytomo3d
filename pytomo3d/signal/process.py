@@ -2,9 +2,8 @@ import obspy
 from obspy.signal.invsim import c_sac_taper
 from obspy.signal.util import _npts2nfft
 import numpy as np
-from functools import partial
 from obspy import UTCDateTime
-from rotate_seismo import rotate_stream
+from rotate import rotate_stream
 
 
 def check_array_order(array, order="ascending"):
@@ -24,9 +23,11 @@ def check_array_order(array, order="ascending"):
 
 
 def flex_cut_trace(tr, cut_starttime, cut_endtime):
-    # not cut strictly, but also based on the original trace length
+    """
+    not cut strictly, but also based on the original trace length
+    """
     if not isinstance(tr, obspy.Trace):
-        raise ValueError("cut_trace method only accepts obspy.Trace" 
+        raise ValueError("cut_trace method only accepts obspy.Trace"
                          "as the first argument")
 
     starttime = tr.stats.starttime
@@ -52,7 +53,7 @@ def cut_func(st, cut_start, cut_end, dynamic_length=10.0):
     else:
         raise ValueError("cut_func method only accepts obspy.Trace or"
                          "obspy.Stream as the first Argument")
-    
+
 
 def filter_synt(tr, pre_filt):
     """
@@ -81,13 +82,14 @@ def filter_synt(tr, pre_filt):
     tr.data = data
 
 
-### =================
-### proc base function
 def process(st, inv, remove_response=False, pre_filt=[0.025, 0.05, 0.1, 0.2],
-            starttime=UTCDateTime(0), endtime=UTCDateTime(3600), 
-            resample_flag=True, sampling_rate=1.0, 
+            starttime=UTCDateTime(0), endtime=UTCDateTime(3600),
+            resample_flag=True, sampling_rate=1.0,
             taper_type="hann", taper_percentage=0.05,
             rotate_flag=True, event_latitude=0.0, event_longitude=0.0):
+    """
+    Data processing base funtion
+    """
 
     # cut the stream out before processing
     cut_func(st, starttime, endtime)

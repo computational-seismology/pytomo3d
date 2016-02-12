@@ -11,7 +11,7 @@ def config_setup(mode=None, period=None):
         config = config_wf(period)
     elif mode in "multitaper_misfit":
         config = config_mt(period)
-    else:    
+    else:
         config = config_mt(period)
 
     return config
@@ -19,26 +19,28 @@ def config_setup(mode=None, period=None):
 
 def config_cc(period):
     return pyadjoint.Config(
-            min_period=float(period[0]), 
+            min_period=float(period[0]),
             max_period=float(period[1]),
             ipower_costaper=10,
             taper_percentage=0.15,
             taper_type='hann',
             use_cc_error=True)
 
+
 def config_wf(period):
     return pyadjoint.Config(
-            min_period=float(period[0]), 
-            max_period=float(period[1]),
-            taper_percentage=0.15,
-            taper_type='hann',
-            use_cc_error=False)
+        min_period=float(period[0]),
+        max_period=float(period[1]),
+        taper_percentage=0.15,
+        taper_type='hann',
+        use_cc_error=False)
+
 
 def config_mt(period):
     return pyadjoint.Config(
-            min_period=float(period[0]), 
+            min_period=float(period[0]),
             max_period=float(period[1]),
-            lnpt = 15,
+            lnpt=15,
             transfunc_waterlevel=1.0E-10,
             ipower_costaper=10,
             min_cycle_in_window=3,

@@ -10,7 +10,7 @@ def write_window_txtfile_single(results, outputdir):
     for key, sta_win in results.iteritems():
         print "window:", key, sta_win
         if sta_win is None:
-            continue 
+            continue
         for comp_win in sta_win:
             fn = comp_win[0].channel_id + ".win"
             fn = os.path.join(outputdir, fn)
@@ -36,7 +36,7 @@ def write_window_txtfile_combine(results, outputdir):
             for win in comp_win:
                 fh.write("%10.2f %10.2f %10.2f %10.3f %10.3f\n"
                          % (win.relative_starttime, win.relative_endtime,
-                           win.cc_shift, win.dlnA, win.max_cc_value))
+                            win.cc_shift, win.dlnA, win.max_cc_value))
     fh.close()
 
 
@@ -53,7 +53,7 @@ def get_json_content(window):
         "dlnA":  window.dlnA,
         "dt": window.dt,
         "min_period": window.min_period,
-        #"phase_arrivals": window.phase_arrivals,
+        # "phase_arrivals": window.phase_arrivals,
         "absolute_starttime": window.absolute_starttime,
         "absolute_endtime": window.absolute_endtime,
         "relative_starttime": window.relative_starttime,
@@ -87,12 +87,12 @@ def write_window_jsonfile_single(results, outputdir):
             continue
         _window_all = {}
         for _comp in sta_win:
-            _window = [ get_json_content(_i) for _i in _comp]
+            _window = [get_json_content(_i) for _i in _comp]
             _window_all[_window[0]["channel_id"]] = _window
         output_json = os.path.join(outputdir, "%s.json" % key)
         with open(output_json, 'w') as fh:
-            j = json.dumps(_window_all, cls=WindowEncoder, sort_keys=True, 
-                    indent=2, separators=(',', ':'))
+            j = json.dumps(_window_all, cls=WindowEncoder, sort_keys=True,
+                           indent=2, separators=(',', ':'))
             try:
                 fh.write(j)
             except TypeError:
@@ -100,7 +100,7 @@ def write_window_jsonfile_single(results, outputdir):
 
 
 def write_window_jsonfile_combine(results, outputdir):
- 
+
     output_json = os.path.join(outputdir, "windows.json")
     window_all = {}
     for key, sta_win in results.iteritems():
@@ -109,13 +109,13 @@ def write_window_jsonfile_combine(results, outputdir):
         window_all[key] = {}
         _window_comp = {}
         for _comp in sta_win:
-            _window = [ get_json_content(_i) for _i in _comp]
+            _window = [get_json_content(_i) for _i in _comp]
             _window_comp[_window[0]["channel_id"]] = _window
         window_all[key] = _window_comp
 
     with open(output_json, 'w') as fh:
-        j = json.dumps(window_all, cls=WindowEncoder, sort_keys=True, 
-                indent=2, separators=(',', ':'))
+        j = json.dumps(window_all, cls=WindowEncoder, sort_keys=True,
+                       indent=2, separators=(',', ':'))
         try:
             fh.write(j)
         except TypeError:

@@ -9,8 +9,8 @@ def check_orthogonality(azim1, azim2):
     """
     Check if two azimuth are orthogonal
     """
-    azim1 = azim1%360
-    azim2 = azim2%360
+    azim1 = azim1 % 360
+    azim2 = azim2 % 360
 
     if abs(abs(azim1 - azim2) - 90.0) < SMALL_DEGREE:
         if abs(azim1 - azim2 - 90.0) < SMALL_DEGREE:
@@ -32,16 +32,16 @@ def check_orthogonality(azim1, azim2):
 
 def rotate_certain_angle(d1, d2, angle):
     """
-    Basic rotating function. 
-    
+    Basic rotating function.
+
     (d1, d2, Vertical) should form a left-handed coordinate system, i.e.,
                     Azimuth_{d2} = Azimuth_{d1} + 90.0
-    For example, (North, East, Vertical) & (Radial, Transverse, Vertical) 
-    are both left-handed coordinate systems. The return value (dnew1, 
+    For example, (North, East, Vertical) & (Radial, Transverse, Vertical)
+    are both left-handed coordinate systems. The return value (dnew1,
     dnew2, vertic) should also form a left-handed coordinate system.
-    The angle is azimuth differnce between d1 and dnew1, i.e., 
+    The angle is azimuth differnce between d1 and dnew1, i.e.,
                     angle = Azimuth_{dnew1} - Azimuth_{d1}
-    
+
     :type d1: :class:`~numpy.ndarray`
     :param d1: Data of one of the two horizontal components
     :type d2: :class:`~numpy.ndarray`
@@ -50,8 +50,8 @@ def rotate_certain_angle(d1, d2, angle):
     :param angle: component azimuth of data2
     :return: two new components after rotation
     """
-    dnew1 =  d1 * cos(angle) + d2 * sin(angle)
-    dnew2 = -d1 * sin(angle) + d2 * cos(angle) 
+    dnew1 = d1 * cos(angle) + d2 * sin(angle)
+    dnew2 = -d1 * sin(angle) + d2 * cos(angle)
     return dnew1, dnew2
 
 
@@ -64,7 +64,7 @@ def rotate_12_RT(d1, d2, baz, azim1, azim2):
     :type d2: :class:`~numpy.ndarray`
     :param d2: Data of the other horizontal components
     :type baz: float
-    :param baz: the back azimuth from station to source in degrees 
+    :param baz: the back azimuth from station to source in degrees
     :type azim1: float
     :param azim1: component azimuth of data1
     :type azim2: float
@@ -74,7 +74,7 @@ def rotate_12_RT(d1, d2, baz, azim1, azim2):
     """
     status = check_orthogonality(azim1, azim2)
     if not status:
-        #raise ValueError("azim1 and azim2 not orthogonal")
+        # raise ValueError("azim1 and azim2 not orthogonal")
         return None, None
     if "right" in status:
         # flip to left-hand
@@ -82,7 +82,7 @@ def rotate_12_RT(d1, d2, baz, azim1, azim2):
         azim1, azim2 = azim2, azim1
 
     if len(d1) != len(d2):
-        #raise ValueError("Component 1 and 2 have different length")
+        # raise ValueError("Component 1 and 2 have different length")
         return None, None
     if baz < 0 or baz > 360:
         raise ValueError("Back Azimuth should be between 0 and 360 degree")
@@ -103,7 +103,7 @@ def rotate_RT_12(r, t, baz, azim1, azim2):
     :type data2: :class:`~numpy.ndarray`
     :param data2: Data of the other horizontal components
     :type baz: float
-    :param baz: the back azimuth from station to source in degrees 
+    :param baz: the back azimuth from station to source in degrees
     :type azim1: float
     :param azim1: component azimuth of data1
     :type azim2: float
@@ -167,8 +167,8 @@ def rotate_12_NE(d1, d2, azim1, azim2):
 
 def rotate_NE_12(n, e, azim1, azim2):
     """
-    Rotate from East and North components to give two orghogonal horizontal 
-    components. Returned values are (d1, d2) and (d1, d2, Vertical) will 
+    Rotate from East and North components to give two orghogonal horizontal
+    components. Returned values are (d1, d2) and (d1, d2, Vertical) will
     form a left-handed coordinate system.
 
     :type data1: :class:`~numpy.ndarray`
@@ -179,7 +179,7 @@ def rotate_NE_12(n, e, azim1, azim2):
     :param azim1: component azimuth of data1
     :type azim2: float
     :param azim2: component azimuth of data2
-    :return: two horizontal orthogonal seismogram after rotation. 
+    :return: two horizontal orthogonal seismogram after rotation.
     """
     status = check_orthogonality(azim1, azim2)
     if not status:
@@ -213,7 +213,7 @@ def extract_channel_orientation_info(tr, inv):
         return inc, azi
     except:
         return None, None
-                
+
 
 def rotate_12_RT_func(st, inv, method="12->RT", back_azimuth=None):
     if method != "12->RT":
@@ -234,20 +234,19 @@ def rotate_12_RT_func(st, inv, method="12->RT", back_azimuth=None):
             inc1, azi1 = extract_channel_orientation_info(i_1, inv)
             inc2, azi2 = extract_channel_orientation_info(i_2, inv)
             if inc1 is None or inc2 is None \
-                    or inc1 !=0.0 or inc2 !=0.0:
+                    or inc1 != 0.0 or inc2 != 0.0:
                 continue
 
-            output_1, output_2 = rotate_12_RT(i_1.data, i_2.data, back_azimuth, azi1, azi2)
+            output_1, output_2 = rotate_12_RT(i_1.data, i_2.data, back_azimuth,
+                                              azi1, azi2)
             if output_1 is None or output_2 is None:
-                continue 
+                continue
 
             i_1.data = output_1
             i_2.data = output_2
             # Rename the components
-            i_1.stats.channel = i_1.stats.channel[:-1] + \
-                    output_components[0]
-            i_2.stats.channel = i_2.stats.channel[:-1] + \
-                    output_components[1]
+            i_1.stats.channel = i_1.stats.channel[:-1] + output_components[0]
+            i_2.stats.channel = i_2.stats.channel[:-1] + output_components[1]
             # Add the azimuth backj to stats object
             for comp in (i_1, i_2):
                 comp.stats.back_azimuth = back_azimuth

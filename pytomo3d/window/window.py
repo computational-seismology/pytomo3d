@@ -2,7 +2,7 @@
 
 import pyflex
 import os
-from win_const import config_repo 
+from win_const import config_repo
 
 
 def plot_window_figure(figdir, obs_tr, ws, _verbose):
@@ -47,35 +47,7 @@ def window_function(observed, synthetic, stationxml, period=[27, 60],
             if windows is None or len(windows) == 0:
                 continue
             if _verbose:
-                print("Station %s picked %i windows" % ( 
+                print("Station %s picked %i windows" % (
                     obs_tr.id, len(windows)))
             all_windows.append(windows)
     return all_windows
-
-
-def window_wrapper(obsd_station_group, synt_station_group, 
-                   obsd_tag="proc_obsd_27_60", synt_tag="proc_synt_27_60", 
-                   period=[27, 60], event=None, selection_mode="body_waves",
-                   figure_mode=False, figure_dir=None,
-                   _verbose=False):
-    """
-    Wrapper for asdf IO
-    """
-
-    # Make sure everything thats required is there.
-    if not hasattr(synt_station_group, "StationXML") or \
-            not hasattr(obsd_station_group, obsd_tag) or \
-            not hasattr(synt_station_group, synt_tag):
-        print "Missing attr, return"
-        return
-
-    stationxml = synt_station_group.StationXML
-    observed = getattr(obsd_station_group, obsd_tag)
-    synthetic = getattr(synt_station_group, synt_tag)
-
-    return window_function(observed, synthetic, stationxml,
-                           period=period, event=event,
-                           selection_mode=selection_mode,
-                           figure_mode=figure_mode, figure_dir=figure_dir,
-                           _verbose=_verbose)
-
