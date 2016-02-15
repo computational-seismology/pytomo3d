@@ -146,6 +146,10 @@ def process(st, remove_response_flag=False, inv=None,
     :return: processed stream
     """
     # cut the stream out before processing to reduce computation
+    if not isinstance(st, obspy.Stream) and not isinstance(st, obspy.Trace):
+        raise ValueError("Input seismogram should be either obspy.Stream "
+                         "or obspy.Trace")
+
     if starttime is not None and endtime is not None:
         flex_cut_stream(st, starttime, endtime)
 
@@ -188,11 +192,14 @@ def process(st, remove_response_flag=False, inv=None,
         # just cut
         st.trim(starttime, endtime)
 
-    if rotate_flag:
-        rotate_stream(st, inv, event_latitude, event_longitude, mode="ALL")
-
-    # Convert to single precision to save space.
-    for tr in st:
-        tr.data = np.require(tr.data, dtype="float32")
+    if isinstance(st, obspy.Trace):
+        st.data = np.require(st.data, dtype="float32")
+    elif isinstance(st, obspy.Stream):
+        if rotate_flag:
+            rotate_stream(st, inv, event_latitude, event_longitude,
+                          mode="ALL")
+        # Convert to single precision to save space.
+        for tr in st:
+            tr.data = np.require(tr.data, dtype="float32")
 
     return st
