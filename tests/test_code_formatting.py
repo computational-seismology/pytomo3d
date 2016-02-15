@@ -20,16 +20,17 @@ import os
 def test_flake8():
     test_dir = os.path.dirname(os.path.abspath(inspect.getfile(
         inspect.currentframe())))
-    pyflex_dir = os.path.dirname(test_dir)
 
-    print pyflex_dir
+    basedir = os.path.dirname(test_dir)
 
     # Possibility to ignore some files and paths.
     ignore_paths = [
-        os.path.join(pyflex_dir, "doc"),
-        os.path.join(pyflex_dir, ".git")]
+        os.path.join(basedir, "doc"),
+        os.path.join(basedir, ".git"),
+        os.path.join(basedir, "scripts")]
     files = []
-    for dirpath, _, filenames in os.walk(pyflex_dir):
+
+    for dirpath, _, filenames in os.walk(basedir):
         ignore = False
         for path in ignore_paths:
             if dirpath.startswith(path):
@@ -55,3 +56,6 @@ def test_flake8():
     assert report.counters["files"] > 10
     # And no errors occured.
     assert report.get_count() == 0
+
+if __name__ == "__main__":
+    test_flake8()
