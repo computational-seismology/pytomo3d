@@ -1,11 +1,11 @@
 #!/usr/bin/env python
-import pyadjoint
 import os
-from adj_const import config_setup
+import yaml
+import numpy as np
 from obspy import Stream, Trace
 from obspy.core.util.geodetics import gps2DistAzimuth
+import pyadjoint
 from pyadjoint import AdjointSource
-import numpy as np
 
 
 def plot_adjsrc_figure(figdir, obs_tr, adjsrc, _verbose):
@@ -57,10 +57,22 @@ def _clean_adj_results(comp_adj_dict, comp_nwins_dict):
     return clean_adj_dict, clean_nwin_dict
 
 
-def calculate_adjoint_sources(observed, synthetic, windows, adj_src_type,
-                              period):
+def load_adjoint_config_yaml(filename):
+    """
+    load yaml and setup pyadjoint.Config object
+    """
+    with open(filename) as fh:
+        data = yaml.load(fh)
 
-    config = config_setup(mode=adj_src_type, period=period)
+    if data["min_period"] > data["max_period"]:
+        raise ValueError("min_period is larger than max_period in config "
+                         "file: %s" % filename)
+
+    return pyadjoint.Config(**data)
+
+
+def calculate_adjoint_sources(observed, synthetic, windows, config,
+                              adj_src_type):
 
     comp_adj_dict = {}
 

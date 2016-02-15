@@ -1,3 +1,9 @@
+# Example file for window config
+# The basic structure follows the original version of
+# FLEXWIN(and all the parameters). If you want furture
+# and detailed documentions, please refer to the manual
+# of FLEXWIN
+
 # min and max period of seismograms
 "min_period": 27.0
 "max_period": 60.0

@@ -31,35 +31,19 @@ def plot_window_figure(figure_dir, figure_id, ws, _verbose=False,
     ws.plot(figfn)
 
 
-def check_period_band(period_band, frequency_band):
-    if period_band is None and frequency_band is None:
-        raise ValueError("Specify either period_band or frequency_band")
-    if period_band is not None and frequency_band is not None:
-        raise ValueError(
-            "Specify only period_band or frequency_band."
-            "Because they contain the same piece of information:"
-            "(period_band = 1.0 / frequency_band)")
+def load_window_config_yaml(filename):
+    """
+    Load yaml and setup pyflex.Config object
 
-    if frequency_band is None:
-        if len(period_band) != 2:
-            raise ValueError("length of period_band should be 2")
-        if period_band[0] >= period_band[1]:
-            raise ValueError("period_band should be in ascending"
-                             "order: %s" % period_band)
-    else:
-        if len(frequency_band) != 2:
-            raise ValueError("length of frequency_band should be 2")
-        if frequency_band[0] >= frequency_band[1]:
-            raise ValueError("frequency_band should be in ascending"
-                             "order: %s" % frequency_band)
-        period_band = [1.0/frequency_band[1], 1.0/frequency_band[0]]
-
-    return period_band
-
-
-def load_config_yaml(filename):
+    :param filename:
+    :return:
+    """
     with open(filename) as fh:
         data = yaml.load(fh)
+
+    if data["min_period"] > data["max_period"]:
+        raise ValueError("min_period is larger than max_period in config "
+                         "file: %s" % filename)
 
     return pyflex.Config(**data)
 
@@ -67,6 +51,28 @@ def load_config_yaml(filename):
 def window_trace(obs_tr, syn_tr, config, station=None,
                  event=None, _verbose=False,
                  figure_mode=False, figure_dir=None):
+    """
+    Window selection on a trace(obspy.Trace)
+
+    :param observed: observed trace
+    :type observed: obspy.Trace
+    :param synthetic: synthetic trace
+    :type synthetic: obspy.Trace
+    :param config: window selection config
+    :type config_dict: pyflex.Config
+    :param station: station information which provids station location to
+        calculate the epicenter distance
+    :type station: obspy.Inventory or pyflex.Station
+    :param event: event information, providing the event information
+    :type event: pyflex.Event, obspy.Catalog or obspy.Event
+    :param figure_mode: output figure flag
+    :type figure_mode: bool
+    :param figure_dir: output figure directory
+    :type figure_dir: str
+    :param _verbose: verbose flag
+    :type _verbose: bool
+    :return:
+    """
 
     if not isinstance(obs_tr, obspy.Trace):
         raise ValueError("Input obs_tr should be obspy.Trace")
@@ -96,7 +102,7 @@ def window_stream(observed, synthetic, config_dict, station=None,
                   event=None, figure_mode=False, figure_dir=None,
                   _verbose=False):
     """
-    Window selection function
+    Window selection function o Stream
 
     :param observed: observed stream
     :type observed: obspy.Stream

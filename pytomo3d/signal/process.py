@@ -115,7 +115,11 @@ def process(st, remove_response_flag=False, inv=None,
             taper_type="hann", taper_percentage=0.05,
             rotate_flag=False, event_latitude=None, event_longitude=None):
     """
-    Stream processing function defined for general purpose of tomography
+    Stream processing function defined for general purpose of tomography.
+    The advantage of using Stream, rather than than Trace, is that rotation
+    could be operated if the Stream contains multiple channels. But this
+    function also deals with Trace, but you need to set rotate_flag to
+    False
 
     :param st: input stream
     :type st: obspy.Stream
@@ -193,11 +197,15 @@ def process(st, remove_response_flag=False, inv=None,
         st.trim(starttime, endtime)
 
     if isinstance(st, obspy.Trace):
+        if rotate_flag:
+            raise ValueError("Rotation could not be performed on the "
+                             "obspy.Trace. Please turn the rotate_flag "
+                             "to False.")
         st.data = np.require(st.data, dtype="float32")
     elif isinstance(st, obspy.Stream):
         if rotate_flag:
-            rotate_stream(st, inv, event_latitude, event_longitude,
-                          mode="ALL")
+            rotate_stream(st, event_latitude, event_longitude,
+                          inventory=inv, mode="ALL")
         # Convert to single precision to save space.
         for tr in st:
             tr.data = np.require(tr.data, dtype="float32")
