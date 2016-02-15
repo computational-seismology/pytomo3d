@@ -123,19 +123,25 @@ def process(st, remove_response_flag=False, inv=None,
 
     :param st: input stream
     :type st: obspy.Stream
-    :param remove_response_flag: flag for remove instrument response
-    :type remove_response_flag: boolen
+    :param remove_response_flag: flag for remove instrument response. If True,
+        then inv should be specified, and filter_flag would not be taken caren
+        of. If you want just filter the seismogram, please leave this to False
+        and set filter_flag to True.
+    :type remove_response_flag: bool
     :param inv: inventory information
     :type inv: obspy.Inventory
-    :param filter_flag:flag for filter
-    :type filter_flag: boolen
+    :param filter_flag:flag for filter the seismogram
+    :type filter_flag: bool
     :param pre_filt: list of tuple of 4 corner frequency for filter,
-        in ascending order
+        in ascending order(unit: Hz)
+    :type pre_filt: list, tuple or numpy.array
     :param starttime: starttime of cutting
+    :type starttime: obspy.UTCDateTime
     :param endtime: endtime of cutting
+    :type endtime: obspy.UTCDateTime
     :param resample_flag: flag for data resampling
-    :type resample_flag: boolen
-    :param sampling_rate: resampling rate
+    :type resample_flag: bool
+    :param sampling_rate: resampling rate(unit: Hz)
     :type sampling_rate: float
     :param taper_type: taper type, options from obspy taper
     :type taper_type: str
@@ -149,36 +155,45 @@ def process(st, remove_response_flag=False, inv=None,
     :type event_longitude: float
     :return: processed stream
     """
-    # cut the stream out before processing to reduce computation
     if not isinstance(st, obspy.Stream) and not isinstance(st, obspy.Trace):
         raise ValueError("Input seismogram should be either obspy.Stream "
                          "or obspy.Trace")
 
+    # cut the stream out before processing to reduce computation
     if starttime is not None and endtime is not None:
         flex_cut_stream(st, starttime, endtime)
 
+    # detrend ,demean, taper
     st.detrend("linear")
     st.detrend("demean")
     st.taper(max_percentage=taper_percentage, type=taper_type)
 
+    # remove response or filter
+    if remove_response_flag or filter_flag:
+        if pre_filt is None or len(pre_filt) != 4:
+            raise ValueError("Filter band should be list or tuple with "
+                             "length of 4")
+
     if remove_response_flag:
         # remove response
+        if inv is None:
+            raise ValueError("Station information(inv) should be provided if"
+                             "you want to remove instrument response")
         st.attach_response(inv)
         st.remove_response(output="DISP", pre_filt=pre_filt, zero_mean=False,
                            taper=False)
     elif filter_flag:
-        if pre_filt is None or len(pre_filt) != 4:
-            raise ValueError("Filter band should be list or tuple with "
-                             "length of 4")
         # Perform a frequency domain taper like during the response removal
         # just without an actual response...
         for tr in st:
             filter_trace(tr, pre_filt)
 
+    # detrend, demean or taper
     st.detrend("linear")
     st.detrend("demean")
     st.taper(max_percentage=taper_percentage, type=taper_type)
 
+    # resample
     if resample_flag:
         # interpolation
         if sampling_rate is None:
