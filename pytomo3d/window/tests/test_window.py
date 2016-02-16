@@ -1,12 +1,9 @@
 import os
 import inspect
-import numpy as np
-import pytest
 from obspy import read, read_inventory, readEvents
 import pyflex
 from pyflex.window import Window
 import pytomo3d.window.window as win
-from pytomo3d.window.write_window import write_jsonfile
 import json
 
 # Most generic way to get the data folder path.

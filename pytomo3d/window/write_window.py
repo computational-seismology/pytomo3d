@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import os
 import json
 import obspy
 import numpy as np
