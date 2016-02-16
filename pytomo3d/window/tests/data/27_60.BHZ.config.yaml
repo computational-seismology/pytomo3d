@@ -1,0 +1,54 @@
+# Example file for window config
+# The basic structure follows the original version of
+# FLEXWIN(and all the parameters). If you want furture
+# and detailed documentions, please refer to the manual
+# of FLEXWIN
+
+# min and max period of seismograms
+"min_period": 27.0
+"max_period": 60.0
+
+# STA/LAT water level
+"stalta_waterlevel": 0.10
+
+# max tsfhit
+"tshift_acceptance_level": 8.0
+"tshift_reference": 0.0
+
+# max amplitude difference
+"dlna_acceptance_level": 0.50
+"dlna_reference": 0.0
+
+# min cc coef
+"cc_acceptance_level": 0.85
+
+# window signal-to-noise ratio
+"s2n_limit": 3.0
+"s2n_limit_energy": 1.5
+"window_signal_to_noise_type": "amplitude"
+
+# min/max surface wave velocity, to calculate slowest/fast 
+# surface wave arrival to define the boundaries of 
+# surface wave region
+"selection_mode": "body_and_surface_waves"
+"min_surface_wave_velocity": 3.20
+"max_surface_wave_velocity": 4.10
+"earth_model": "ak135"
+"max_time_before_first_arrival": 50.0
+
+# check global data quality
+"check_global_data_quality": True
+"snr_integrate_base": 3.5
+"snr_max_base": 3.0
+
+# see reference in FLEXWIN manual
+"c_0": 0.7
+"c_1": 2.0
+"c_2": 0.0
+"c_3a": 1.0
+"c_3b": 2.0
+"c_4a": 3.0
+"c_4b": 10.0
+
+# window merge strategy
+"resolution_strategy": "interval_scheduling"

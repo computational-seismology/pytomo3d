@@ -47,9 +47,10 @@ def load_window_config_yaml(filename):
     return pyflex.Config(**data)
 
 
-def window_trace(obs_tr, syn_tr, config, station=None,
-                 event=None, _verbose=False,
-                 figure_mode=False, figure_dir=None):
+def window_on_trace(obs_tr, syn_tr, config, station=None,
+                    event=None, _verbose=False,
+                    figure_mode=False, figure_dir=None,
+                    figure_format="pdf"):
     """
     Window selection on a trace(obspy.Trace)
 
@@ -89,7 +90,8 @@ def window_trace(obs_tr, syn_tr, config, station=None,
         windows = []
 
     if figure_mode:
-        plot_window_figure(figure_dir, obs_tr.id, ws, _verbose)
+        plot_window_figure(figure_dir, obs_tr.id, ws, _verbose,
+                           figure_format=figure_format)
 
     if _verbose:
         print("Station %s picked %i windows" % (obs_tr.id, len(windows)))
@@ -97,9 +99,9 @@ def window_trace(obs_tr, syn_tr, config, station=None,
     return windows
 
 
-def window_stream(observed, synthetic, config_dict, station=None,
-                  event=None, figure_mode=False, figure_dir=None,
-                  _verbose=False):
+def window_on_stream(observed, synthetic, config_dict, station=None,
+                     event=None, figure_mode=False, figure_dir=None,
+                     _verbose=False):
     """
     Window selection on a Stream
 
@@ -142,7 +144,7 @@ def window_stream(observed, synthetic, config_dict, station=None,
         for obs_tr in obs:
             config = config_dict[component]
 
-            windows = window_trace(
+            windows = window_on_trace(
                 obs_tr, syn_tr, config, station=station,
                 event=event, _verbose=_verbose,
                 figure_mode=figure_mode, figure_dir=figure_dir)
