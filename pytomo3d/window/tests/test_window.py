@@ -5,7 +5,6 @@ import pyflex
 from pyflex.window import Window
 import pytomo3d.window.window as win
 import json
-from pytomo3d.window.write_window import write_jsonfile
 
 # Most generic way to get the data folder path.
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(
