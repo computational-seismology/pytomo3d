@@ -23,7 +23,6 @@ def plot_window_figure(figure_dir, figure_id, ws, _verbose=False,
     :type figure_format: str
     :return:
     """
-
     outfn = "%s.%s" % (figure_id, figure_format)
     figfn = os.path.join(figure_dir, outfn)
     if _verbose:
@@ -102,7 +101,7 @@ def window_stream(observed, synthetic, config_dict, station=None,
                   event=None, figure_mode=False, figure_dir=None,
                   _verbose=False):
     """
-    Window selection function o Stream
+    Window selection on a Stream
 
     :param observed: observed stream
     :type observed: obspy.Stream

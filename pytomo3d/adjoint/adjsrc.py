@@ -8,51 +8,54 @@ import pyadjoint
 from pyadjoint import AdjointSource
 
 
-def plot_adjsrc_figure(figdir, obs_tr, adjsrc, _verbose):
-    outfn = "%s.pdf" % obs_tr.id
-    figfn = os.path.join(figdir, outfn)
+def plot_adjsrc_figure(figure_dir, figure_id, adjsrc, _verbose=False,
+                       figure_format="pdf"):
+    """
+    Plot adjoint source figure
+
+    :param figure_dir: output figured directory
+    :type figure_dir: str
+    :param figure_id: figure id, for example, you can use trace id
+        as figure_id, like "II.AAK.00.BHZ"
+    :type figure_id: str
+    :param adjsrc: adjoint source
+    :type adjsrc: pyadjoint.AdjointSource
+    :param _verbose: output verbose flag
+    :type _verbose: bool
+    :param figure_format: output figure format, for example, "pdf"
+        or "png"
+    :return:
+    """
+    outfn = "%s.%s" % (figure_id, figure_format)
+    figfn = os.path.join(figure_dir, outfn)
     if _verbose:
         print "Output fig:", figfn
     adjsrc.plot(figfn)
 
 
-def _stats_comp_window(windows):
+def _stats_channel_window(windows):
     """
     Determine number of windows on each channel of each component.
-    1) component weight: for example, {"Z":1.0, "R":0.5, "T":0.5}
-    2) instrument weight: if there is mulitple instrument, we assign
-        different weight to differnt instruments based on the number
-        of windows on each instrument. For example, if there is two
-        instrument, 'II.AAK.00.BHZ' and 'II.AAK.10.BHZ', and there are
-        4 and 6 windows selected on each window, then for instrument
-        weight, the values are 0.4 and 0.6
     """
-    comp_win_dict = dict()
+    channel_win_dict = dict()
     for chan_win in windows:
         chan_id = chan_win[0].channel_id
-        chan_name = chan_id.split()[-1]
-        comp = chan_name[-1]
         nwin = len(chan_win)
-        if comp not in comp_win_dict.keys():
-            comp_win_dict[comp] = {}
-        comp_win_dict[comp][chan_id] = nwin
+        channel_win_dict[chan_id] = nwin
 
-    return comp_win_dict
+    return channel_win_dict
 
 
-def _clean_adj_results(comp_adj_dict, comp_nwins_dict):
+def _clean_adj_results(chan_adj_dict, chan_nwin_dict):
     """
-    Remove chan from comp_nwins_dict if the key is not in comp_adj_dict,
-    for clean purpose. Also, rip off the comlex structure of comp_adj_dict
-    and comp_nwins_dict(because they are two layered dict) to make them
-    one-layer dict with {chan_id: adjsrc, ...}
+    Remove chan from channel_nwins_dict if the key is not in
+    channel_adj_dict, for clean purpose.
     """
     clean_adj_dict = {}
     clean_nwin_dict = {}
-    for comp, comp_adj in comp_adj_dict.iteritems():
-        for chan_id, chan_adj in comp_adj.iteritems():
-            clean_adj_dict[chan_id] = chan_adj
-            clean_nwin_dict[chan_id] = comp_nwins_dict[comp][chan_id]
+    for chan_id, chan_adj in chan_adj_dict.iteritems():
+        clean_adj_dict[chan_id] = chan_adj
+        clean_nwin_dict[chan_id] = chan_nwin_dict[chan_id]
 
     return clean_adj_dict, clean_nwin_dict
 
@@ -71,18 +74,85 @@ def load_adjoint_config_yaml(filename):
     return pyadjoint.Config(**data)
 
 
-def calculate_adjoint_sources(observed, synthetic, windows, config,
-                              adj_src_type):
+def calculate_adjsrc_on_trace(obs, syn, windows, config, adj_src_type,
+                              adjoint_src_flag=True, plot_flag=False):
+    """
+    Calculate adjoint source on a pair of trace and windows selected
 
-    comp_adj_dict = {}
+    :param obs: observed trace
+    :type obs: obspy.Trace
+    :param syn: synthetic trace
+    :type syn: obspy.Trace
+    :param windows: windows information, 2-dimension array, like
+        [[win_1_left, win_1_right], [win_2_left, win_2_right], ...]
+    :type windows: list or numpy.array
+    :param config: config of pyadjoint
+    :type config: pyadjoint.Config
+    :param adj_src_type: adjoint source type, like "multitaper"
+    :type adj_src_type: str
+    :param adjoint_src_flag: whether calcualte adjoint source or not.
+        If False, only make measurements
+    :type adjoint_src_flag: bool
+    :param plot_flag: whether make plots or not. If True, it will lot
+        a adjoint source figure right after calculation
+    :type plot_flag:  bool
+    :return: adjoint source(pyadjoit.AdjointSource)
+    """
+    if not isinstance(obs, Trace):
+        raise ValueError("Input obs should be obspy.Trace")
+    if not isinstance(syn, Trace):
+        raise ValueError("Input syn should be obspy.Trace")
+    if not isinstance(config, pyadjoint.Config):
+        raise ValueError("Input config should be pyadjoint.Config")
+    windows = np.array(windows)
+    if len(windows.shape) != 2 or windows.shape[1] != 2:
+        raise ValueError("Input windows dimension incorrect, dimention"
+                         "(*, 2) expected")
+
+    try:
+        adjsrc = pyadjoint.calculate_adjoint_source(
+            adj_src_type=adj_src_type, observed=obs, synthetic=syn,
+            config=config, window=windows, adjoint_src=adjoint_src_flag,
+            plot=plot_flag)
+    except:
+        adjsrc = None
+
+    return adjsrc
+
+
+def calculate_adjsrc_on_stream(observed, synthetic, windows, config,
+                               adj_src_type, plot_flag=False,
+                               adjoint_src_flag=True):
+    """
+    calculate adjoint source on a pair of stream and windows selected
+
+    :param observed: observed stream
+    :type observed: obspy.Stream
+    :param synthetic: observed stream
+    :type synthetic: obspy.Stream
+    :param windows: list of pyflex windows, like:
+        [[Windows(), Windows(), Windows()], [Windows(), Windows()], ...]
+        For each element, it contains windows for one channel
+    :type windows: list
+    :param config: config for calculating adjoint source
+    :type config: pyadjoit.Config
+    :param adj_src_type: adjoint source type
+    :type adj_src_type: str
+    :param plot_flag: plot flag. Leave it to True if you want to see adjoint
+        plots for every trace
+    :type plot_flag: bool
+    :param adjoint_src_flag: adjoint source flag. Set it to True if you want
+        to calculate adjoint sources
+    :type adjoint_src_flag: bool
+    :return:
+    """
+
+    channel_adj_dict = {}
 
     for chan_win in windows:
         if len(chan_win) == 0:
             continue
-
         obsd_id = chan_win[0].channel_id
-        channel_name = obsd_id.split(".")[-1]
-        comp_name = channel_name[-1]
 
         try:
             obs = observed.select(id=obsd_id)[0]
@@ -101,91 +171,78 @@ def calculate_adjoint_sources(observed, synthetic, windows, config,
             win_b = _win.relative_starttime
             win_e = _win.relative_endtime
             wins.append([win_b, win_e])
+        wins = np.array(wins)
 
-        try:
-            adjsrc = pyadjoint.calculate_adjoint_source(
-                adj_src_type=adj_src_type, observed=obs, synthetic=syn,
-                config=config, window=wins, adjoint_src=True, plot=False)
-        except:
-            print("No adjoint source calculated for %s" % obsd_id)
+        adjsrc = calculate_adjsrc_on_trace(
+            obs, syn, wins, config, adj_src_type,
+            adjoint_src_flag=adjoint_src_flag,
+            plot_flag=plot_flag)
+
+        if adjsrc is None:
             continue
+        channel_adj_dict[obsd_id] = adjsrc
 
-        if comp_name not in comp_adj_dict.keys():
-            comp_adj_dict[comp_name] = {}
-        comp_adj_dict[comp_name][obsd_id] = adjsrc
-
-    return comp_adj_dict
+    return channel_adj_dict
 
 
-def adjsrc_function(observed, synthetic, adj_src_type='multitaper_misfit',
-                    period=[27, 60], windows=None, figure_mode=False,
+def adjsrc_function(observed, synthetic, windows, config,
+                    adj_src_type='multitaper_misfit', figure_mode=False,
                     figure_dir=None, _verbose=False):
-    '''
+    """
     Calculate adjoint sources using the time windows selected by pyflex
+    and stats the window information at the same time
 
     :param observed: Observed data for one station
     :type observed: An obspy.core.stream.Stream object.
     :param synthetic: Synthetic data for one station
     :type synthetic: An obspy.core.stream.Stream object
-    :param selection_mode: measurement type (cc_traveltime_misfit;
-        multitaper_misfir; waveform_midfit)
-    :type selection_mode: str
+    :param windows: window files for one station, produced by
+        FLEXWIN/pyflexwin
+    :type windows: a dictionary instance with all time windows for each
+        contained traces in the stream object.
     :param config: parameters
     :type config: a class instance with all necessary constants/parameters
-    :param window: window files for one station, produced by FLEXWIN/pyflexwin
-    :type window: a dictionary instance with all time windows for each
-        contained traces in the stream object.
-    '''
+    :param adj_src_type: measurement type ("cc_traveltime_misfit",
+        "multitaper_misfit", "waveform_misfit")
+    :type adj_src_type: str
+    """
+    if not isinstance(observed, Stream):
+        raise ValueError("Input observed should be obspy.Stream")
+    if not isinstance(synthetic, Stream):
+        raise ValueError("Input synthetic should be obspy.Stream")
     if windows is None or len(windows) == 0:
         return
+    if not isinstance(config, pyadjoint.Config):
+        raise ValueError("Input config should be pyadjoint.Config")
 
-    comp_nwins_dict = _stats_comp_window(windows)
-    comp_adj_dict = calculate_adjoint_sources(observed, synthetic, windows,
-                                              adj_src_type, period)
+    channel_nwins_dict = _stats_channel_window(windows)
+    channel_adj_dict = \
+        calculate_adjsrc_on_stream(observed, synthetic, windows, config,
+                                   adj_src_type)
 
-    return _clean_adj_results(comp_adj_dict, comp_nwins_dict)
-
-
-def adjsrc_wrapper(obsd_station_group, synt_station_group,
-                   obsd_tag="proc_obsd_27_60", synt_tag="proc_synt_27_60",
-                   period=[27, 60], window=None, event=None,
-                   selection_mode="multitaper_misfit",
-                   figure_mode=False, figure_dir=None,
-                   _verbose=False, outputdir="."):
-    """
-    Wrapper for pyasdf APIs
-    """
-
-    # Make sure everything thats required is there.
-    if not hasattr(obsd_station_group, obsd_tag) or \
-       not hasattr(synt_station_group, synt_tag):
-        print "Missing attr, return"
-        return 1
-
-    observed = getattr(obsd_station_group, obsd_tag)
-    synthetic = getattr(synt_station_group, synt_tag)
-
-    # select associated windows
-    ntwk = observed[0].stats.network
-    stnm = observed[0].stats.station
-    win_key = ntwk + "." + stnm
-    st_wins = window[win_key]
-
-    return adjsrc_function(observed, synthetic, selection_mode=selection_mode,
-                           period=period, window=st_wins,
-                           figure_mode=figure_mode,
-                           figure_dir=figure_dir, _verbose=_verbose,
-                           outputdir=outputdir)
+    return _clean_adj_results(channel_adj_dict, channel_nwins_dict)
 
 
 def calculate_baz(elat, elon, slat, slon):
+    """
+    Calculate back azimuth
+
+    :param elat: event latitude
+    :param elon: event longitude
+    :param slat: station latitude
+    :param slon: station longitude
+    :return: back azimuth
+    """
 
     _, baz, _ = gps2DistAzimuth(elat, elon, slat, slon)
 
     return baz
 
 
-def convert_adj_to_trace(adj, starttime, chan_id):
+def _convert_adj_to_trace(adj, starttime, chan_id):
+    """
+    Convert AdjointSource to Trace,for internal use only
+    """
 
     tr = Trace()
     tr.data = adj.adjoint_source
@@ -200,7 +257,10 @@ def convert_adj_to_trace(adj, starttime, chan_id):
     return tr
 
 
-def convert_trace_to_adj(tr, adj):
+def _convert_trace_to_adj(tr, adj):
+    """
+    Convert Trace to AdjointSource, for internal use only
+    """
 
     adj.dt = tr.stats.delta
     adj.component = tr.stats.channel[-1]
@@ -240,7 +300,18 @@ def zero_padding_stream(stream, starttime, endtime):
 
 
 def sum_adj_on_component(adj_stream, weight_dict):
+    """
+    Sum adjoint source on different channels but same component
+    together, like "II.AAK.00.BHZ" and "II.AAK.10.BHZ" to form
+    "II.AAK.BHZ"
 
+    :param adj_stream: adjoint source stream
+    :param weight_dict: weight dictionary, should be something like
+        {"Z":{"II.AAK.00.BHZ": 0.5, "II.AAK.10.BHZ": 0.5},
+         "R":{"II.AAK.00.BHR": 0.3, "II.AAK.10.BHR": 0.7},
+         "T":{"II.AAK..BHT": 1.0}}
+    :return: summed adjoint source stream
+    """
     new_stream = Stream()
     done_comps = []
     for comp, comp_weights in weight_dict.iteritems():
@@ -257,8 +328,8 @@ def sum_adj_on_component(adj_stream, weight_dict):
     return new_stream
 
 
-def postprocess_adjsrc(adjsrcs, adj_starttime, raw_synthetic, staxml, event,
-                       sum_over_comp=False, weight_dict=None):
+def postprocess_adjsrc(adjsrcs, adj_starttime, raw_synthetic, inventory, event,
+                       sum_over_comp_flag=False, weight_dict=None):
     """
     Postprocess adjoint sources to fit SPECFEM input(same as raw_synthetic)
     1) zero padding the adjoint sources
@@ -266,10 +337,20 @@ def postprocess_adjsrc(adjsrcs, adj_starttime, raw_synthetic, staxml, event,
     3) add multiple instrument together if there are
     4) rotate from (R, T) to (N, E)
 
-    :param adjsrcs: adjoint sources list(no multiple instruments
-        at this stage)
-    :param raw_synthetic: raw synthetic from SPECFEM output
+    :param adjsrcs: adjoint sources list from the same station
+    :type adjsrcs: list
+    :param adj_starttime: starttime of adjoint sources
+    :param adj_starttime: obspy.UTCDateTime
+    :param raw_synthetic: raw synthetic from SPECFEM output, as reference
+    :type raw_synthetic: obspy.Stream or obspy.Trace
+    :param inventory: station inventory
+    :type inventory: obspy.Inventory
+    :param event: event information
+    :type event: obspy.Event
+    :param sum_over_comp_flag: sum over component flag
+    :param weight_dict: weight dictionary
     """
+
     # extract event information
     origin = event.preferred_origin() or event.origins[0]
     elat = origin.latitude
@@ -277,13 +358,13 @@ def postprocess_adjsrc(adjsrcs, adj_starttime, raw_synthetic, staxml, event,
     event_time = origin.time
 
     # extract station information
-    slat = float(staxml[0][0].latitude)
-    slon = float(staxml[0][0].longitude)
+    slat = float(inventory[0][0].latitude)
+    slon = float(inventory[0][0].longitude)
 
-    # transfer adjoint_source type to stream
+    # transfer AdjointSource type to stream
     adj_stream = Stream()
     for chan_id, adj in adjsrcs.iteritems():
-        _tr = convert_adj_to_trace(adj, adj_starttime, chan_id)
+        _tr = _convert_adj_to_trace(adj, adj_starttime, chan_id)
         adj_stream.append(_tr)
 
     interp_starttime = raw_synthetic[0].stats.starttime
@@ -301,16 +382,11 @@ def postprocess_adjsrc(adjsrcs, adj_starttime, raw_synthetic, staxml, event,
                            npts=interp_npts)
 
     # sum multiple instruments
-    if sum_over_comp:
+    if sum_over_comp_flag:
         if weight_dict is None:
             raise ValueError("weight_dict should be assigned if you want"
                              "to add")
         adj_stream = sum_adj_on_component(adj_stream, weight_dict)
-
-    # rotate
-    baz = calculate_baz(elat, elon, slat, slon)
-
-    components = [tr.stats.channel[-1] for tr in adj_stream]
 
     # add zero trace for missing components
     missinglist = ["Z", "R", "T"]
@@ -324,20 +400,24 @@ def postprocess_adjsrc(adjsrcs, adj_starttime, raw_synthetic, staxml, event,
                                            component)
         adj_stream.append(zero_adj)
 
+    # rotate
+    baz = calculate_baz(elat, elon, slat, slon)
+    components = [tr.stats.channel[-1] for tr in adj_stream]
+
     if "R" in components and "T" in components:
         try:
             adj_stream.rotate(method="RT->NE", back_azimuth=baz)
         except Exception as e:
             print e
 
+    # prepare the final results
     final_adjsrcs = []
-
     _temp_id = adjsrcs.keys()[0]
     adj_src_type = adjsrcs[_temp_id].adj_src_type
     minp = adjsrcs[_temp_id].min_period
     maxp = adjsrcs[_temp_id].max_period
     for tr in adj_stream:
         _adj = AdjointSource(adj_src_type, 0.0, 0.0, minp, maxp, "")
-        final_adjsrcs.append(convert_trace_to_adj(tr, _adj))
+        final_adjsrcs.append(_convert_trace_to_adj(tr, _adj))
 
     return final_adjsrcs, time_offset

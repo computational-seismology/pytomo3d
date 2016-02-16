@@ -108,7 +108,7 @@ def filter_trace(tr, pre_filt):
     tr.data = data
 
 
-def process(st, remove_response_flag=False, inv=None,
+def process(st, remove_response_flag=False, inventory=None,
             filter_flag=False, pre_filt=None,
             starttime=None, endtime=None,
             resample_flag=False, sampling_rate=1.0,
@@ -128,8 +128,8 @@ def process(st, remove_response_flag=False, inv=None,
         of. If you want just filter the seismogram, please leave this to False
         and set filter_flag to True.
     :type remove_response_flag: bool
-    :param inv: inventory information
-    :type inv: obspy.Inventory
+    :param inventory: station inventory information
+    :type inventory: obspy.Inventory
     :param filter_flag:flag for filter the seismogram
     :type filter_flag: bool
     :param pre_filt: list of tuple of 4 corner frequency for filter,
@@ -176,10 +176,10 @@ def process(st, remove_response_flag=False, inv=None,
 
     if remove_response_flag:
         # remove response
-        if inv is None:
+        if inventory is None:
             raise ValueError("Station information(inv) should be provided if"
                              "you want to remove instrument response")
-        st.attach_response(inv)
+        st.attach_response(inventory)
         st.remove_response(output="DISP", pre_filt=pre_filt, zero_mean=False,
                            taper=False)
     elif filter_flag:
@@ -220,7 +220,7 @@ def process(st, remove_response_flag=False, inv=None,
     elif isinstance(st, obspy.Stream):
         if rotate_flag:
             rotate_stream(st, event_latitude, event_longitude,
-                          inventory=inv, mode="ALL")
+                          inventory=inventory, mode="ALL")
         # Convert to single precision to save space.
         for tr in st:
             tr.data = np.require(tr.data, dtype="float32")
