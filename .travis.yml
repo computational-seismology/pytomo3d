@@ -30,8 +30,6 @@ install:
 
 script: 
     - coverage run --source=pytomo3d setup.py test
-    - if [[ $TRAVIS_PYTHON_VERSION == '2.7' ]]; then cd $TRAVIS_BUILD_DIR/doc; make html ; fi
 
 after_success:
     - cd $TRAVIS_BUILD_DIR; coveralls
-    - if [[ $TRAVIS_PYTHON_VERSION == '2.7' ]]; then bash $TRAVIS_BUILD_DIR/.travis-update-gh-pages.sh ; f
