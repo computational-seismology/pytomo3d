@@ -48,8 +48,8 @@ setup(
         "seismology", "tomography", "adjoint", "signal", "inversion", "window"
     ],
     install_requires=[
-        "obspy", "flake8", "pytest", "nose", "future>=0.14.1", "pyflex",
-        "pyadjoint"
+        "numpy", "obspy", "flake8", "pytest", "nose", "future>=0.14.1", "pyflex",
+        "pyadjoint", "yaml"
     ],
     extras_require={
         "docs": ["sphinx", "ipython", "runipy"]
