@@ -5,6 +5,7 @@ import pyflex
 from pyflex.window import Window
 import pytomo3d.window.window as win
 import json
+from pytomo3d.window.write_window import write_jsonfile
 
 # Most generic way to get the data folder path.
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(
@@ -25,8 +26,8 @@ def test_read_config():
 
 
 def test_window_on_trace():
-    obs_tr = read(obsfile).select(channel="*Z")[0]
-    syn_tr = read(synfile).select(channel="*Z")[0]
+    obs_tr = read(obsfile).select(channel="*R")[0]
+    syn_tr = read(synfile).select(channel="*R")[0]
 
     config_file = os.path.join(DATA_DIR, "27_60.BHZ.config.yaml")
     config = win.load_window_config_yaml(config_file)
@@ -39,7 +40,7 @@ def test_window_on_trace():
                                   figure_mode=False)
 
     winfile_bm = os.path.join(DATA_DIR, "benchmark",
-                              "IU.KBL..BHZ.window.json")
+                              "IU.KBL..BHR.window.json")
     with open(winfile_bm) as fh:
         windows_json = json.load(fh)
     for _win, _win_json_bm in zip(windows, windows_json):
