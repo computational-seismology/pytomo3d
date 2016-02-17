@@ -1,36 +1,10 @@
 #!/usr/bin/env python
-import os
 import yaml
 import numpy as np
 from obspy import Stream, Trace
 from obspy.core.util.geodetics import gps2DistAzimuth
 import pyadjoint
 from pyadjoint import AdjointSource
-
-
-def plot_adjsrc_figure(figure_dir, figure_id, adjsrc, _verbose=False,
-                       figure_format="pdf"):
-    """
-    Plot adjoint source figure
-
-    :param figure_dir: output figured directory
-    :type figure_dir: str
-    :param figure_id: figure id, for example, you can use trace id
-        as figure_id, like "II.AAK.00.BHZ"
-    :type figure_id: str
-    :param adjsrc: adjoint source
-    :type adjsrc: pyadjoint.AdjointSource
-    :param _verbose: output verbose flag
-    :type _verbose: bool
-    :param figure_format: output figure format, for example, "pdf"
-        or "png"
-    :return:
-    """
-    outfn = "%s.%s" % (figure_id, figure_format)
-    figfn = os.path.join(figure_dir, outfn)
-    if _verbose:
-        print "Output fig:", figfn
-    adjsrc.plot(figfn)
 
 
 def _stats_channel_window(windows):
@@ -74,7 +48,29 @@ def load_adjoint_config_yaml(filename):
     return pyadjoint.Config(**data)
 
 
-def calculate_adjsrc_on_trace(obs, syn, windows, config, adj_src_type,
+def _extract_window_time(windows):
+    """
+    Extract window time information from a list of windows(pyflex.Window).
+    Windows should come from the same channel.
+
+    :param windows: a list of pyflex.Window
+    :return: a two dimension numpy.array of time window, with window
+        starttime and endtime
+    """
+    wins = []
+    id_base = windows[0].channel_id
+    # read windows for this trace
+    for _win in windows:
+        if _win.channel_id != id_base:
+            raise ValueError("Windows come from different channel: %s, %s"
+                             % (id_base, _win.channel_id))
+        win_b = _win.relative_starttime
+        win_e = _win.relative_endtime
+        wins.append([win_b, win_e])
+    return np.array(wins)
+
+
+def calculate_adjsrc_on_trace(obs, syn, window_time, config, adj_src_type,
                               adjoint_src_flag=True, plot_flag=False):
     """
     Calculate adjoint source on a pair of trace and windows selected
@@ -83,12 +79,15 @@ def calculate_adjsrc_on_trace(obs, syn, windows, config, adj_src_type,
     :type obs: obspy.Trace
     :param syn: synthetic trace
     :type syn: obspy.Trace
-    :param windows: windows information, 2-dimension array, like
+    :param window_time: window time information, 2-dimension array, like
         [[win_1_left, win_1_right], [win_2_left, win_2_right], ...]
-    :type windows: list or numpy.array
+    :type windows: 2-d list or numpy.array
     :param config: config of pyadjoint
     :type config: pyadjoint.Config
-    :param adj_src_type: adjoint source type, like "multitaper"
+    :param adj_src_type: adjoint source type, options include:
+        1) "cc_traveltime_misfit"
+        2) "multitaper_misfit"
+        3) "waveform_misfit"
     :type adj_src_type: str
     :param adjoint_src_flag: whether calcualte adjoint source or not.
         If False, only make measurements
@@ -104,7 +103,7 @@ def calculate_adjsrc_on_trace(obs, syn, windows, config, adj_src_type,
         raise ValueError("Input syn should be obspy.Trace")
     if not isinstance(config, pyadjoint.Config):
         raise ValueError("Input config should be pyadjoint.Config")
-    windows = np.array(windows)
+    windows = np.array(window_time)
     if len(windows.shape) != 2 or windows.shape[1] != 2:
         raise ValueError("Input windows dimension incorrect, dimention"
                          "(*, 2) expected")
@@ -112,7 +111,7 @@ def calculate_adjsrc_on_trace(obs, syn, windows, config, adj_src_type,
     try:
         adjsrc = pyadjoint.calculate_adjoint_source(
             adj_src_type=adj_src_type, observed=obs, synthetic=syn,
-            config=config, window=windows, adjoint_src=adjoint_src_flag,
+            config=config, window=window_time, adjoint_src=adjoint_src_flag,
             plot=plot_flag)
     except:
         adjsrc = None
@@ -165,16 +164,10 @@ def calculate_adjsrc_on_stream(observed, synthetic, windows, config,
             raise ValueError("Missing synthetic trace matching obsd id: %s"
                              % obsd_id)
 
-        wins = []
-        # read windows for this trace
-        for _win in chan_win:
-            win_b = _win.relative_starttime
-            win_e = _win.relative_endtime
-            wins.append([win_b, win_e])
-        wins = np.array(wins)
+        win_time = _extract_window_time(chan_win)
 
         adjsrc = calculate_adjsrc_on_trace(
-            obs, syn, wins, config, adj_src_type,
+            obs, syn, win_time, config, adj_src_type,
             adjoint_src_flag=adjoint_src_flag,
             plot_flag=plot_flag)
 
@@ -257,11 +250,11 @@ def _convert_adj_to_trace(adj, starttime, chan_id):
     return tr
 
 
-def _convert_trace_to_adj(tr, adj):
+def _convert_trace_to_adj(tr, adj_src_type, minp, maxp):
     """
     Convert Trace to AdjointSource, for internal use only
     """
-
+    adj = AdjointSource(adj_src_type, 0.0, 0.0, minp, maxp, "")
     adj.dt = tr.stats.delta
     adj.component = tr.stats.channel[-1]
     adj.adjoint_source = tr.data
@@ -417,7 +410,8 @@ def postprocess_adjsrc(adjsrcs, adj_starttime, raw_synthetic, inventory, event,
     minp = adjsrcs[_temp_id].min_period
     maxp = adjsrcs[_temp_id].max_period
     for tr in adj_stream:
-        _adj = AdjointSource(adj_src_type, 0.0, 0.0, minp, maxp, "")
-        final_adjsrcs.append(_convert_trace_to_adj(tr, _adj))
+
+        final_adjsrcs.append(_convert_trace_to_adj(tr, adj_src_type,
+                                                   minp, maxp))
 
     return final_adjsrcs, time_offset

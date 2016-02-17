@@ -24,6 +24,15 @@ def test_read_config():
     assert config.stalta_waterlevel == 0.10
 
 
+def test_read_window_json():
+    winfile_bm = os.path.join(DATA_DIR, "benchmark",
+                              "IU.KBL..BHR.window.json")
+    with open(winfile_bm) as fh:
+        windows_json = json.load(fh)
+    for _win_json_bm in windows_json:
+        Window._load_from_json_content(_win_json_bm)
+
+
 def test_window_on_trace():
     obs_tr = read(obsfile).select(channel="*R")[0]
     syn_tr = read(synfile).select(channel="*R")[0]

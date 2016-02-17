@@ -299,9 +299,9 @@ def rotate_stream(st, event_latitude, event_longitude,
     mode = mode.upper()
     if mode not in ["NE", "ALL", "12"]:
         raise ValueError("rotate_stream supports mode: 1) 12; 2) NE; 3) ALL")
-    if mode == "12" and inventory is None:
-        raise ValueError("Mode '12' required inventory(stationxml) "
-                         "information provided")
+    if mode in ["12", "ALL"] and inventory is None:
+        raise ValueError("Mode %s required inventory(stationxml) "
+                         "information provided" % mode)
 
     _, baz, _ = gps2DistAzimuth(station_latitude, station_longitude,
                                 event_latitude, event_longitude)

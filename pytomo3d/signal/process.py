@@ -208,8 +208,9 @@ def process(st, remove_response_flag=False, inventory=None,
             st.interpolate(sampling_rate=sampling_rate,
                            starttime=starttime)
     else:
-        # just cut
-        st.trim(starttime, endtime)
+        if starttime is not None and endtime is not None:
+            # just cut
+            st.trim(starttime, endtime)
 
     if isinstance(st, obspy.Trace):
         if rotate_flag:

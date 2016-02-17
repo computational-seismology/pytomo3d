@@ -1,0 +1,8 @@
+# min and max period(unit: second)
+min_period: 27.0
+max_period: 60.0
+
+# adjoint config parameter
+taper_percentage: 0.15
+taper_type: 'hann'
+use_cc_error: False

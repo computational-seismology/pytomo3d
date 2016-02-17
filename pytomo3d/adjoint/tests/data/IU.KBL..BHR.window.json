@@ -1,0 +1,209 @@
+[
+  {
+    "absolute_endtime":"2010-09-03T16:52:22.900000Z",
+    "absolute_starttime":"2010-09-03T16:50:50.900000Z",
+    "cc_shift_in_samples":1,
+    "cc_shift_in_seconds":0.5,
+    "center_index":1878,
+    "channel_id":"IU.KBL..BHR",
+    "dlnA":0.48803955316543579,
+    "dt":0.5,
+    "left_index":1786,
+    "max_cc_value":0.8766710162162781,
+    "min_period":27.0,
+    "phase_arrivals":[
+      {
+        "dT/dD":4.4456692671514837,
+        "phase_name":"Pdiff",
+        "take-off angle":13.434087677707552,
+        "time":921.57164021473227
+      },
+      {
+        "dT/dD":4.4456692671514837,
+        "phase_name":"pPdiff",
+        "take-off angle":-13.434087677707552,
+        "time":925.59656472549852
+      },
+      {
+        "dT/dD":4.4456692671514837,
+        "phase_name":"sPdiff",
+        "take-off angle":-7.9665437648996926,
+        "time":927.01890281265969
+      }
+    ],
+    "relative_endtime":985.0,
+    "relative_starttime":893.0,
+    "right_index":1970,
+    "time_of_first_sample":"2010-09-03T16:35:57.900000Z",
+    "window_weight":2.9871753145147255
+  },
+  {
+    "absolute_endtime":"2010-09-03T16:57:31.400000Z",
+    "absolute_starttime":"2010-09-03T16:54:01.900000Z",
+    "cc_shift_in_samples":-1,
+    "cc_shift_in_seconds":-0.5,
+    "center_index":2377,
+    "channel_id":"IU.KBL..BHR",
+    "dlnA":0.48111575841903687,
+    "dt":0.5,
+    "left_index":2168,
+    "max_cc_value":0.8718979954719543,
+    "min_period":27.0,
+    "phase_arrivals":[
+      {
+        "dT/dD":1.9203947915200748,
+        "phase_name":"PKIKP",
+        "take-off angle":5.7597903672055866,
+        "time":1133.7321324662771
+      },
+      {
+        "dT/dD":1.9667534143239638,
+        "phase_name":"PKiKP",
+        "take-off angle":5.8993201347274269,
+        "time":1133.8825697541524
+      },
+      {
+        "dT/dD":1.9204256128819468,
+        "phase_name":"pPKIKP",
+        "take-off angle":-5.7598831215868769,
+        "time":1137.8492259219263
+      },
+      {
+        "dT/dD":1.9666201058462494,
+        "phase_name":"pPKiKP",
+        "take-off angle":-5.8989188541267081,
+        "time":1137.9986120246617
+      },
+      {
+        "dT/dD":1.920419365467769,
+        "phase_name":"sPKIKP",
+        "take-off angle":-3.4323249861736018,
+        "time":1139.2526820380981
+      },
+      {
+        "dT/dD":1.9666471316624559,
+        "phase_name":"sPKiKP",
+        "take-off angle":-3.5150494831133834,
+        "time":1139.4022812356418
+      },
+      {
+        "dT/dD":6.8044611381118356,
+        "phase_name":"PP",
+        "take-off angle":20.829909599926395,
+        "time":1226.4648460852875
+      }
+    ],
+    "relative_endtime":1293.5,
+    "relative_starttime":1084.0,
+    "right_index":2587,
+    "time_of_first_sample":"2010-09-03T16:35:57.900000Z",
+    "window_weight":6.7652825944953499
+  },
+  {
+    "absolute_endtime":"2010-09-03T17:04:37.900000Z",
+    "absolute_starttime":"2010-09-03T17:02:37.900000Z",
+    "cc_shift_in_samples":5,
+    "cc_shift_in_seconds":2.5,
+    "center_index":3320,
+    "channel_id":"IU.KBL..BHR",
+    "dlnA":0.216083824634552,
+    "dt":0.5,
+    "left_index":3200,
+    "max_cc_value":0.8694591522216797,
+    "min_period":27.0,
+    "phase_arrivals":[
+      {
+        "dT/dD":6.4899426478691424,
+        "phase_name":"SKKS",
+        "take-off angle":11.672984879522478,
+        "time":1645.8188901670642
+      },
+      {
+        "dT/dD":8.3405984429746454,
+        "phase_name":"Sdiff",
+        "take-off angle":15.071261840889404,
+        "time":1700.6517202757764
+      },
+      {
+        "dT/dD":8.3405984429746454,
+        "phase_name":"pSdiff",
+        "take-off angle":-25.840796286684665,
+        "time":1705.8633598019533
+      },
+      {
+        "dT/dD":8.3405984429746454,
+        "phase_name":"sSdiff",
+        "take-off angle":-15.071261840889404,
+        "time":1707.3500031243075
+      }
+    ],
+    "relative_endtime":1720.0,
+    "relative_starttime":1600.0,
+    "right_index":3440,
+    "time_of_first_sample":"2010-09-03T16:35:57.900000Z",
+    "window_weight":3.864262898763021
+  },
+  {
+    "absolute_endtime":"2010-09-03T17:15:43.900000Z",
+    "absolute_starttime":"2010-09-03T17:12:22.900000Z",
+    "cc_shift_in_samples":1,
+    "cc_shift_in_seconds":0.5,
+    "center_index":4571,
+    "channel_id":"IU.KBL..BHR",
+    "dlnA":0.34011611342430115,
+    "dt":0.5,
+    "left_index":4370,
+    "max_cc_value":0.9845609664916992,
+    "min_period":27.0,
+    "phase_arrivals":[
+      {
+        "dT/dD":2.9610305040872409,
+        "phase_name":"SKKS",
+        "take-off angle":5.2965630710429092,
+        "time":2185.9236772240752
+      },
+      {
+        "dT/dD":1.873485479005921,
+        "phase_name":"SKIKKIKS",
+        "take-off angle":3.3483442154348597,
+        "time":2199.1581326465957
+      },
+      {
+        "dT/dD":12.767144008283758,
+        "phase_name":"SS",
+        "take-off angle":23.454386812440546,
+        "time":2222.589822007224
+      },
+      {
+        "dT/dD":1.9222659759508847,
+        "phase_name":"PKIKPPKIKP",
+        "take-off angle":5.7654215719944482,
+        "time":2259.5987753741283
+      }
+    ],
+    "relative_endtime":2386.0,
+    "relative_starttime":2185.0,
+    "right_index":4772,
+    "time_of_first_sample":"2010-09-03T16:35:57.900000Z",
+    "window_weight":7.3295094172159834
+  },
+  {
+    "absolute_endtime":"2010-09-03T17:19:57.900000Z",
+    "absolute_starttime":"2010-09-03T17:16:58.400000Z",
+    "cc_shift_in_samples":5,
+    "cc_shift_in_seconds":2.5,
+    "center_index":5100,
+    "channel_id":"IU.KBL..BHR",
+    "dlnA":0.32002359628677368,
+    "dt":0.5,
+    "left_index":4921,
+    "max_cc_value":0.8598634004592896,
+    "min_period":27.0,
+    "phase_arrivals":[],
+    "relative_endtime":2640.0,
+    "relative_starttime":2460.5,
+    "right_index":5280,
+    "time_of_first_sample":"2010-09-03T16:35:57.900000Z",
+    "window_weight":5.7164992734237954
+  }
+]

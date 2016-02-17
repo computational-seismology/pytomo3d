@@ -1,0 +1,9 @@
+# min and max period of seismograms
+min_period: 27.0
+max_period: 60.0
+
+# config parameters
+ipower_costaper: 10
+taper_percentage: 0.15
+taper_type: 'hann'
+use_cc_error: True
