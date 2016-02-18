@@ -100,7 +100,7 @@ def test_process_obsd():
     t1 = event_time
     t2 = event_time + 6000.0
     st_new = proc.process(st, remove_response_flag=True, inventory=inv,
-                          filter_flag=False, pre_filt=pre_filt,
+                          filter_flag=True, pre_filt=pre_filt,
                           starttime=t1, endtime=t2, resample_flag=True,
                           sampling_rate=2.0, taper_type="hann",
                           taper_percentage=0.05, rotate_flag=True,

@@ -169,19 +169,26 @@ def process(st, remove_response_flag=False, inventory=None,
     st.taper(max_percentage=taper_percentage, type=taper_type)
 
     # remove response or filter
-    if remove_response_flag or filter_flag:
+    if filter_flag:
         if pre_filt is None or len(pre_filt) != 4:
             raise ValueError("Filter band should be list or tuple with "
                              "length of 4")
+        if not check_array_order(pre_filt, order="ascending"):
+            raise ValueError("Input pre_filt must be in ascending order")
 
     if remove_response_flag:
         # remove response
         if inventory is None:
             raise ValueError("Station information(inv) should be provided if"
                              "you want to remove instrument response")
+
         st.attach_response(inventory)
-        st.remove_response(output="DISP", pre_filt=pre_filt, zero_mean=False,
-                           taper=False)
+        if filter_flag:
+            st.remove_response(output="DISP", pre_filt=pre_filt,
+                               zero_mean=False, taper=False)
+        else:
+            st.remove_response(output="DISP", zero_mean=False, taper=False)
+
     elif filter_flag:
         # Perform a frequency domain taper like during the response removal
         # just without an actual response...
