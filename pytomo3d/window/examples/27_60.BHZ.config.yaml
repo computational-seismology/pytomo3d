@@ -51,4 +51,4 @@
 "c_4b": 10.0
 
 # window merge strategy
-"selection_mode": "body_waves"
+"resolution_strategy": "interval_scheduling"

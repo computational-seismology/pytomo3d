@@ -113,7 +113,8 @@ def process(st, remove_response_flag=False, inventory=None,
             starttime=None, endtime=None,
             resample_flag=False, sampling_rate=1.0,
             taper_type="hann", taper_percentage=0.05,
-            rotate_flag=False, event_latitude=None, event_longitude=None):
+            rotate_flag=False, event_latitude=None,
+            event_longitude=None, **kwargs):
     """
     Stream processing function defined for general purpose of tomography.
     The advantage of using Stream, rather than than Trace, is that rotation
