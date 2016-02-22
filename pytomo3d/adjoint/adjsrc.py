@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import (print_function, division)
 import yaml
 import numpy as np
 from obspy import Stream, Trace
@@ -13,7 +14,10 @@ def _stats_channel_window(windows):
     """
     channel_win_dict = dict()
     for chan_win in windows:
-        chan_id = chan_win[0].channel_id
+        if isinstance(chan_win[0], dict):
+            chan_id = chan_win[0]["channel_id"]
+        else:
+            chan_id = chan_win[0].channel_id
         nwin = len(chan_win)
         channel_win_dict[chan_id] = nwin
 
@@ -58,20 +62,31 @@ def _extract_window_time(windows):
         starttime and endtime
     """
     wins = []
-    id_base = windows[0].channel_id
+    if isinstance(windows[0], dict):
+        id_base = windows[0]["channel_id"]
+        for _win in windows:
+            if _win["channel_id"] != id_base:
+                raise ValueError("Windows come from different channel: %s, %s"
+                                 % (id_base, _win["channel_id"]))
+            win_b = _win["relative_starttime"]
+            win_e = _win["relative_endtime"]
+            wins.append([win_b, win_e])
+    else:
+        id_base = windows[0].channel_id
+        for _win in windows:
+            if _win.channel_id != id_base:
+                raise ValueError("Windows come from different channel: %s, %s"
+                                 % (id_base, _win["channel_id"]))
+            win_b = _win.relative_starttime
+            win_e = _win.relative_endtime
+            wins.append([win_b, win_e])
+
     # read windows for this trace
-    for _win in windows:
-        if _win.channel_id != id_base:
-            raise ValueError("Windows come from different channel: %s, %s"
-                             % (id_base, _win.channel_id))
-        win_b = _win.relative_starttime
-        win_e = _win.relative_endtime
-        wins.append([win_b, win_e])
-    return np.array(wins)
+    return np.array(wins), id_base
 
 
 def calculate_adjsrc_on_trace(obs, syn, window_time, config, adj_src_type,
-                              adjoint_src_flag=True, plot_flag=False):
+                              adjoint_src_flag=True, figure_mode=False):
     """
     Calculate adjoint source on a pair of trace and windows selected
 
@@ -112,7 +127,7 @@ def calculate_adjsrc_on_trace(obs, syn, window_time, config, adj_src_type,
         adjsrc = pyadjoint.calculate_adjoint_source(
             adj_src_type=adj_src_type, observed=obs, synthetic=syn,
             config=config, window=window_time, adjoint_src=adjoint_src_flag,
-            plot=plot_flag)
+            plot=figure_mode)
     except:
         adjsrc = None
 
@@ -120,7 +135,7 @@ def calculate_adjsrc_on_trace(obs, syn, window_time, config, adj_src_type,
 
 
 def calculate_adjsrc_on_stream(observed, synthetic, windows, config,
-                               adj_src_type, plot_flag=False,
+                               adj_src_type, figure_mode=False,
                                adjoint_src_flag=True):
     """
     calculate adjoint source on a pair of stream and windows selected
@@ -137,9 +152,9 @@ def calculate_adjsrc_on_stream(observed, synthetic, windows, config,
     :type config: pyadjoit.Config
     :param adj_src_type: adjoint source type
     :type adj_src_type: str
-    :param plot_flag: plot flag. Leave it to True if you want to see adjoint
+    :param figure_mode: plot flag. Leave it to True if you want to see adjoint
         plots for every trace
-    :type plot_flag: bool
+    :type figure_mode: bool
     :param adjoint_src_flag: adjoint source flag. Set it to True if you want
         to calculate adjoint sources
     :type adjoint_src_flag: bool
@@ -151,7 +166,8 @@ def calculate_adjsrc_on_stream(observed, synthetic, windows, config,
     for chan_win in windows:
         if len(chan_win) == 0:
             continue
-        obsd_id = chan_win[0].channel_id
+
+        win_time, obsd_id = _extract_window_time(chan_win)
 
         try:
             obs = observed.select(id=obsd_id)[0]
@@ -164,12 +180,10 @@ def calculate_adjsrc_on_stream(observed, synthetic, windows, config,
             raise ValueError("Missing synthetic trace matching obsd id: %s"
                              % obsd_id)
 
-        win_time = _extract_window_time(chan_win)
-
         adjsrc = calculate_adjsrc_on_trace(
             obs, syn, win_time, config, adj_src_type,
             adjoint_src_flag=adjoint_src_flag,
-            plot_flag=plot_flag)
+            figure_mode=figure_mode)
 
         if adjsrc is None:
             continue
@@ -292,7 +306,7 @@ def zero_padding_stream(stream, starttime, endtime):
         tr.stats.starttime = padding_starttime
 
 
-def sum_adj_on_component(adj_stream, weight_dict):
+def sum_adj_on_component(adj_stream, weight_flag, weight_dict=None):
     """
     Sum adjoint source on different channels but same component
     together, like "II.AAK.00.BHZ" and "II.AAK.10.BHZ" to form
@@ -305,24 +319,71 @@ def sum_adj_on_component(adj_stream, weight_dict):
          "T":{"II.AAK..BHT": 1.0}}
     :return: summed adjoint source stream
     """
+    if weight_dict is None:
+        raise ValueError("weight_dict should be assigned if you want"
+                         "to add")
+
     new_stream = Stream()
     done_comps = []
-    for comp, comp_weights in weight_dict.iteritems():
-        for chan_id, chan_weight in comp_weights.iteritems():
+
+    if not weight_flag:
+        # just add same components without weight
+        for tr in adj_stream:
+            comp = tr.stats.channel[-1]
             if comp not in done_comps:
-                done_comps.append(comp)
-                comp_tr = adj_stream.select(id=chan_id)[0]
-                comp_tr.data *= chan_weight
+                comp_tr = tr
                 comp_tr.stats.location = ""
+                new_stream.append(comp_tr)
             else:
-                comp_tr.data += \
-                    chan_weight * adj_stream.select(id=chan_id)[0].data
-        new_stream.append(comp_tr)
+                comp_tr = new_stream.select("*%s" % comp)
+                comp_tr.data += tr.data
+    else:
+        # sum using components weight
+        for comp, comp_weights in weight_dict.iteritems():
+            for chan_id, chan_weight in comp_weights.iteritems():
+                if comp not in done_comps:
+                    done_comps.append(comp)
+                    comp_tr = adj_stream.select(id=chan_id)[0]
+                    comp_tr.data *= chan_weight
+                    comp_tr.stats.location = ""
+                    new_stream.append(comp_tr)
+                else:
+                    comp_tr = new_stream.select(channel="*%s" % comp)[0]
+                    comp_tr.data += \
+                        chan_weight * adj_stream.select(id=chan_id)[0].data
+
     return new_stream
 
 
-def postprocess_adjsrc(adjsrcs, adj_starttime, raw_synthetic, inventory, event,
-                       sum_over_comp_flag=False, weight_dict=None):
+def rotate_adj(adj_stream, event, inventory):
+
+    if event is None or inventory is None:
+        raise ValueError("Event and Station must be provied to rotate the"
+                         "adjoint source")
+    # extract event information
+    origin = event.preferred_origin() or event.origins[0]
+    elat = origin.latitude
+    elon = origin.longitude
+
+    # extract station information
+    slat = float(inventory[0][0].latitude)
+    slon = float(inventory[0][0].longitude)
+
+    # rotate
+    baz = calculate_baz(elat, elon, slat, slon)
+    components = [tr.stats.channel[-1] for tr in adj_stream]
+
+    if "R" in components and "T" in components:
+        try:
+            adj_stream.rotate(method="RT->NE", back_azimuth=baz)
+        except Exception as e:
+            print(e)
+
+
+def postprocess_adjsrc(adjsrcs, adj_starttime, interp_starttime, interp_delta,
+                       interp_npts, rotate_flag=False, inventory=None,
+                       event=None, sum_over_comp_flag=False,
+                       weight_flag=False, weight_dict=None):
     """
     Postprocess adjoint sources to fit SPECFEM input(same as raw_synthetic)
     1) zero padding the adjoint sources
@@ -344,29 +405,18 @@ def postprocess_adjsrc(adjsrcs, adj_starttime, raw_synthetic, inventory, event,
     :param weight_dict: weight dictionary
     """
 
-    # extract event information
-    origin = event.preferred_origin() or event.origins[0]
-    elat = origin.latitude
-    elon = origin.longitude
-    event_time = origin.time
+    if not isinstance(adjsrcs, dict):
+        raise ValueError("Input adjsrcs should be type of dict, for example,"
+                         "{'tr.id': pyadjoint.AdjointSource, ...}")
 
-    # extract station information
-    slat = float(inventory[0][0].latitude)
-    slon = float(inventory[0][0].longitude)
-
-    # transfer AdjointSource type to stream
+    # transfer AdjointSource type to stream for easy processing
     adj_stream = Stream()
     for chan_id, adj in adjsrcs.iteritems():
         _tr = _convert_adj_to_trace(adj, adj_starttime, chan_id)
         adj_stream.append(_tr)
 
-    interp_starttime = raw_synthetic[0].stats.starttime
-    interp_delta = raw_synthetic[0].stats.delta
-    interp_npts = raw_synthetic[0].stats.npts
-    interp_endtime = interp_starttime + interp_delta * interp_npts
-    time_offset = interp_starttime - event_time
-
     # zero padding
+    interp_endtime = interp_starttime + interp_delta * interp_npts
     zero_padding_stream(adj_stream, interp_starttime, interp_endtime)
 
     # interpolate
@@ -376,16 +426,15 @@ def postprocess_adjsrc(adjsrcs, adj_starttime, raw_synthetic, inventory, event,
 
     # sum multiple instruments
     if sum_over_comp_flag:
-        if weight_dict is None:
-            raise ValueError("weight_dict should be assigned if you want"
-                             "to add")
-        adj_stream = sum_adj_on_component(adj_stream, weight_dict)
+        adj_stream = sum_adj_on_component(adj_stream, weight_flag,
+                                          weight_dict)
 
     # add zero trace for missing components
     missinglist = ["Z", "R", "T"]
     tr_template = adj_stream[0]
     for tr in adj_stream:
         missinglist.remove(tr.stats.channel[-1])
+
     for component in missinglist:
         zero_adj = tr_template.copy()
         zero_adj.data.fill(0.0)
@@ -393,25 +442,17 @@ def postprocess_adjsrc(adjsrcs, adj_starttime, raw_synthetic, inventory, event,
                                            component)
         adj_stream.append(zero_adj)
 
-    # rotate
-    baz = calculate_baz(elat, elon, slat, slon)
-    components = [tr.stats.channel[-1] for tr in adj_stream]
+    if rotate_flag:
+        rotate_adj(adj_stream, event, inventory)
 
-    if "R" in components and "T" in components:
-        try:
-            adj_stream.rotate(method="RT->NE", back_azimuth=baz)
-        except Exception as e:
-            print e
-
-    # prepare the final results
+    # convert the stream to pyadjoint.AdjointSource
     final_adjsrcs = []
     _temp_id = adjsrcs.keys()[0]
     adj_src_type = adjsrcs[_temp_id].adj_src_type
     minp = adjsrcs[_temp_id].min_period
     maxp = adjsrcs[_temp_id].max_period
     for tr in adj_stream:
-
         final_adjsrcs.append(_convert_trace_to_adj(tr, adj_src_type,
                                                    minp, maxp))
 
-    return final_adjsrcs, time_offset
+    return final_adjsrcs

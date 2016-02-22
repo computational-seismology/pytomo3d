@@ -72,11 +72,11 @@ def test_waveform_adjoint():
     config_file = os.path.join(DATA_DIR, "waveform.adjoint.config.yaml")
     config = adj.load_adjoint_config_yaml(config_file)
 
-    win_time = adj._extract_window_time(windows)
+    win_time, _ = adj._extract_window_time(windows)
 
     adjsrc = adj.calculate_adjsrc_on_trace(
         obs, syn, win_time, config, adj_src_type="waveform_misfit",
-        adjoint_src_flag=True, plot_flag=False)
+        adjoint_src_flag=True, figure_mode=False)
 
     # tr_adj = adj._convert_adj_to_trace(adjsrc, syn.stats.starttime, syn.id)
     # tr.write("%s.sac" % syn.id, format="SAC")
@@ -99,11 +99,11 @@ def test_multitaper_adjoint():
     config_file = os.path.join(DATA_DIR, "multitaper.adjoint.config.yaml")
     config = adj.load_adjoint_config_yaml(config_file)
 
-    win_time = adj._extract_window_time(windows)
+    win_time, _ = adj._extract_window_time(windows)
 
     adjsrc = adj.calculate_adjsrc_on_trace(
         obs, syn, win_time, config, adj_src_type="multitaper_misfit",
-        adjoint_src_flag=True, plot_flag=False)
+        adjoint_src_flag=True, figure_mode=False)
 
     # tr_adj = adj._convert_adj_to_trace(adjsrc, syn.stats.starttime, syn.id)
     # tr.write("%s.sac" % syn.id, format="SAC")
@@ -124,11 +124,11 @@ def test_cc_traveltime_adjoint():
     config_file = os.path.join(DATA_DIR, "cc_traveltime.adjoint.config.yaml")
     config = adj.load_adjoint_config_yaml(config_file)
 
-    win_time = adj._extract_window_time(windows)
+    win_time, _ = adj._extract_window_time(windows)
 
     adjsrc = adj.calculate_adjsrc_on_trace(
         obs, syn, win_time, config, adj_src_type="cc_traveltime_misfit",
-        adjoint_src_flag=True, plot_flag=False)
+        adjoint_src_flag=True, figure_mode=False)
 
     # tr_adj = adj._convert_adj_to_trace(adjsrc, syn.stats.starttime, syn.id)
     # tr.write("%s.sac" % syn.id, format="SAC")

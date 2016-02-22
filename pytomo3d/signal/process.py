@@ -175,7 +175,8 @@ def process(st, remove_response_flag=False, inventory=None,
             raise ValueError("Filter band should be list or tuple with "
                              "length of 4")
         if not check_array_order(pre_filt, order="ascending"):
-            raise ValueError("Input pre_filt must be in ascending order")
+            raise ValueError("Input pre_filt must be in ascending order: %s"
+                             % pre_filt)
 
     if remove_response_flag:
         # remove response
