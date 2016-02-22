@@ -26,20 +26,6 @@ def _stats_channel_window(windows):
     return channel_win_dict
 
 
-def _clean_adj_results(chan_adj_dict, chan_nwin_dict):
-    """
-    Remove chan from channel_nwins_dict if the key is not in
-    channel_adj_dict, for clean purpose.
-    """
-    clean_adj_dict = {}
-    clean_nwin_dict = {}
-    for chan_id, chan_adj in chan_adj_dict.iteritems():
-        clean_adj_dict[chan_id] = chan_adj
-        clean_nwin_dict[chan_id] = chan_nwin_dict[chan_id]
-
-    return clean_adj_dict, clean_nwin_dict
-
-
 def load_adjoint_config_yaml(filename):
     """
     load yaml and setup pyadjoint.Config object
@@ -171,8 +157,16 @@ def calculate_adjsrc_on_stream(observed, synthetic, windows, config,
     :type adjoint_src_flag: bool
     :return:
     """
+    if not isinstance(observed, Stream):
+        raise ValueError("Input observed should be obspy.Stream")
+    if not isinstance(synthetic, Stream):
+        raise ValueError("Input synthetic should be obspy.Stream")
+    if windows is None or len(windows) == 0:
+        return
+    if not isinstance(config, pyadjoint.Config):
+        raise ValueError("Input config should be pyadjoint.Config")
 
-    channel_adj_dict = {}
+    adjsrcs_list = []
 
     for chan_win in windows:
         if len(chan_win) == 0:
@@ -198,48 +192,9 @@ def calculate_adjsrc_on_stream(observed, synthetic, windows, config,
 
         if adjsrc is None:
             continue
-        channel_adj_dict[obsd_id] = adjsrc
+        adjsrcs_list.append(adjsrc)
 
-    return channel_adj_dict
-
-
-def adjsrc_function(observed, synthetic, windows, config,
-                    adj_src_type='multitaper_misfit', figure_mode=False,
-                    figure_dir=None, _verbose=False):
-    """
-    Calculate adjoint sources using the time windows selected by pyflex
-    and stats the window information at the same time
-
-    :param observed: Observed data for one station
-    :type observed: An obspy.core.stream.Stream object.
-    :param synthetic: Synthetic data for one station
-    :type synthetic: An obspy.core.stream.Stream object
-    :param windows: window files for one station, produced by
-        FLEXWIN/pyflexwin
-    :type windows: a dictionary instance with all time windows for each
-        contained traces in the stream object.
-    :param config: parameters
-    :type config: a class instance with all necessary constants/parameters
-    :param adj_src_type: measurement type ("cc_traveltime_misfit",
-        "multitaper_misfit", "waveform_misfit")
-    :type adj_src_type: str
-    """
-    if not isinstance(observed, Stream):
-        raise ValueError("Input observed should be obspy.Stream")
-    if not isinstance(synthetic, Stream):
-        raise ValueError("Input synthetic should be obspy.Stream")
-    if windows is None or len(windows) == 0:
-        return
-    if not isinstance(config, pyadjoint.Config):
-        raise ValueError("Input config should be pyadjoint.Config")
-
-    channel_nwins_dict = _stats_channel_window(windows)
-    channel_adj_dict = \
-        calculate_adjsrc_on_stream(observed, synthetic, windows, config,
-                                   adj_src_type, figure_mode=figure_mode,
-                                   figure_dir=figure_dir)
-
-    return _clean_adj_results(channel_adj_dict, channel_nwins_dict)
+    return adjsrcs_list
 
 
 def calculate_baz(elat, elon, slat, slon):
