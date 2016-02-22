@@ -1,0 +1,550 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pytomo3d.adjoint.adjsrc &mdash; pytomo3d 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="pytomo3d 0.1.0 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">pytomo3d 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pytomo3d.adjoint.adjsrc</h1><div class="highlight"><pre>
+<span class="ch">#!/usr/bin/env python</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="p">(</span><span class="n">print_function</span><span class="p">,</span> <span class="n">division</span><span class="p">)</span>
+<span class="kn">import</span> <span class="nn">yaml</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">obspy</span> <span class="kn">import</span> <span class="n">Stream</span><span class="p">,</span> <span class="n">Trace</span>
+<span class="kn">from</span> <span class="nn">obspy.core.util.geodetics</span> <span class="kn">import</span> <span class="n">gps2DistAzimuth</span>
+<span class="kn">import</span> <span class="nn">pyadjoint</span>
+<span class="kn">from</span> <span class="nn">pyadjoint</span> <span class="kn">import</span> <span class="n">AdjointSource</span>
+
+
+<span class="k">def</span> <span class="nf">_stats_channel_window</span><span class="p">(</span><span class="n">windows</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Determine number of windows on each channel of each component.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">channel_win_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">chan_win</span> <span class="ow">in</span> <span class="n">windows</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">chan_win</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="n">chan_id</span> <span class="o">=</span> <span class="n">chan_win</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;channel_id&quot;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">chan_id</span> <span class="o">=</span> <span class="n">chan_win</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">channel_id</span>
+        <span class="n">nwin</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">chan_win</span><span class="p">)</span>
+        <span class="n">channel_win_dict</span><span class="p">[</span><span class="n">chan_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">nwin</span>
+
+    <span class="k">return</span> <span class="n">channel_win_dict</span>
+
+
+<span class="k">def</span> <span class="nf">_clean_adj_results</span><span class="p">(</span><span class="n">chan_adj_dict</span><span class="p">,</span> <span class="n">chan_nwin_dict</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Remove chan from channel_nwins_dict if the key is not in</span>
+<span class="sd">    channel_adj_dict, for clean purpose.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">clean_adj_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">clean_nwin_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">chan_id</span><span class="p">,</span> <span class="n">chan_adj</span> <span class="ow">in</span> <span class="n">chan_adj_dict</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+        <span class="n">clean_adj_dict</span><span class="p">[</span><span class="n">chan_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">chan_adj</span>
+        <span class="n">clean_nwin_dict</span><span class="p">[</span><span class="n">chan_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">chan_nwin_dict</span><span class="p">[</span><span class="n">chan_id</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">clean_adj_dict</span><span class="p">,</span> <span class="n">clean_nwin_dict</span>
+
+
+<div class="viewcode-block" id="load_adjoint_config_yaml"><a class="viewcode-back" href="../../../pytomo3d.adjoint.html#pytomo3d.adjoint.adjsrc.load_adjoint_config_yaml">[docs]</a><span class="k">def</span> <span class="nf">load_adjoint_config_yaml</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    load yaml and setup pyadjoint.Config object</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="k">as</span> <span class="n">fh</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">fh</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;min_period&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;max_period&quot;</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;min_period is larger than max_period in config &quot;</span>
+                         <span class="s2">&quot;file: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">filename</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">pyadjoint</span><span class="o">.</span><span class="n">Config</span><span class="p">(</span><span class="o">**</span><span class="n">data</span><span class="p">)</span>
+
+</div>
+<span class="k">def</span> <span class="nf">_extract_window_time</span><span class="p">(</span><span class="n">windows</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Extract window time information from a list of windows(pyflex.Window).</span>
+<span class="sd">    Windows should come from the same channel.</span>
+
+<span class="sd">    :param windows: a list of pyflex.Window</span>
+<span class="sd">    :return: a two dimension numpy.array of time window, with window</span>
+<span class="sd">        starttime and endtime</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">wins</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">windows</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="n">id_base</span> <span class="o">=</span> <span class="n">windows</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;channel_id&quot;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">_win</span> <span class="ow">in</span> <span class="n">windows</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">_win</span><span class="p">[</span><span class="s2">&quot;channel_id&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">id_base</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Windows come from different channel: </span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">&quot;</span>
+                                 <span class="o">%</span> <span class="p">(</span><span class="n">id_base</span><span class="p">,</span> <span class="n">_win</span><span class="p">[</span><span class="s2">&quot;channel_id&quot;</span><span class="p">]))</span>
+            <span class="n">win_b</span> <span class="o">=</span> <span class="n">_win</span><span class="p">[</span><span class="s2">&quot;relative_starttime&quot;</span><span class="p">]</span>
+            <span class="n">win_e</span> <span class="o">=</span> <span class="n">_win</span><span class="p">[</span><span class="s2">&quot;relative_endtime&quot;</span><span class="p">]</span>
+            <span class="n">wins</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">win_b</span><span class="p">,</span> <span class="n">win_e</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">id_base</span> <span class="o">=</span> <span class="n">windows</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">channel_id</span>
+        <span class="k">for</span> <span class="n">_win</span> <span class="ow">in</span> <span class="n">windows</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">_win</span><span class="o">.</span><span class="n">channel_id</span> <span class="o">!=</span> <span class="n">id_base</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Windows come from different channel: </span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">&quot;</span>
+                                 <span class="o">%</span> <span class="p">(</span><span class="n">id_base</span><span class="p">,</span> <span class="n">_win</span><span class="p">[</span><span class="s2">&quot;channel_id&quot;</span><span class="p">]))</span>
+            <span class="n">win_b</span> <span class="o">=</span> <span class="n">_win</span><span class="o">.</span><span class="n">relative_starttime</span>
+            <span class="n">win_e</span> <span class="o">=</span> <span class="n">_win</span><span class="o">.</span><span class="n">relative_endtime</span>
+            <span class="n">wins</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">win_b</span><span class="p">,</span> <span class="n">win_e</span><span class="p">])</span>
+
+    <span class="c1"># read windows for this trace</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">wins</span><span class="p">),</span> <span class="n">id_base</span>
+
+
+<div class="viewcode-block" id="calculate_adjsrc_on_trace"><a class="viewcode-back" href="../../../pytomo3d.adjoint.html#pytomo3d.adjoint.adjsrc.calculate_adjsrc_on_trace">[docs]</a><span class="k">def</span> <span class="nf">calculate_adjsrc_on_trace</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">syn</span><span class="p">,</span> <span class="n">window_time</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">adj_src_type</span><span class="p">,</span>
+                              <span class="n">adjoint_src_flag</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">figure_mode</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate adjoint source on a pair of trace and windows selected</span>
+
+<span class="sd">    :param obs: observed trace</span>
+<span class="sd">    :type obs: obspy.Trace</span>
+<span class="sd">    :param syn: synthetic trace</span>
+<span class="sd">    :type syn: obspy.Trace</span>
+<span class="sd">    :param window_time: window time information, 2-dimension array, like</span>
+<span class="sd">        [[win_1_left, win_1_right], [win_2_left, win_2_right], ...]</span>
+<span class="sd">    :type windows: 2-d list or numpy.array</span>
+<span class="sd">    :param config: config of pyadjoint</span>
+<span class="sd">    :type config: pyadjoint.Config</span>
+<span class="sd">    :param adj_src_type: adjoint source type, options include:</span>
+<span class="sd">        1) &quot;cc_traveltime_misfit&quot;</span>
+<span class="sd">        2) &quot;multitaper_misfit&quot;</span>
+<span class="sd">        3) &quot;waveform_misfit&quot;</span>
+<span class="sd">    :type adj_src_type: str</span>
+<span class="sd">    :param adjoint_src_flag: whether calcualte adjoint source or not.</span>
+<span class="sd">        If False, only make measurements</span>
+<span class="sd">    :type adjoint_src_flag: bool</span>
+<span class="sd">    :param plot_flag: whether make plots or not. If True, it will lot</span>
+<span class="sd">        a adjoint source figure right after calculation</span>
+<span class="sd">    :type plot_flag:  bool</span>
+<span class="sd">    :return: adjoint source(pyadjoit.AdjointSource)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obs</span><span class="p">,</span> <span class="n">Trace</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Input obs should be obspy.Trace&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">syn</span><span class="p">,</span> <span class="n">Trace</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Input syn should be obspy.Trace&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">pyadjoint</span><span class="o">.</span><span class="n">Config</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Input config should be pyadjoint.Config&quot;</span><span class="p">)</span>
+    <span class="n">windows</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">window_time</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">windows</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span> <span class="ow">or</span> <span class="n">windows</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Input windows dimension incorrect, dimention&quot;</span>
+                         <span class="s2">&quot;(*, 2) expected&quot;</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">adjsrc</span> <span class="o">=</span> <span class="n">pyadjoint</span><span class="o">.</span><span class="n">calculate_adjoint_source</span><span class="p">(</span>
+            <span class="n">adj_src_type</span><span class="o">=</span><span class="n">adj_src_type</span><span class="p">,</span> <span class="n">observed</span><span class="o">=</span><span class="n">obs</span><span class="p">,</span> <span class="n">synthetic</span><span class="o">=</span><span class="n">syn</span><span class="p">,</span>
+            <span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">,</span> <span class="n">window</span><span class="o">=</span><span class="n">window_time</span><span class="p">,</span> <span class="n">adjoint_src</span><span class="o">=</span><span class="n">adjoint_src_flag</span><span class="p">,</span>
+            <span class="n">plot</span><span class="o">=</span><span class="n">figure_mode</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">adjsrc</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">return</span> <span class="n">adjsrc</span>
+
+</div>
+<div class="viewcode-block" id="calculate_adjsrc_on_stream"><a class="viewcode-back" href="../../../pytomo3d.adjoint.html#pytomo3d.adjoint.adjsrc.calculate_adjsrc_on_stream">[docs]</a><span class="k">def</span> <span class="nf">calculate_adjsrc_on_stream</span><span class="p">(</span><span class="n">observed</span><span class="p">,</span> <span class="n">synthetic</span><span class="p">,</span> <span class="n">windows</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span>
+                               <span class="n">adj_src_type</span><span class="p">,</span> <span class="n">figure_mode</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                               <span class="n">adjoint_src_flag</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    calculate adjoint source on a pair of stream and windows selected</span>
+
+<span class="sd">    :param observed: observed stream</span>
+<span class="sd">    :type observed: obspy.Stream</span>
+<span class="sd">    :param synthetic: observed stream</span>
+<span class="sd">    :type synthetic: obspy.Stream</span>
+<span class="sd">    :param windows: list of pyflex windows, like:</span>
+<span class="sd">        [[Windows(), Windows(), Windows()], [Windows(), Windows()], ...]</span>
+<span class="sd">        For each element, it contains windows for one channel</span>
+<span class="sd">    :type windows: list</span>
+<span class="sd">    :param config: config for calculating adjoint source</span>
+<span class="sd">    :type config: pyadjoit.Config</span>
+<span class="sd">    :param adj_src_type: adjoint source type</span>
+<span class="sd">    :type adj_src_type: str</span>
+<span class="sd">    :param figure_mode: plot flag. Leave it to True if you want to see adjoint</span>
+<span class="sd">        plots for every trace</span>
+<span class="sd">    :type figure_mode: bool</span>
+<span class="sd">    :param adjoint_src_flag: adjoint source flag. Set it to True if you want</span>
+<span class="sd">        to calculate adjoint sources</span>
+<span class="sd">    :type adjoint_src_flag: bool</span>
+<span class="sd">    :return:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">channel_adj_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">for</span> <span class="n">chan_win</span> <span class="ow">in</span> <span class="n">windows</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">chan_win</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="n">win_time</span><span class="p">,</span> <span class="n">obsd_id</span> <span class="o">=</span> <span class="n">_extract_window_time</span><span class="p">(</span><span class="n">chan_win</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">obs</span> <span class="o">=</span> <span class="n">observed</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">obsd_id</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Missing observed trace for window: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">obsd_id</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">syn</span> <span class="o">=</span> <span class="n">synthetic</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">channel</span><span class="o">=</span><span class="s2">&quot;*</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">obs</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">channel</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Missing synthetic trace matching obsd id: </span><span class="si">%s</span><span class="s2">&quot;</span>
+                             <span class="o">%</span> <span class="n">obsd_id</span><span class="p">)</span>
+
+        <span class="n">adjsrc</span> <span class="o">=</span> <span class="n">calculate_adjsrc_on_trace</span><span class="p">(</span>
+            <span class="n">obs</span><span class="p">,</span> <span class="n">syn</span><span class="p">,</span> <span class="n">win_time</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">adj_src_type</span><span class="p">,</span>
+            <span class="n">adjoint_src_flag</span><span class="o">=</span><span class="n">adjoint_src_flag</span><span class="p">,</span>
+            <span class="n">figure_mode</span><span class="o">=</span><span class="n">figure_mode</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">adjsrc</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">channel_adj_dict</span><span class="p">[</span><span class="n">obsd_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">adjsrc</span>
+
+    <span class="k">return</span> <span class="n">channel_adj_dict</span>
+
+</div>
+<div class="viewcode-block" id="adjsrc_function"><a class="viewcode-back" href="../../../pytomo3d.adjoint.html#pytomo3d.adjoint.adjsrc.adjsrc_function">[docs]</a><span class="k">def</span> <span class="nf">adjsrc_function</span><span class="p">(</span><span class="n">observed</span><span class="p">,</span> <span class="n">synthetic</span><span class="p">,</span> <span class="n">windows</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span>
+                    <span class="n">adj_src_type</span><span class="o">=</span><span class="s1">&#39;multitaper_misfit&#39;</span><span class="p">,</span> <span class="n">figure_mode</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                    <span class="n">figure_dir</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">_verbose</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate adjoint sources using the time windows selected by pyflex</span>
+<span class="sd">    and stats the window information at the same time</span>
+
+<span class="sd">    :param observed: Observed data for one station</span>
+<span class="sd">    :type observed: An obspy.core.stream.Stream object.</span>
+<span class="sd">    :param synthetic: Synthetic data for one station</span>
+<span class="sd">    :type synthetic: An obspy.core.stream.Stream object</span>
+<span class="sd">    :param windows: window files for one station, produced by</span>
+<span class="sd">        FLEXWIN/pyflexwin</span>
+<span class="sd">    :type windows: a dictionary instance with all time windows for each</span>
+<span class="sd">        contained traces in the stream object.</span>
+<span class="sd">    :param config: parameters</span>
+<span class="sd">    :type config: a class instance with all necessary constants/parameters</span>
+<span class="sd">    :param adj_src_type: measurement type (&quot;cc_traveltime_misfit&quot;,</span>
+<span class="sd">        &quot;multitaper_misfit&quot;, &quot;waveform_misfit&quot;)</span>
+<span class="sd">    :type adj_src_type: str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">observed</span><span class="p">,</span> <span class="n">Stream</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Input observed should be obspy.Stream&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">synthetic</span><span class="p">,</span> <span class="n">Stream</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Input synthetic should be obspy.Stream&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">windows</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">windows</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">pyadjoint</span><span class="o">.</span><span class="n">Config</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Input config should be pyadjoint.Config&quot;</span><span class="p">)</span>
+
+    <span class="n">channel_nwins_dict</span> <span class="o">=</span> <span class="n">_stats_channel_window</span><span class="p">(</span><span class="n">windows</span><span class="p">)</span>
+    <span class="n">channel_adj_dict</span> <span class="o">=</span> \
+        <span class="n">calculate_adjsrc_on_stream</span><span class="p">(</span><span class="n">observed</span><span class="p">,</span> <span class="n">synthetic</span><span class="p">,</span> <span class="n">windows</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span>
+                                   <span class="n">adj_src_type</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">_clean_adj_results</span><span class="p">(</span><span class="n">channel_adj_dict</span><span class="p">,</span> <span class="n">channel_nwins_dict</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="calculate_baz"><a class="viewcode-back" href="../../../pytomo3d.adjoint.html#pytomo3d.adjoint.adjsrc.calculate_baz">[docs]</a><span class="k">def</span> <span class="nf">calculate_baz</span><span class="p">(</span><span class="n">elat</span><span class="p">,</span> <span class="n">elon</span><span class="p">,</span> <span class="n">slat</span><span class="p">,</span> <span class="n">slon</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate back azimuth</span>
+
+<span class="sd">    :param elat: event latitude</span>
+<span class="sd">    :param elon: event longitude</span>
+<span class="sd">    :param slat: station latitude</span>
+<span class="sd">    :param slon: station longitude</span>
+<span class="sd">    :return: back azimuth</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_</span><span class="p">,</span> <span class="n">baz</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">gps2DistAzimuth</span><span class="p">(</span><span class="n">elat</span><span class="p">,</span> <span class="n">elon</span><span class="p">,</span> <span class="n">slat</span><span class="p">,</span> <span class="n">slon</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">baz</span>
+
+</div>
+<span class="k">def</span> <span class="nf">_convert_adj_to_trace</span><span class="p">(</span><span class="n">adj</span><span class="p">,</span> <span class="n">starttime</span><span class="p">,</span> <span class="n">chan_id</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert AdjointSource to Trace,for internal use only</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">tr</span> <span class="o">=</span> <span class="n">Trace</span><span class="p">()</span>
+    <span class="n">tr</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">adj</span><span class="o">.</span><span class="n">adjoint_source</span>
+    <span class="n">tr</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">starttime</span> <span class="o">=</span> <span class="n">starttime</span>
+    <span class="n">tr</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">delta</span> <span class="o">=</span> <span class="n">adj</span><span class="o">.</span><span class="n">dt</span>
+
+    <span class="n">tr</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">channel</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">chan_id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">tr</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">station</span> <span class="o">=</span> <span class="n">adj</span><span class="o">.</span><span class="n">station</span>
+    <span class="n">tr</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">network</span> <span class="o">=</span> <span class="n">adj</span><span class="o">.</span><span class="n">network</span>
+    <span class="n">tr</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">location</span> <span class="o">=</span> <span class="n">chan_id</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">2</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">tr</span>
+
+
+<span class="k">def</span> <span class="nf">_convert_trace_to_adj</span><span class="p">(</span><span class="n">tr</span><span class="p">,</span> <span class="n">adj_src_type</span><span class="p">,</span> <span class="n">minp</span><span class="p">,</span> <span class="n">maxp</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert Trace to AdjointSource, for internal use only</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">adj</span> <span class="o">=</span> <span class="n">AdjointSource</span><span class="p">(</span><span class="n">adj_src_type</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">minp</span><span class="p">,</span> <span class="n">maxp</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">adj</span><span class="o">.</span><span class="n">dt</span> <span class="o">=</span> <span class="n">tr</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">delta</span>
+    <span class="n">adj</span><span class="o">.</span><span class="n">component</span> <span class="o">=</span> <span class="n">tr</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">channel</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">adj</span><span class="o">.</span><span class="n">adjoint_source</span> <span class="o">=</span> <span class="n">tr</span><span class="o">.</span><span class="n">data</span>
+    <span class="n">adj</span><span class="o">.</span><span class="n">station</span> <span class="o">=</span> <span class="n">tr</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">station</span>
+    <span class="n">adj</span><span class="o">.</span><span class="n">network</span> <span class="o">=</span> <span class="n">tr</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">network</span>
+    <span class="k">return</span> <span class="n">adj</span>
+
+
+<div class="viewcode-block" id="zero_padding_stream"><a class="viewcode-back" href="../../../pytomo3d.adjoint.html#pytomo3d.adjoint.adjsrc.zero_padding_stream">[docs]</a><span class="k">def</span> <span class="nf">zero_padding_stream</span><span class="p">(</span><span class="n">stream</span><span class="p">,</span> <span class="n">starttime</span><span class="p">,</span> <span class="n">endtime</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Zero padding the stream to time [starttime, endtime)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">starttime</span> <span class="o">&gt;</span> <span class="n">endtime</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Starttime is larger than endtime: [</span><span class="si">%f</span><span class="s2">, </span><span class="si">%f</span><span class="s2">]&quot;</span>
+                         <span class="o">%</span> <span class="p">(</span><span class="n">starttime</span><span class="p">,</span> <span class="n">endtime</span><span class="p">))</span>
+
+    <span class="k">for</span> <span class="n">tr</span> <span class="ow">in</span> <span class="n">stream</span><span class="p">:</span>
+        <span class="n">dt</span> <span class="o">=</span> <span class="n">tr</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">delta</span>
+        <span class="n">npts</span> <span class="o">=</span> <span class="n">tr</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">npts</span>
+        <span class="n">tr_starttime</span> <span class="o">=</span> <span class="n">tr</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">starttime</span>
+        <span class="n">tr_endtime</span> <span class="o">=</span> <span class="n">tr</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">endtime</span>
+
+        <span class="n">npts_before</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">tr_starttime</span> <span class="o">-</span> <span class="n">starttime</span><span class="p">)</span> <span class="o">/</span> <span class="n">dt</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">npts_before</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">npts_before</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">npts_after</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">endtime</span> <span class="o">-</span> <span class="n">tr_endtime</span><span class="p">)</span> <span class="o">/</span> <span class="n">dt</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">npts_after</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">npts_after</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># recalculate the time for padding trace</span>
+        <span class="n">padding_starttime</span> <span class="o">=</span> <span class="n">tr_starttime</span> <span class="o">-</span> <span class="n">npts_before</span> <span class="o">*</span> <span class="n">dt</span>
+        <span class="n">padding_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">npts_before</span> <span class="o">+</span> <span class="n">npts</span> <span class="o">+</span> <span class="n">npts_after</span><span class="p">)</span>
+        <span class="n">padding_array</span><span class="p">[</span><span class="n">npts_before</span><span class="p">:(</span><span class="n">npts_before</span> <span class="o">+</span> <span class="n">npts</span><span class="p">)]</span> <span class="o">=</span> \
+            <span class="n">tr</span><span class="o">.</span><span class="n">data</span><span class="p">[:]</span>
+
+        <span class="n">tr</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">padding_array</span>
+        <span class="n">tr</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">starttime</span> <span class="o">=</span> <span class="n">padding_starttime</span>
+
+</div>
+<div class="viewcode-block" id="sum_adj_on_component"><a class="viewcode-back" href="../../../pytomo3d.adjoint.html#pytomo3d.adjoint.adjsrc.sum_adj_on_component">[docs]</a><span class="k">def</span> <span class="nf">sum_adj_on_component</span><span class="p">(</span><span class="n">adj_stream</span><span class="p">,</span> <span class="n">weight_flag</span><span class="p">,</span> <span class="n">weight_dict</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Sum adjoint source on different channels but same component</span>
+<span class="sd">    together, like &quot;II.AAK.00.BHZ&quot; and &quot;II.AAK.10.BHZ&quot; to form</span>
+<span class="sd">    &quot;II.AAK.BHZ&quot;</span>
+
+<span class="sd">    :param adj_stream: adjoint source stream</span>
+<span class="sd">    :param weight_dict: weight dictionary, should be something like</span>
+<span class="sd">        {&quot;Z&quot;:{&quot;II.AAK.00.BHZ&quot;: 0.5, &quot;II.AAK.10.BHZ&quot;: 0.5},</span>
+<span class="sd">         &quot;R&quot;:{&quot;II.AAK.00.BHR&quot;: 0.3, &quot;II.AAK.10.BHR&quot;: 0.7},</span>
+<span class="sd">         &quot;T&quot;:{&quot;II.AAK..BHT&quot;: 1.0}}</span>
+<span class="sd">    :return: summed adjoint source stream</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">weight_dict</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;weight_dict should be assigned if you want&quot;</span>
+                         <span class="s2">&quot;to add&quot;</span><span class="p">)</span>
+
+    <span class="n">new_stream</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
+    <span class="n">done_comps</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">weight_flag</span><span class="p">:</span>
+        <span class="c1"># just add same components without weight</span>
+        <span class="k">for</span> <span class="n">tr</span> <span class="ow">in</span> <span class="n">adj_stream</span><span class="p">:</span>
+            <span class="n">comp</span> <span class="o">=</span> <span class="n">tr</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">channel</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">comp</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">done_comps</span><span class="p">:</span>
+                <span class="n">comp_tr</span> <span class="o">=</span> <span class="n">tr</span>
+                <span class="n">comp_tr</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">location</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+                <span class="n">new_stream</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">comp_tr</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">comp_tr</span> <span class="o">=</span> <span class="n">new_stream</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s2">&quot;*</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">comp</span><span class="p">)</span>
+                <span class="n">comp_tr</span><span class="o">.</span><span class="n">data</span> <span class="o">+=</span> <span class="n">tr</span><span class="o">.</span><span class="n">data</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># sum using components weight</span>
+        <span class="k">for</span> <span class="n">comp</span><span class="p">,</span> <span class="n">comp_weights</span> <span class="ow">in</span> <span class="n">weight_dict</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">chan_id</span><span class="p">,</span> <span class="n">chan_weight</span> <span class="ow">in</span> <span class="n">comp_weights</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">comp</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">done_comps</span><span class="p">:</span>
+                    <span class="n">done_comps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">comp</span><span class="p">)</span>
+                    <span class="n">comp_tr</span> <span class="o">=</span> <span class="n">adj_stream</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">chan_id</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">comp_tr</span><span class="o">.</span><span class="n">data</span> <span class="o">*=</span> <span class="n">chan_weight</span>
+                    <span class="n">comp_tr</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">location</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+                    <span class="n">new_stream</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">comp_tr</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">comp_tr</span> <span class="o">=</span> <span class="n">new_stream</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">channel</span><span class="o">=</span><span class="s2">&quot;*</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">comp</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">comp_tr</span><span class="o">.</span><span class="n">data</span> <span class="o">+=</span> \
+                        <span class="n">chan_weight</span> <span class="o">*</span> <span class="n">adj_stream</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">chan_id</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
+
+    <span class="k">return</span> <span class="n">new_stream</span>
+
+</div>
+<div class="viewcode-block" id="rotate_adj"><a class="viewcode-back" href="../../../pytomo3d.adjoint.html#pytomo3d.adjoint.adjsrc.rotate_adj">[docs]</a><span class="k">def</span> <span class="nf">rotate_adj</span><span class="p">(</span><span class="n">adj_stream</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">inventory</span><span class="p">):</span>
+
+    <span class="k">if</span> <span class="n">event</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> <span class="n">inventory</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Event and Station must be provied to rotate the&quot;</span>
+                         <span class="s2">&quot;adjoint source&quot;</span><span class="p">)</span>
+    <span class="c1"># extract event information</span>
+    <span class="n">origin</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">preferred_origin</span><span class="p">()</span> <span class="ow">or</span> <span class="n">event</span><span class="o">.</span><span class="n">origins</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">elat</span> <span class="o">=</span> <span class="n">origin</span><span class="o">.</span><span class="n">latitude</span>
+    <span class="n">elon</span> <span class="o">=</span> <span class="n">origin</span><span class="o">.</span><span class="n">longitude</span>
+
+    <span class="c1"># extract station information</span>
+    <span class="n">slat</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">inventory</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">latitude</span><span class="p">)</span>
+    <span class="n">slon</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">inventory</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">longitude</span><span class="p">)</span>
+
+    <span class="c1"># rotate</span>
+    <span class="n">baz</span> <span class="o">=</span> <span class="n">calculate_baz</span><span class="p">(</span><span class="n">elat</span><span class="p">,</span> <span class="n">elon</span><span class="p">,</span> <span class="n">slat</span><span class="p">,</span> <span class="n">slon</span><span class="p">)</span>
+    <span class="n">components</span> <span class="o">=</span> <span class="p">[</span><span class="n">tr</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">channel</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">tr</span> <span class="ow">in</span> <span class="n">adj_stream</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="s2">&quot;R&quot;</span> <span class="ow">in</span> <span class="n">components</span> <span class="ow">and</span> <span class="s2">&quot;T&quot;</span> <span class="ow">in</span> <span class="n">components</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">adj_stream</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">&quot;RT-&gt;NE&quot;</span><span class="p">,</span> <span class="n">back_azimuth</span><span class="o">=</span><span class="n">baz</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="postprocess_adjsrc"><a class="viewcode-back" href="../../../pytomo3d.adjoint.html#pytomo3d.adjoint.adjsrc.postprocess_adjsrc">[docs]</a><span class="k">def</span> <span class="nf">postprocess_adjsrc</span><span class="p">(</span><span class="n">adjsrcs</span><span class="p">,</span> <span class="n">adj_starttime</span><span class="p">,</span> <span class="n">interp_starttime</span><span class="p">,</span> <span class="n">interp_delta</span><span class="p">,</span>
+                       <span class="n">interp_npts</span><span class="p">,</span> <span class="n">rotate_flag</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">inventory</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                       <span class="n">event</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">sum_over_comp_flag</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                       <span class="n">weight_flag</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">weight_dict</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Postprocess adjoint sources to fit SPECFEM input(same as raw_synthetic)</span>
+<span class="sd">    1) zero padding the adjoint sources</span>
+<span class="sd">    2) interpolation</span>
+<span class="sd">    3) add multiple instrument together if there are</span>
+<span class="sd">    4) rotate from (R, T) to (N, E)</span>
+
+<span class="sd">    :param adjsrcs: adjoint sources list from the same station</span>
+<span class="sd">    :type adjsrcs: list</span>
+<span class="sd">    :param adj_starttime: starttime of adjoint sources</span>
+<span class="sd">    :param adj_starttime: obspy.UTCDateTime</span>
+<span class="sd">    :param raw_synthetic: raw synthetic from SPECFEM output, as reference</span>
+<span class="sd">    :type raw_synthetic: obspy.Stream or obspy.Trace</span>
+<span class="sd">    :param inventory: station inventory</span>
+<span class="sd">    :type inventory: obspy.Inventory</span>
+<span class="sd">    :param event: event information</span>
+<span class="sd">    :type event: obspy.Event</span>
+<span class="sd">    :param sum_over_comp_flag: sum over component flag</span>
+<span class="sd">    :param weight_dict: weight dictionary</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">adjsrcs</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Input adjsrcs should be type of dict, for example,&quot;</span>
+                         <span class="s2">&quot;{&#39;tr.id&#39;: pyadjoint.AdjointSource, ...}&quot;</span><span class="p">)</span>
+
+    <span class="c1"># transfer AdjointSource type to stream for easy processing</span>
+    <span class="n">adj_stream</span> <span class="o">=</span> <span class="n">Stream</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">chan_id</span><span class="p">,</span> <span class="n">adj</span> <span class="ow">in</span> <span class="n">adjsrcs</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+        <span class="n">_tr</span> <span class="o">=</span> <span class="n">_convert_adj_to_trace</span><span class="p">(</span><span class="n">adj</span><span class="p">,</span> <span class="n">adj_starttime</span><span class="p">,</span> <span class="n">chan_id</span><span class="p">)</span>
+        <span class="n">adj_stream</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_tr</span><span class="p">)</span>
+
+    <span class="c1"># zero padding</span>
+    <span class="n">interp_endtime</span> <span class="o">=</span> <span class="n">interp_starttime</span> <span class="o">+</span> <span class="n">interp_delta</span> <span class="o">*</span> <span class="n">interp_npts</span>
+    <span class="n">zero_padding_stream</span><span class="p">(</span><span class="n">adj_stream</span><span class="p">,</span> <span class="n">interp_starttime</span><span class="p">,</span> <span class="n">interp_endtime</span><span class="p">)</span>
+
+    <span class="c1"># interpolate</span>
+    <span class="n">adj_stream</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span><span class="n">sampling_rate</span><span class="o">=</span><span class="mf">1.0</span><span class="o">/</span><span class="n">interp_delta</span><span class="p">,</span>
+                           <span class="n">starttime</span><span class="o">=</span><span class="n">interp_starttime</span><span class="p">,</span>
+                           <span class="n">npts</span><span class="o">=</span><span class="n">interp_npts</span><span class="p">)</span>
+
+    <span class="c1"># sum multiple instruments</span>
+    <span class="k">if</span> <span class="n">sum_over_comp_flag</span><span class="p">:</span>
+        <span class="n">adj_stream</span> <span class="o">=</span> <span class="n">sum_adj_on_component</span><span class="p">(</span><span class="n">adj_stream</span><span class="p">,</span> <span class="n">weight_flag</span><span class="p">,</span>
+                                          <span class="n">weight_dict</span><span class="p">)</span>
+
+    <span class="c1"># add zero trace for missing components</span>
+    <span class="n">missinglist</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Z&quot;</span><span class="p">,</span> <span class="s2">&quot;R&quot;</span><span class="p">,</span> <span class="s2">&quot;T&quot;</span><span class="p">]</span>
+    <span class="n">tr_template</span> <span class="o">=</span> <span class="n">adj_stream</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">tr</span> <span class="ow">in</span> <span class="n">adj_stream</span><span class="p">:</span>
+        <span class="n">missinglist</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">tr</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">channel</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="k">for</span> <span class="n">component</span> <span class="ow">in</span> <span class="n">missinglist</span><span class="p">:</span>
+        <span class="n">zero_adj</span> <span class="o">=</span> <span class="n">tr_template</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">zero_adj</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">fill</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">zero_adj</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">channel</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">tr_template</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">channel</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">],</span>
+                                           <span class="n">component</span><span class="p">)</span>
+        <span class="n">adj_stream</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">zero_adj</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">rotate_flag</span><span class="p">:</span>
+        <span class="n">rotate_adj</span><span class="p">(</span><span class="n">adj_stream</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">inventory</span><span class="p">)</span>
+
+    <span class="c1"># convert the stream to pyadjoint.AdjointSource</span>
+    <span class="n">final_adjsrcs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">_temp_id</span> <span class="o">=</span> <span class="n">adjsrcs</span><span class="o">.</span><span class="n">keys</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">adj_src_type</span> <span class="o">=</span> <span class="n">adjsrcs</span><span class="p">[</span><span class="n">_temp_id</span><span class="p">]</span><span class="o">.</span><span class="n">adj_src_type</span>
+    <span class="n">minp</span> <span class="o">=</span> <span class="n">adjsrcs</span><span class="p">[</span><span class="n">_temp_id</span><span class="p">]</span><span class="o">.</span><span class="n">min_period</span>
+    <span class="n">maxp</span> <span class="o">=</span> <span class="n">adjsrcs</span><span class="p">[</span><span class="n">_temp_id</span><span class="p">]</span><span class="o">.</span><span class="n">max_period</span>
+    <span class="k">for</span> <span class="n">tr</span> <span class="ow">in</span> <span class="n">adj_stream</span><span class="p">:</span>
+        <span class="n">final_adjsrcs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_convert_trace_to_adj</span><span class="p">(</span><span class="n">tr</span><span class="p">,</span> <span class="n">adj_src_type</span><span class="p">,</span>
+                                                   <span class="n">minp</span><span class="p">,</span> <span class="n">maxp</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">final_adjsrcs</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">pytomo3d 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2016, Wenjie Lei.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

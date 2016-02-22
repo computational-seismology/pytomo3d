@@ -1,0 +1,455 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pytomo3d.signal package &mdash; pytomo3d 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="pytomo3d 0.1.0 documentation" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">pytomo3d 0.1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="pytomo3d-signal-package">
+<h1>pytomo3d.signal package<a class="headerlink" href="#pytomo3d-signal-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-pytomo3d.signal.process">
+<span id="pytomo3d-signal-process-module"></span><h2>pytomo3d.signal.process module<a class="headerlink" href="#module-pytomo3d.signal.process" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="pytomo3d.signal.process.check_array_order">
+<tt class="descclassname">pytomo3d.signal.process.</tt><tt class="descname">check_array_order</tt><big>(</big><em>array</em>, <em>order='ascending'</em><big>)</big><a class="reference internal" href="_modules/pytomo3d/signal/process.html#check_array_order"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytomo3d.signal.process.check_array_order" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check whether a array is in ascending order or descending order
+:param array: the input array
+:param order: &#8220;ascending&#8221; or &#8220;descending&#8221;
+:return:</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pytomo3d.signal.process.filter_trace">
+<tt class="descclassname">pytomo3d.signal.process.</tt><tt class="descname">filter_trace</tt><big>(</big><em>tr</em>, <em>pre_filt</em><big>)</big><a class="reference internal" href="_modules/pytomo3d/signal/process.html#filter_trace"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytomo3d.signal.process.filter_trace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform a frequency domain taper mimicing the behavior during the
+response removal, without a actual response removal.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>tr</strong> &#8211; input trace</li>
+<li><strong>pre_filt</strong> (<em>Numpy.array or list</em>) &#8211; frequency array(Hz) in ascending order, to define
+the four corners of filter, for example, [0.01, 0.1, 0.2, 0.5].</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">filtered trace</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pytomo3d.signal.process.flex_cut_stream">
+<tt class="descclassname">pytomo3d.signal.process.</tt><tt class="descname">flex_cut_stream</tt><big>(</big><em>st</em>, <em>cut_start</em>, <em>cut_end</em>, <em>dynamic_length=10.0</em><big>)</big><a class="reference internal" href="_modules/pytomo3d/signal/process.html#flex_cut_stream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytomo3d.signal.process.flex_cut_stream" title="Permalink to this definition">¶</a></dt>
+<dd><p>Flexible cut stream</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>st</strong> &#8211; input stream</li>
+<li><strong>cut_start</strong> &#8211; cut starttime</li>
+<li><strong>cut_end</strong> &#8211; cut endtime</li>
+<li><strong>dynamic_length</strong> &#8211; the dynamic length before cut_start and after
+cut_end</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pytomo3d.signal.process.flex_cut_trace">
+<tt class="descclassname">pytomo3d.signal.process.</tt><tt class="descname">flex_cut_trace</tt><big>(</big><em>tr</em>, <em>cut_starttime</em>, <em>cut_endtime</em><big>)</big><a class="reference internal" href="_modules/pytomo3d/signal/process.html#flex_cut_trace"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytomo3d.signal.process.flex_cut_trace" title="Permalink to this definition">¶</a></dt>
+<dd><p>not cut strictly(but also based on the original trace length)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>tr</strong> (<em>obspy.Trace</em>) &#8211; input trace</li>
+<li><strong>cut_starttime</strong> (<em>obspy.UTCDateTime</em>) &#8211; starttime of cutting</li>
+<li><strong>cut_endtime</strong> (<em>obspy.UTCDateTime</em>) &#8211; endtime of cutting</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pytomo3d.signal.process.process">
+<tt class="descclassname">pytomo3d.signal.process.</tt><tt class="descname">process</tt><big>(</big><em>st</em>, <em>remove_response_flag=False</em>, <em>inventory=None</em>, <em>filter_flag=False</em>, <em>pre_filt=None</em>, <em>starttime=None</em>, <em>endtime=None</em>, <em>resample_flag=False</em>, <em>sampling_rate=1.0</em>, <em>taper_type='hann'</em>, <em>taper_percentage=0.05</em>, <em>rotate_flag=False</em>, <em>event_latitude=None</em>, <em>event_longitude=None</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/pytomo3d/signal/process.html#process"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytomo3d.signal.process.process" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stream processing function defined for general purpose of tomography.
+The advantage of using Stream, rather than than Trace, is that rotation
+could be operated if the Stream contains multiple channels. But this
+function also deals with Trace, but you need to set rotate_flag to
+False</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>st</strong> (<em>obspy.Stream</em>) &#8211; input stream</li>
+<li><strong>remove_response_flag</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) &#8211; flag for remove instrument response. If True,
+then inv should be specified, and filter_flag would not be taken caren
+of. If you want just filter the seismogram, please leave this to False
+and set filter_flag to True.</li>
+<li><strong>inventory</strong> (<em>obspy.Inventory</em>) &#8211; station inventory information</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>:param filter_flag:flag for filter the seismogram
+:type filter_flag: bool
+:param pre_filt: list of tuple of 4 corner frequency for filter,</p>
+<blockquote>
+<div>in ascending order(unit: Hz)</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>starttime</strong> (<em>obspy.UTCDateTime</em>) &#8211; starttime of cutting</li>
+<li><strong>endtime</strong> (<em>obspy.UTCDateTime</em>) &#8211; endtime of cutting</li>
+<li><strong>resample_flag</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#bool" title="(in Python v2.7)"><em>bool</em></a>) &#8211; flag for data resampling</li>
+<li><strong>sampling_rate</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; resampling rate(unit: Hz)</li>
+<li><strong>taper_type</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; taper type, options from obspy taper</li>
+<li><strong>taper_percentage</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; percentage of taper</li>
+<li><strong>rotate_flag</strong> &#8211; rotate flag. If true, both inv and event location
+information should be provided</li>
+<li><strong>event_latitude</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; latitude of event, for rotation usage</li>
+<li><strong>event_longitude</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; longitude of event, for rotation usage</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">processed stream</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pytomo3d.signal.rotate">
+<span id="pytomo3d-signal-rotate-module"></span><h2>pytomo3d.signal.rotate module<a class="headerlink" href="#module-pytomo3d.signal.rotate" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="pytomo3d.signal.rotate.check_orthogonality">
+<tt class="descclassname">pytomo3d.signal.rotate.</tt><tt class="descname">check_orthogonality</tt><big>(</big><em>azim1</em>, <em>azim2</em><big>)</big><a class="reference internal" href="_modules/pytomo3d/signal/rotate.html#check_orthogonality"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytomo3d.signal.rotate.check_orthogonality" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if two azimuth are orthogonal</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pytomo3d.signal.rotate.extract_channel_orientation_info">
+<tt class="descclassname">pytomo3d.signal.rotate.</tt><tt class="descname">extract_channel_orientation_info</tt><big>(</big><em>tr</em>, <em>inv</em><big>)</big><a class="reference internal" href="_modules/pytomo3d/signal/rotate.html#extract_channel_orientation_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytomo3d.signal.rotate.extract_channel_orientation_info" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pytomo3d.signal.rotate.rotate_12_NE">
+<tt class="descclassname">pytomo3d.signal.rotate.</tt><tt class="descname">rotate_12_NE</tt><big>(</big><em>d1</em>, <em>d2</em>, <em>azim1</em>, <em>azim2</em><big>)</big><a class="reference internal" href="_modules/pytomo3d/signal/rotate.html#rotate_12_NE"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytomo3d.signal.rotate.rotate_12_NE" title="Permalink to this definition">¶</a></dt>
+<dd><p>Rotate from any two orthogonal horizontal components to EN components</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>d1</strong> (<tt class="xref py py-class docutils literal"><span class="pre">ndarray</span></tt>) &#8211; Data of one of the two horizontal components</li>
+<li><strong>d2</strong> (<tt class="xref py py-class docutils literal"><span class="pre">ndarray</span></tt>) &#8211; Data of the other horizontal components</li>
+<li><strong>azim1</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; component azimuth of data1</li>
+<li><strong>azim2</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; component azimuth of data2</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">East and North component of seismogram.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pytomo3d.signal.rotate.rotate_12_RT">
+<tt class="descclassname">pytomo3d.signal.rotate.</tt><tt class="descname">rotate_12_RT</tt><big>(</big><em>d1</em>, <em>d2</em>, <em>baz</em>, <em>azim1</em>, <em>azim2</em><big>)</big><a class="reference internal" href="_modules/pytomo3d/signal/rotate.html#rotate_12_RT"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytomo3d.signal.rotate.rotate_12_RT" title="Permalink to this definition">¶</a></dt>
+<dd><p>Rotate from any two orthogonal horizontal components to RT components</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>d1</strong> (<tt class="xref py py-class docutils literal"><span class="pre">ndarray</span></tt>) &#8211; Data of one of the two horizontal components</li>
+<li><strong>d2</strong> (<tt class="xref py py-class docutils literal"><span class="pre">ndarray</span></tt>) &#8211; Data of the other horizontal components</li>
+<li><strong>baz</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; the back azimuth from station to source in degrees</li>
+<li><strong>azim1</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; component azimuth of data1</li>
+<li><strong>azim2</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; component azimuth of data2</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Radial and Transeversal component of seismogram. (None, None)
+returned if input two components are not orthogonal</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pytomo3d.signal.rotate.rotate_12_RT_func">
+<tt class="descclassname">pytomo3d.signal.rotate.</tt><tt class="descname">rotate_12_RT_func</tt><big>(</big><em>st</em>, <em>inv</em>, <em>method='12-&gt;RT'</em>, <em>back_azimuth=None</em><big>)</big><a class="reference internal" href="_modules/pytomo3d/signal/rotate.html#rotate_12_RT_func"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytomo3d.signal.rotate.rotate_12_RT_func" title="Permalink to this definition">¶</a></dt>
+<dd><p>Rotate 12 component to RT</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>st</strong> &#8211; input stream</li>
+<li><strong>inv</strong> &#8211; station inventory information</li>
+<li><strong>method</strong> &#8211; rotation method</li>
+<li><strong>back_azimuth</strong> &#8211; back azimuth(station to event azimuth)</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">rotated stream</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pytomo3d.signal.rotate.rotate_NE_12">
+<tt class="descclassname">pytomo3d.signal.rotate.</tt><tt class="descname">rotate_NE_12</tt><big>(</big><em>n</em>, <em>e</em>, <em>azim1</em>, <em>azim2</em><big>)</big><a class="reference internal" href="_modules/pytomo3d/signal/rotate.html#rotate_NE_12"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytomo3d.signal.rotate.rotate_NE_12" title="Permalink to this definition">¶</a></dt>
+<dd><p>Rotate from East and North components to give two orghogonal horizontal
+components. Returned values are (d1, d2) and (d1, d2, Vertical) will
+form a left-handed coordinate system.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>data1</strong> (<tt class="xref py py-class docutils literal"><span class="pre">ndarray</span></tt>) &#8211; Data of one of the two horizontal components</li>
+<li><strong>data2</strong> (<tt class="xref py py-class docutils literal"><span class="pre">ndarray</span></tt>) &#8211; Data of the other horizontal components</li>
+<li><strong>azim1</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; component azimuth of data1</li>
+<li><strong>azim2</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; component azimuth of data2</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">two horizontal orthogonal seismogram after rotation.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pytomo3d.signal.rotate.rotate_RT_12">
+<tt class="descclassname">pytomo3d.signal.rotate.</tt><tt class="descname">rotate_RT_12</tt><big>(</big><em>r</em>, <em>t</em>, <em>baz</em>, <em>azim1</em>, <em>azim2</em><big>)</big><a class="reference internal" href="_modules/pytomo3d/signal/rotate.html#rotate_RT_12"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytomo3d.signal.rotate.rotate_RT_12" title="Permalink to this definition">¶</a></dt>
+<dd><p>Rotate from any two orthogonal horizontal components to RT components</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>data1</strong> (<tt class="xref py py-class docutils literal"><span class="pre">ndarray</span></tt>) &#8211; Data of one of the two horizontal components</li>
+<li><strong>data2</strong> (<tt class="xref py py-class docutils literal"><span class="pre">ndarray</span></tt>) &#8211; Data of the other horizontal components</li>
+<li><strong>baz</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; the back azimuth from station to source in degrees</li>
+<li><strong>azim1</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; component azimuth of data1</li>
+<li><strong>azim2</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; component azimuth of data2</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Radial and Transeversal component of seismogram.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pytomo3d.signal.rotate.rotate_certain_angle">
+<tt class="descclassname">pytomo3d.signal.rotate.</tt><tt class="descname">rotate_certain_angle</tt><big>(</big><em>d1</em>, <em>d2</em>, <em>angle</em><big>)</big><a class="reference internal" href="_modules/pytomo3d/signal/rotate.html#rotate_certain_angle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytomo3d.signal.rotate.rotate_certain_angle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Basic rotating function.</p>
+<dl class="docutils">
+<dt>(d1, d2, Vertical) should form a left-handed coordinate system, i.e.,</dt>
+<dd>Azimuth_{d2} = Azimuth_{d1} + 90.0</dd>
+</dl>
+<p>For example, (North, East, Vertical) &amp; (Radial, Transverse, Vertical)
+are both left-handed coordinate systems. The return value (dnew1,
+dnew2, vertic) should also form a left-handed coordinate system.
+The angle is azimuth differnce between d1 and dnew1, i.e.,</p>
+<blockquote>
+<div>angle = Azimuth_{dnew1} - Azimuth_{d1}</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>d1</strong> (<tt class="xref py py-class docutils literal"><span class="pre">ndarray</span></tt>) &#8211; Data of one of the two horizontal components</li>
+<li><strong>d2</strong> (<tt class="xref py py-class docutils literal"><span class="pre">ndarray</span></tt>) &#8211; Data of one of the two horizontal components</li>
+<li><strong>angle</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; component azimuth of data2</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">two new components after rotation</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pytomo3d.signal.rotate.rotate_stream">
+<tt class="descclassname">pytomo3d.signal.rotate.</tt><tt class="descname">rotate_stream</tt><big>(</big><em>st</em>, <em>event_latitude</em>, <em>event_longitude</em>, <em>station_latitude=None</em>, <em>station_longitude=None</em>, <em>inventory=None</em>, <em>mode='ALL'</em><big>)</big><a class="reference internal" href="_modules/pytomo3d/signal/rotate.html#rotate_stream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytomo3d.signal.rotate.rotate_stream" title="Permalink to this definition">¶</a></dt>
+<dd><p>Rotate a stream to radial and transverse components based on the
+station information and event information</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>st</strong> (<em>obspy.Stream</em>) &#8211; input stream</li>
+<li><strong>event_latitude</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; event latitude</li>
+<li><strong>event_longitude</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; event longitude</li>
+<li><strong>station_latitude</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; station latitude. If not provided, extract
+information from inventory</li>
+<li><strong>station_longitude</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#float" title="(in Python v2.7)"><em>float</em></a>) &#8211; station longitude. If not provided, extrace
+information from inventory</li>
+<li><strong>inv</strong> &#8211; station inventory information. If you want to rotate</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>&#8220;12&#8221; components, you need to provide inventory since only station
+and station_longitude is not enough.
+:type inv: obspy.Inventory
+:param mode: rotation mode, could be one of:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li>&#8220;NE&#8221;: rotate only North and East channel to RT</li>
+<li>&#8220;12&#8221;: rotate only 1 and 2 channel, like &#8220;BH1&#8221; and &#8220;BH2&#8221; to RT</li>
+<li>&#8220;all&#8221;: rotate all components to RT</li>
+</ol>
+</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">rotated stream(obspy.Stream)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pytomo3d.signal">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pytomo3d.signal" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">pytomo3d.signal package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-pytomo3d.signal.process">pytomo3d.signal.process module</a></li>
+<li><a class="reference internal" href="#module-pytomo3d.signal.rotate">pytomo3d.signal.rotate module</a></li>
+<li><a class="reference internal" href="#module-pytomo3d.signal">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/pytomo3d.signal.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">pytomo3d 0.1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2016, Wenjie Lei.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

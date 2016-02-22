@@ -1,0 +1,330 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pytomo3d.signal.process &mdash; pytomo3d 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="pytomo3d 0.1.0 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">pytomo3d 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pytomo3d.signal.process</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">obspy</span>
+<span class="kn">from</span> <span class="nn">obspy.signal.invsim</span> <span class="kn">import</span> <span class="n">c_sac_taper</span>
+<span class="kn">from</span> <span class="nn">obspy.signal.util</span> <span class="kn">import</span> <span class="n">_npts2nfft</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">rotate</span> <span class="kn">import</span> <span class="n">rotate_stream</span>
+
+
+<div class="viewcode-block" id="check_array_order"><a class="viewcode-back" href="../../../pytomo3d.signal.html#pytomo3d.signal.process.check_array_order">[docs]</a><span class="k">def</span> <span class="nf">check_array_order</span><span class="p">(</span><span class="n">array</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="s2">&quot;ascending&quot;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Check whether a array is in ascending order or descending order</span>
+<span class="sd">    :param array: the input array</span>
+<span class="sd">    :param order: &quot;ascending&quot; or &quot;descending&quot;</span>
+<span class="sd">    :return:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">array</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">order</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;descending&quot;</span><span class="p">,</span> <span class="s2">&quot;ascending&quot;</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Order should be either ascending or descending&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">order</span> <span class="o">==</span> <span class="s2">&quot;descending&quot;</span><span class="p">:</span>
+        <span class="n">array</span> <span class="o">*=</span> <span class="o">-</span><span class="mi">1</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">array</span> <span class="o">==</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">array</span><span class="p">))</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+
+</div>
+<div class="viewcode-block" id="flex_cut_trace"><a class="viewcode-back" href="../../../pytomo3d.signal.html#pytomo3d.signal.process.flex_cut_trace">[docs]</a><span class="k">def</span> <span class="nf">flex_cut_trace</span><span class="p">(</span><span class="n">tr</span><span class="p">,</span> <span class="n">cut_starttime</span><span class="p">,</span> <span class="n">cut_endtime</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    not cut strictly(but also based on the original trace length)</span>
+
+<span class="sd">    :param tr: input trace</span>
+<span class="sd">    :type tr: obspy.Trace</span>
+<span class="sd">    :param cut_starttime: starttime of cutting</span>
+<span class="sd">    :type cut_starttime: obspy.UTCDateTime</span>
+<span class="sd">    :param cut_endtime: endtime of cutting</span>
+<span class="sd">    :type cut_endtime: obspy.UTCDateTime</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tr</span><span class="p">,</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Trace</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;cut_trace method only accepts obspy.Trace&quot;</span>
+                         <span class="s2">&quot;as the first argument&quot;</span><span class="p">)</span>
+
+    <span class="n">starttime</span> <span class="o">=</span> <span class="n">tr</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">starttime</span>
+    <span class="n">endtime</span> <span class="o">=</span> <span class="n">tr</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">endtime</span>
+    <span class="n">cut_starttime</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">starttime</span><span class="p">,</span> <span class="n">cut_starttime</span><span class="p">)</span>
+    <span class="n">cut_endtime</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">endtime</span><span class="p">,</span> <span class="n">cut_endtime</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">cut_starttime</span> <span class="o">&gt;</span> <span class="n">cut_endtime</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cut starttime is larger than cut endtime&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tr</span><span class="o">.</span><span class="n">slice</span><span class="p">(</span><span class="n">cut_starttime</span><span class="p">,</span> <span class="n">cut_endtime</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="flex_cut_stream"><a class="viewcode-back" href="../../../pytomo3d.signal.html#pytomo3d.signal.process.flex_cut_stream">[docs]</a><span class="k">def</span> <span class="nf">flex_cut_stream</span><span class="p">(</span><span class="n">st</span><span class="p">,</span> <span class="n">cut_start</span><span class="p">,</span> <span class="n">cut_end</span><span class="p">,</span> <span class="n">dynamic_length</span><span class="o">=</span><span class="mf">10.0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Flexible cut stream</span>
+
+<span class="sd">    :param st: input stream</span>
+<span class="sd">    :param cut_start: cut starttime</span>
+<span class="sd">    :param cut_end: cut endtime</span>
+<span class="sd">    :param dynamic_length: the dynamic length before cut_start and after</span>
+<span class="sd">        cut_end</span>
+<span class="sd">    :return:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">t1</span> <span class="o">=</span> <span class="n">cut_start</span> <span class="o">-</span> <span class="n">dynamic_length</span>
+    <span class="n">t2</span> <span class="o">=</span> <span class="n">cut_end</span> <span class="o">+</span> <span class="n">dynamic_length</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">st</span><span class="p">,</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Trace</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">flex_cut_trace</span><span class="p">(</span><span class="n">st</span><span class="p">,</span> <span class="n">t1</span><span class="p">,</span> <span class="n">t2</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">st</span><span class="p">,</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Stream</span><span class="p">):</span>
+        <span class="n">tr_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">tr</span> <span class="ow">in</span> <span class="n">st</span><span class="p">:</span>
+            <span class="n">tr_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">flex_cut_trace</span><span class="p">(</span><span class="n">tr</span><span class="p">,</span> <span class="n">t1</span><span class="p">,</span> <span class="n">t2</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Stream</span><span class="p">(</span><span class="n">traces</span><span class="o">=</span><span class="n">tr_list</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;cut_func method only accepts obspy. Trace or&quot;</span>
+                         <span class="s2">&quot;obspy.Stream as the first Argument&quot;</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="filter_trace"><a class="viewcode-back" href="../../../pytomo3d.signal.html#pytomo3d.signal.process.filter_trace">[docs]</a><span class="k">def</span> <span class="nf">filter_trace</span><span class="p">(</span><span class="n">tr</span><span class="p">,</span> <span class="n">pre_filt</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Perform a frequency domain taper mimicing the behavior during the</span>
+<span class="sd">    response removal, without a actual response removal.</span>
+
+<span class="sd">    :param tr: input trace</span>
+<span class="sd">    :param pre_filt: frequency array(Hz) in ascending order, to define</span>
+<span class="sd">        the four corners of filter, for example, [0.01, 0.1, 0.2, 0.5].</span>
+<span class="sd">    :type pre_filt: Numpy.array or list</span>
+<span class="sd">    :return: filtered trace</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">tr</span><span class="p">)</span> <span class="o">!=</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Trace</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;First Argument should be trace: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="nb">type</span><span class="p">(</span><span class="n">tr</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">check_array_order</span><span class="p">(</span><span class="n">pre_filt</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Frequency band should be in ascending order: </span><span class="si">%s</span><span class="s2">&quot;</span>
+                         <span class="o">%</span> <span class="n">pre_filt</span><span class="p">)</span>
+
+    <span class="n">data</span> <span class="o">=</span> <span class="n">tr</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+    <span class="c1"># smart calculation of nfft dodging large primes</span>
+    <span class="n">nfft</span> <span class="o">=</span> <span class="n">_npts2nfft</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+
+    <span class="n">fy</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="n">tr</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">delta</span> <span class="o">*</span> <span class="mf">2.0</span><span class="p">)</span>
+    <span class="n">freqs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">fy</span><span class="p">,</span> <span class="n">nfft</span> <span class="o">//</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="c1"># Transform data to Frequency domain</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">rfft</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="n">nfft</span><span class="p">)</span>
+    <span class="n">data</span> <span class="o">*=</span> <span class="n">c_sac_taper</span><span class="p">(</span><span class="n">freqs</span><span class="p">,</span> <span class="n">flimit</span><span class="o">=</span><span class="n">pre_filt</span><span class="p">)</span>
+    <span class="n">data</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="mf">0.0j</span>
+    <span class="c1"># transform data back into the time domain</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">irfft</span><span class="p">(</span><span class="n">data</span><span class="p">)[</span><span class="mi">0</span><span class="p">:</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)]</span>
+    <span class="c1"># assign processed data and store processing information</span>
+    <span class="n">tr</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span>
+
+</div>
+<div class="viewcode-block" id="process"><a class="viewcode-back" href="../../../pytomo3d.signal.html#pytomo3d.signal.process.process">[docs]</a><span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="n">st</span><span class="p">,</span> <span class="n">remove_response_flag</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">inventory</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+            <span class="n">filter_flag</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">pre_filt</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+            <span class="n">starttime</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">endtime</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+            <span class="n">resample_flag</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">sampling_rate</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+            <span class="n">taper_type</span><span class="o">=</span><span class="s2">&quot;hann&quot;</span><span class="p">,</span> <span class="n">taper_percentage</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span>
+            <span class="n">rotate_flag</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">event_latitude</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+            <span class="n">event_longitude</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Stream processing function defined for general purpose of tomography.</span>
+<span class="sd">    The advantage of using Stream, rather than than Trace, is that rotation</span>
+<span class="sd">    could be operated if the Stream contains multiple channels. But this</span>
+<span class="sd">    function also deals with Trace, but you need to set rotate_flag to</span>
+<span class="sd">    False</span>
+
+<span class="sd">    :param st: input stream</span>
+<span class="sd">    :type st: obspy.Stream</span>
+<span class="sd">    :param remove_response_flag: flag for remove instrument response. If True,</span>
+<span class="sd">        then inv should be specified, and filter_flag would not be taken caren</span>
+<span class="sd">        of. If you want just filter the seismogram, please leave this to False</span>
+<span class="sd">        and set filter_flag to True.</span>
+<span class="sd">    :type remove_response_flag: bool</span>
+<span class="sd">    :param inventory: station inventory information</span>
+<span class="sd">    :type inventory: obspy.Inventory</span>
+<span class="sd">    :param filter_flag:flag for filter the seismogram</span>
+<span class="sd">    :type filter_flag: bool</span>
+<span class="sd">    :param pre_filt: list of tuple of 4 corner frequency for filter,</span>
+<span class="sd">        in ascending order(unit: Hz)</span>
+<span class="sd">    :type pre_filt: list, tuple or numpy.array</span>
+<span class="sd">    :param starttime: starttime of cutting</span>
+<span class="sd">    :type starttime: obspy.UTCDateTime</span>
+<span class="sd">    :param endtime: endtime of cutting</span>
+<span class="sd">    :type endtime: obspy.UTCDateTime</span>
+<span class="sd">    :param resample_flag: flag for data resampling</span>
+<span class="sd">    :type resample_flag: bool</span>
+<span class="sd">    :param sampling_rate: resampling rate(unit: Hz)</span>
+<span class="sd">    :type sampling_rate: float</span>
+<span class="sd">    :param taper_type: taper type, options from obspy taper</span>
+<span class="sd">    :type taper_type: str</span>
+<span class="sd">    :param taper_percentage: percentage of taper</span>
+<span class="sd">    :type taper_percentage: float</span>
+<span class="sd">    :param rotate_flag: rotate flag. If true, both inv and event location</span>
+<span class="sd">        information should be provided</span>
+<span class="sd">    :param event_latitude: latitude of event, for rotation usage</span>
+<span class="sd">    :type event_latitude: float</span>
+<span class="sd">    :param event_longitude: longitude of event, for rotation usage</span>
+<span class="sd">    :type event_longitude: float</span>
+<span class="sd">    :return: processed stream</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">st</span><span class="p">,</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Stream</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">st</span><span class="p">,</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Trace</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Input seismogram should be either obspy.Stream &quot;</span>
+                         <span class="s2">&quot;or obspy.Trace&quot;</span><span class="p">)</span>
+
+    <span class="c1"># cut the stream out before processing to reduce computation</span>
+    <span class="k">if</span> <span class="n">starttime</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">endtime</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">flex_cut_stream</span><span class="p">(</span><span class="n">st</span><span class="p">,</span> <span class="n">starttime</span><span class="p">,</span> <span class="n">endtime</span><span class="p">)</span>
+
+    <span class="c1"># detrend ,demean, taper</span>
+    <span class="n">st</span><span class="o">.</span><span class="n">detrend</span><span class="p">(</span><span class="s2">&quot;linear&quot;</span><span class="p">)</span>
+    <span class="n">st</span><span class="o">.</span><span class="n">detrend</span><span class="p">(</span><span class="s2">&quot;demean&quot;</span><span class="p">)</span>
+    <span class="n">st</span><span class="o">.</span><span class="n">taper</span><span class="p">(</span><span class="n">max_percentage</span><span class="o">=</span><span class="n">taper_percentage</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">taper_type</span><span class="p">)</span>
+
+    <span class="c1"># remove response or filter</span>
+    <span class="k">if</span> <span class="n">filter_flag</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">pre_filt</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">pre_filt</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Filter band should be list or tuple with &quot;</span>
+                             <span class="s2">&quot;length of 4&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">check_array_order</span><span class="p">(</span><span class="n">pre_filt</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="s2">&quot;ascending&quot;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Input pre_filt must be in ascending order: </span><span class="si">%s</span><span class="s2">&quot;</span>
+                             <span class="o">%</span> <span class="n">pre_filt</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">remove_response_flag</span><span class="p">:</span>
+        <span class="c1"># remove response</span>
+        <span class="k">if</span> <span class="n">inventory</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Station information(inv) should be provided if&quot;</span>
+                             <span class="s2">&quot;you want to remove instrument response&quot;</span><span class="p">)</span>
+
+        <span class="n">st</span><span class="o">.</span><span class="n">attach_response</span><span class="p">(</span><span class="n">inventory</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">filter_flag</span><span class="p">:</span>
+            <span class="n">st</span><span class="o">.</span><span class="n">remove_response</span><span class="p">(</span><span class="n">output</span><span class="o">=</span><span class="s2">&quot;DISP&quot;</span><span class="p">,</span> <span class="n">pre_filt</span><span class="o">=</span><span class="n">pre_filt</span><span class="p">,</span>
+                               <span class="n">zero_mean</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">taper</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">st</span><span class="o">.</span><span class="n">remove_response</span><span class="p">(</span><span class="n">output</span><span class="o">=</span><span class="s2">&quot;DISP&quot;</span><span class="p">,</span> <span class="n">zero_mean</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">taper</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">filter_flag</span><span class="p">:</span>
+        <span class="c1"># Perform a frequency domain taper like during the response removal</span>
+        <span class="c1"># just without an actual response...</span>
+        <span class="k">for</span> <span class="n">tr</span> <span class="ow">in</span> <span class="n">st</span><span class="p">:</span>
+            <span class="n">filter_trace</span><span class="p">(</span><span class="n">tr</span><span class="p">,</span> <span class="n">pre_filt</span><span class="p">)</span>
+
+    <span class="c1"># detrend, demean or taper</span>
+    <span class="n">st</span><span class="o">.</span><span class="n">detrend</span><span class="p">(</span><span class="s2">&quot;linear&quot;</span><span class="p">)</span>
+    <span class="n">st</span><span class="o">.</span><span class="n">detrend</span><span class="p">(</span><span class="s2">&quot;demean&quot;</span><span class="p">)</span>
+    <span class="n">st</span><span class="o">.</span><span class="n">taper</span><span class="p">(</span><span class="n">max_percentage</span><span class="o">=</span><span class="n">taper_percentage</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="n">taper_type</span><span class="p">)</span>
+
+    <span class="c1"># resample</span>
+    <span class="k">if</span> <span class="n">resample_flag</span><span class="p">:</span>
+        <span class="c1"># interpolation</span>
+        <span class="k">if</span> <span class="n">sampling_rate</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;sampling rate should be provided if you set&quot;</span>
+                             <span class="s2">&quot;resample_flag=True&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">endtime</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">starttime</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">npts</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">endtime</span> <span class="o">-</span> <span class="n">starttime</span><span class="p">)</span> <span class="o">*</span> <span class="n">sampling_rate</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="n">st</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span><span class="n">sampling_rate</span><span class="o">=</span><span class="n">sampling_rate</span><span class="p">,</span>
+                           <span class="n">starttime</span><span class="o">=</span><span class="n">starttime</span><span class="p">,</span>
+                           <span class="n">npts</span><span class="o">=</span><span class="n">npts</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">st</span><span class="o">.</span><span class="n">interpolate</span><span class="p">(</span><span class="n">sampling_rate</span><span class="o">=</span><span class="n">sampling_rate</span><span class="p">,</span>
+                           <span class="n">starttime</span><span class="o">=</span><span class="n">starttime</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">starttime</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">endtime</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="c1"># just cut</span>
+            <span class="n">st</span><span class="o">.</span><span class="n">trim</span><span class="p">(</span><span class="n">starttime</span><span class="p">,</span> <span class="n">endtime</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">st</span><span class="p">,</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Trace</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">rotate_flag</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Rotation could not be performed on the &quot;</span>
+                             <span class="s2">&quot;obspy.Trace. Please turn the rotate_flag &quot;</span>
+                             <span class="s2">&quot;to False.&quot;</span><span class="p">)</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">require</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;float32&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">st</span><span class="p">,</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Stream</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">rotate_flag</span><span class="p">:</span>
+            <span class="n">rotate_stream</span><span class="p">(</span><span class="n">st</span><span class="p">,</span> <span class="n">event_latitude</span><span class="p">,</span> <span class="n">event_longitude</span><span class="p">,</span>
+                          <span class="n">inventory</span><span class="o">=</span><span class="n">inventory</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;ALL&quot;</span><span class="p">)</span>
+        <span class="c1"># Convert to single precision to save space.</span>
+        <span class="k">for</span> <span class="n">tr</span> <span class="ow">in</span> <span class="n">st</span><span class="p">:</span>
+            <span class="n">tr</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">require</span><span class="p">(</span><span class="n">tr</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;float32&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">st</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">pytomo3d 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2016, Wenjie Lei.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

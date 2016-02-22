@@ -1,0 +1,252 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pytomo3d.window.window &mdash; pytomo3d 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="pytomo3d 0.1.0 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">pytomo3d 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pytomo3d.window.window</h1><div class="highlight"><pre>
+<span class="ch">#!/usr/bin/env python</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">yaml</span>
+<span class="kn">import</span> <span class="nn">pyflex</span>
+<span class="kn">import</span> <span class="nn">obspy</span>
+
+
+<div class="viewcode-block" id="plot_window_figure"><a class="viewcode-back" href="../../../pytomo3d.window.html#pytomo3d.window.window.plot_window_figure">[docs]</a><span class="k">def</span> <span class="nf">plot_window_figure</span><span class="p">(</span><span class="n">figure_dir</span><span class="p">,</span> <span class="n">figure_id</span><span class="p">,</span> <span class="n">ws</span><span class="p">,</span> <span class="n">_verbose</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                       <span class="n">figure_format</span><span class="o">=</span><span class="s2">&quot;pdf&quot;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plot window figure out</span>
+
+<span class="sd">    :param figure_dir: output figure directory</span>
+<span class="sd">    :type figure_dir: str</span>
+<span class="sd">    :param figure_id: figure id to distinguish windows plots, for</span>
+<span class="sd">        example, trace id could be used, like &quot;II.AAK.00.BHZ&quot;</span>
+<span class="sd">    :type figure_id: str</span>
+<span class="sd">    :param ws: window selector object from pyflex</span>
+<span class="sd">    :type ws: pyflex.WindowSelector</span>
+<span class="sd">    :param _verbose: verbose output flag</span>
+<span class="sd">    :type _verbose: bool</span>
+<span class="sd">    :param figure_format: figure format, could be &quot;pdf&quot;, &quot;png&quot; and etc.</span>
+<span class="sd">    :type figure_format: str</span>
+<span class="sd">    :return:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">outfn</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">%s</span><span class="s2">.</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">figure_id</span><span class="p">,</span> <span class="n">figure_format</span><span class="p">)</span>
+    <span class="n">figfn</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">figure_dir</span><span class="p">,</span> <span class="n">outfn</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">_verbose</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s2">&quot;Output window figure:&quot;</span><span class="p">,</span> <span class="n">figfn</span>
+    <span class="n">ws</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">figfn</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="load_window_config_yaml"><a class="viewcode-back" href="../../../pytomo3d.window.html#pytomo3d.window.window.load_window_config_yaml">[docs]</a><span class="k">def</span> <span class="nf">load_window_config_yaml</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Load yaml and setup pyflex.Config object</span>
+
+<span class="sd">    :param filename:</span>
+<span class="sd">    :return:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span> <span class="k">as</span> <span class="n">fh</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">yaml</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">fh</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;min_period&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;max_period&quot;</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;min_period is larger than max_period in config &quot;</span>
+                         <span class="s2">&quot;file: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">filename</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">pyflex</span><span class="o">.</span><span class="n">Config</span><span class="p">(</span><span class="o">**</span><span class="n">data</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="window_on_trace"><a class="viewcode-back" href="../../../pytomo3d.window.html#pytomo3d.window.window.window_on_trace">[docs]</a><span class="k">def</span> <span class="nf">window_on_trace</span><span class="p">(</span><span class="n">obs_tr</span><span class="p">,</span> <span class="n">syn_tr</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">station</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                    <span class="n">event</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">_verbose</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                    <span class="n">figure_mode</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">figure_dir</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                    <span class="n">figure_format</span><span class="o">=</span><span class="s2">&quot;pdf&quot;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Window selection on a trace(obspy.Trace)</span>
+
+<span class="sd">    :param observed: observed trace</span>
+<span class="sd">    :type observed: obspy.Trace</span>
+<span class="sd">    :param synthetic: synthetic trace</span>
+<span class="sd">    :type synthetic: obspy.Trace</span>
+<span class="sd">    :param config: window selection config</span>
+<span class="sd">    :type config_dict: pyflex.Config</span>
+<span class="sd">    :param station: station information which provids station location to</span>
+<span class="sd">        calculate the epicenter distance</span>
+<span class="sd">    :type station: obspy.Inventory or pyflex.Station</span>
+<span class="sd">    :param event: event information, providing the event information</span>
+<span class="sd">    :type event: pyflex.Event, obspy.Catalog or obspy.Event</span>
+<span class="sd">    :param figure_mode: output figure flag</span>
+<span class="sd">    :type figure_mode: bool</span>
+<span class="sd">    :param figure_dir: output figure directory</span>
+<span class="sd">    :type figure_dir: str</span>
+<span class="sd">    :param _verbose: verbose flag</span>
+<span class="sd">    :type _verbose: bool</span>
+<span class="sd">    :return:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obs_tr</span><span class="p">,</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Trace</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Input obs_tr should be obspy.Trace&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">syn_tr</span><span class="p">,</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Trace</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Input syn_tr should be obspy.Trace&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">pyflex</span><span class="o">.</span><span class="n">Config</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Input config should be pyflex.Config&quot;</span><span class="p">)</span>
+
+    <span class="n">ws</span> <span class="o">=</span> <span class="n">pyflex</span><span class="o">.</span><span class="n">WindowSelector</span><span class="p">(</span><span class="n">obs_tr</span><span class="p">,</span> <span class="n">syn_tr</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span>
+                               <span class="n">event</span><span class="o">=</span><span class="n">event</span><span class="p">,</span> <span class="n">station</span><span class="o">=</span><span class="n">station</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">windows</span> <span class="o">=</span> <span class="n">ws</span><span class="o">.</span><span class="n">select_windows</span><span class="p">()</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s2">&quot;Error on </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">obs_tr</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="n">windows</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">if</span> <span class="n">figure_mode</span><span class="p">:</span>
+        <span class="n">plot_window_figure</span><span class="p">(</span><span class="n">figure_dir</span><span class="p">,</span> <span class="n">obs_tr</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">ws</span><span class="p">,</span> <span class="n">_verbose</span><span class="p">,</span>
+                           <span class="n">figure_format</span><span class="o">=</span><span class="n">figure_format</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">_verbose</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s2">&quot;Station </span><span class="si">%s</span><span class="s2"> picked </span><span class="si">%i</span><span class="s2"> windows&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">obs_tr</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">windows</span><span class="p">)))</span>
+
+    <span class="k">return</span> <span class="n">windows</span>
+
+</div>
+<div class="viewcode-block" id="window_on_stream"><a class="viewcode-back" href="../../../pytomo3d.window.html#pytomo3d.window.window.window_on_stream">[docs]</a><span class="k">def</span> <span class="nf">window_on_stream</span><span class="p">(</span><span class="n">observed</span><span class="p">,</span> <span class="n">synthetic</span><span class="p">,</span> <span class="n">config_dict</span><span class="p">,</span> <span class="n">station</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                     <span class="n">event</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">figure_mode</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">figure_dir</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                     <span class="n">_verbose</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Window selection on a Stream</span>
+
+<span class="sd">    :param observed: observed stream</span>
+<span class="sd">    :type observed: obspy.Stream</span>
+<span class="sd">    :param synthetic: synthetic stream</span>
+<span class="sd">    :type synthetic: obspy.Stream</span>
+<span class="sd">    :param config_dict: window selection config dictionary, for example,</span>
+<span class="sd">        {&quot;Z&quot;: pyflex.Config, &quot;R&quot;: pyflex.Config, &quot;T&quot;: pyflex.Config}</span>
+<span class="sd">    :type config_dict: dict</span>
+<span class="sd">    :param station: station information which provids station location to</span>
+<span class="sd">        calculate the epicenter distance</span>
+<span class="sd">    :type station: obspy.Inventory or pyflex.Station</span>
+<span class="sd">    :param event: event information, providing the event information</span>
+<span class="sd">    :type event: pyflex.Event, obspy.Catalog or obspy.Event</span>
+<span class="sd">    :param figure_mode: output figure flag</span>
+<span class="sd">    :type figure_mode: bool</span>
+<span class="sd">    :param figure_dir: output figure directory</span>
+<span class="sd">    :type figure_dir: str</span>
+<span class="sd">    :param _verbose: verbose flag</span>
+<span class="sd">    :type _verbose: bool</span>
+<span class="sd">    :return:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">observed</span><span class="p">,</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Stream</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Input observed should be obspy.Stream&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">synthetic</span><span class="p">,</span> <span class="n">obspy</span><span class="o">.</span><span class="n">Stream</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Input synthetic should be obspy.Stream&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">config_dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Input config_dict should be dict&quot;</span><span class="p">)</span>
+
+    <span class="n">all_windows</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">components</span> <span class="o">=</span> <span class="n">config_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">component</span> <span class="ow">in</span> <span class="n">components</span><span class="p">:</span>
+        <span class="n">obs</span> <span class="o">=</span> <span class="n">observed</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">component</span><span class="o">=</span><span class="n">component</span><span class="p">)</span>
+        <span class="n">syn_tr</span> <span class="o">=</span> <span class="n">synthetic</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">component</span><span class="o">=</span><span class="n">component</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">obs</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">syn_tr</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">for</span> <span class="n">obs_tr</span> <span class="ow">in</span> <span class="n">obs</span><span class="p">:</span>
+            <span class="n">config</span> <span class="o">=</span> <span class="n">config_dict</span><span class="p">[</span><span class="n">component</span><span class="p">]</span>
+
+            <span class="n">windows</span> <span class="o">=</span> <span class="n">window_on_trace</span><span class="p">(</span>
+                <span class="n">obs_tr</span><span class="p">,</span> <span class="n">syn_tr</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">station</span><span class="o">=</span><span class="n">station</span><span class="p">,</span>
+                <span class="n">event</span><span class="o">=</span><span class="n">event</span><span class="p">,</span> <span class="n">_verbose</span><span class="o">=</span><span class="n">_verbose</span><span class="p">,</span>
+                <span class="n">figure_mode</span><span class="o">=</span><span class="n">figure_mode</span><span class="p">,</span> <span class="n">figure_dir</span><span class="o">=</span><span class="n">figure_dir</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">_verbose</span><span class="p">:</span>
+                <span class="k">print</span><span class="p">(</span><span class="s2">&quot;Station </span><span class="si">%s</span><span class="s2"> picked </span><span class="si">%i</span><span class="s2"> windows&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                    <span class="n">obs_tr</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">windows</span><span class="p">)))</span>
+
+            <span class="k">if</span> <span class="n">windows</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">windows</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">all_windows</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">windows</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">all_windows</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">pytomo3d 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2016, Wenjie Lei.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

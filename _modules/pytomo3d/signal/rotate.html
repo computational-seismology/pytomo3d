@@ -1,0 +1,415 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pytomo3d.signal.rotate &mdash; pytomo3d 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="pytomo3d 0.1.0 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">pytomo3d 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pytomo3d.signal.rotate</h1><div class="highlight"><pre>
+<span class="kn">from</span> <span class="nn">obspy.core.util.geodetics</span> <span class="kn">import</span> <span class="n">gps2DistAzimuth</span>
+<span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">pi</span><span class="p">,</span> <span class="n">cos</span><span class="p">,</span> <span class="n">sin</span>
+
+
+<span class="n">SMALL_DEGREE</span> <span class="o">=</span> <span class="mf">0.01</span>
+
+
+<div class="viewcode-block" id="check_orthogonality"><a class="viewcode-back" href="../../../pytomo3d.signal.html#pytomo3d.signal.rotate.check_orthogonality">[docs]</a><span class="k">def</span> <span class="nf">check_orthogonality</span><span class="p">(</span><span class="n">azim1</span><span class="p">,</span> <span class="n">azim2</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Check if two azimuth are orthogonal</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">azim1</span> <span class="o">=</span> <span class="n">azim1</span> <span class="o">%</span> <span class="mi">360</span>
+    <span class="n">azim2</span> <span class="o">=</span> <span class="n">azim2</span> <span class="o">%</span> <span class="mi">360</span>
+
+    <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">azim1</span> <span class="o">-</span> <span class="n">azim2</span><span class="p">)</span> <span class="o">-</span> <span class="mf">90.0</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">SMALL_DEGREE</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">azim1</span> <span class="o">-</span> <span class="n">azim2</span> <span class="o">-</span> <span class="mf">90.0</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">SMALL_DEGREE</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;right-hand&quot;</span>
+        <span class="k">elif</span> <span class="nb">abs</span><span class="p">(</span><span class="n">azim1</span> <span class="o">-</span> <span class="n">azim2</span> <span class="o">+</span> <span class="mf">90.0</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">SMALL_DEGREE</span><span class="p">:</span>
+            <span class="c1"># should be orthogonal; otherwise return</span>
+            <span class="k">return</span> <span class="s2">&quot;left-hand&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># cross 360 degree</span>
+        <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">azim1</span> <span class="o">-</span> <span class="n">azim2</span> <span class="o">+</span> <span class="mf">270.0</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">SMALL_DEGREE</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;right-hand&quot;</span>
+        <span class="k">elif</span> <span class="nb">abs</span><span class="p">(</span><span class="n">azim1</span> <span class="o">-</span> <span class="n">azim2</span> <span class="o">-</span> <span class="mf">270.0</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">SMALL_DEGREE</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;left-hand&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+
+</div>
+<div class="viewcode-block" id="rotate_certain_angle"><a class="viewcode-back" href="../../../pytomo3d.signal.html#pytomo3d.signal.rotate.rotate_certain_angle">[docs]</a><span class="k">def</span> <span class="nf">rotate_certain_angle</span><span class="p">(</span><span class="n">d1</span><span class="p">,</span> <span class="n">d2</span><span class="p">,</span> <span class="n">angle</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Basic rotating function.</span>
+
+<span class="sd">    (d1, d2, Vertical) should form a left-handed coordinate system, i.e.,</span>
+<span class="sd">                    Azimuth_{d2} = Azimuth_{d1} + 90.0</span>
+<span class="sd">    For example, (North, East, Vertical) &amp; (Radial, Transverse, Vertical)</span>
+<span class="sd">    are both left-handed coordinate systems. The return value (dnew1,</span>
+<span class="sd">    dnew2, vertic) should also form a left-handed coordinate system.</span>
+<span class="sd">    The angle is azimuth differnce between d1 and dnew1, i.e.,</span>
+<span class="sd">                    angle = Azimuth_{dnew1} - Azimuth_{d1}</span>
+
+<span class="sd">    :type d1: :class:`~numpy.ndarray`</span>
+<span class="sd">    :param d1: Data of one of the two horizontal components</span>
+<span class="sd">    :type d2: :class:`~numpy.ndarray`</span>
+<span class="sd">    :param d2: Data of one of the two horizontal components</span>
+<span class="sd">    :type angle: float</span>
+<span class="sd">    :param angle: component azimuth of data2</span>
+<span class="sd">    :return: two new components after rotation</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dnew1</span> <span class="o">=</span> <span class="n">d1</span> <span class="o">*</span> <span class="n">cos</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span> <span class="o">+</span> <span class="n">d2</span> <span class="o">*</span> <span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span>
+    <span class="n">dnew2</span> <span class="o">=</span> <span class="o">-</span><span class="n">d1</span> <span class="o">*</span> <span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span> <span class="o">+</span> <span class="n">d2</span> <span class="o">*</span> <span class="n">cos</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">dnew1</span><span class="p">,</span> <span class="n">dnew2</span>
+
+</div>
+<div class="viewcode-block" id="rotate_12_RT"><a class="viewcode-back" href="../../../pytomo3d.signal.html#pytomo3d.signal.rotate.rotate_12_RT">[docs]</a><span class="k">def</span> <span class="nf">rotate_12_RT</span><span class="p">(</span><span class="n">d1</span><span class="p">,</span> <span class="n">d2</span><span class="p">,</span> <span class="n">baz</span><span class="p">,</span> <span class="n">azim1</span><span class="p">,</span> <span class="n">azim2</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Rotate from any two orthogonal horizontal components to RT components</span>
+
+<span class="sd">    :type d1: :class:`~numpy.ndarray`</span>
+<span class="sd">    :param d1: Data of one of the two horizontal components</span>
+<span class="sd">    :type d2: :class:`~numpy.ndarray`</span>
+<span class="sd">    :param d2: Data of the other horizontal components</span>
+<span class="sd">    :type baz: float</span>
+<span class="sd">    :param baz: the back azimuth from station to source in degrees</span>
+<span class="sd">    :type azim1: float</span>
+<span class="sd">    :param azim1: component azimuth of data1</span>
+<span class="sd">    :type azim2: float</span>
+<span class="sd">    :param azim2: component azimuth of data2</span>
+<span class="sd">    :return: Radial and Transeversal component of seismogram. (None, None)</span>
+<span class="sd">        returned if input two components are not orthogonal</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="n">check_orthogonality</span><span class="p">(</span><span class="n">azim1</span><span class="p">,</span> <span class="n">azim2</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">status</span><span class="p">:</span>
+        <span class="c1"># raise ValueError(&quot;azim1 and azim2 not orthogonal&quot;)</span>
+        <span class="k">return</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span>
+    <span class="k">if</span> <span class="s2">&quot;right&quot;</span> <span class="ow">in</span> <span class="n">status</span><span class="p">:</span>
+        <span class="c1"># flip to left-hand</span>
+        <span class="n">d1</span><span class="p">,</span> <span class="n">d2</span> <span class="o">=</span> <span class="n">d2</span><span class="p">,</span> <span class="n">d1</span>
+        <span class="n">azim1</span><span class="p">,</span> <span class="n">azim2</span> <span class="o">=</span> <span class="n">azim2</span><span class="p">,</span> <span class="n">azim1</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">d1</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">d2</span><span class="p">):</span>
+        <span class="c1"># raise ValueError(&quot;Component 1 and 2 have different length&quot;)</span>
+        <span class="k">return</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span>
+    <span class="k">if</span> <span class="n">baz</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">baz</span> <span class="o">&gt;</span> <span class="mi">360</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Back Azimuth should be between 0 and 360 degree&quot;</span><span class="p">)</span>
+
+    <span class="c1"># caculate the angle of rotation</span>
+    <span class="n">angle</span> <span class="o">=</span> <span class="p">(</span><span class="n">baz</span> <span class="o">+</span> <span class="mf">180.0</span> <span class="o">-</span> <span class="n">azim1</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">pi</span> <span class="o">/</span> <span class="mf">360.</span>
+    <span class="n">r</span><span class="p">,</span> <span class="n">t</span> <span class="o">=</span> <span class="n">rotate_certain_angle</span><span class="p">(</span><span class="n">d1</span><span class="p">,</span> <span class="n">d2</span><span class="p">,</span> <span class="n">angle</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">r</span><span class="p">,</span> <span class="n">t</span>
+
+</div>
+<div class="viewcode-block" id="rotate_RT_12"><a class="viewcode-back" href="../../../pytomo3d.signal.html#pytomo3d.signal.rotate.rotate_RT_12">[docs]</a><span class="k">def</span> <span class="nf">rotate_RT_12</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">baz</span><span class="p">,</span> <span class="n">azim1</span><span class="p">,</span> <span class="n">azim2</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Rotate from any two orthogonal horizontal components to RT components</span>
+
+<span class="sd">    :type data1: :class:`~numpy.ndarray`</span>
+<span class="sd">    :param data1: Data of one of the two horizontal components</span>
+<span class="sd">    :type data2: :class:`~numpy.ndarray`</span>
+<span class="sd">    :param data2: Data of the other horizontal components</span>
+<span class="sd">    :type baz: float</span>
+<span class="sd">    :param baz: the back azimuth from station to source in degrees</span>
+<span class="sd">    :type azim1: float</span>
+<span class="sd">    :param azim1: component azimuth of data1</span>
+<span class="sd">    :type azim2: float</span>
+<span class="sd">    :param azim2: component azimuth of data2</span>
+<span class="sd">    :return: Radial and Transeversal component of seismogram.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="n">check_orthogonality</span><span class="p">(</span><span class="n">azim1</span><span class="p">,</span> <span class="n">azim2</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">status</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;azim1 and azim2 not orthogonal&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">&quot;left&quot;</span> <span class="ow">in</span> <span class="n">status</span><span class="p">:</span>
+        <span class="n">azim</span> <span class="o">=</span> <span class="n">azim1</span>
+    <span class="k">elif</span> <span class="s2">&quot;right&quot;</span> <span class="ow">in</span> <span class="n">status</span><span class="p">:</span>
+        <span class="n">azim</span> <span class="o">=</span> <span class="n">azim2</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Component R and T have different length&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">baz</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">baz</span> <span class="o">&gt;</span> <span class="mi">360</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Back Azimuth should be between 0 and 360 degree&quot;</span><span class="p">)</span>
+
+    <span class="c1"># caculate the angle of rotation</span>
+    <span class="n">angle</span> <span class="o">=</span> <span class="o">-</span> <span class="p">(</span><span class="n">baz</span> <span class="o">+</span> <span class="mf">180.0</span> <span class="o">-</span> <span class="n">azim</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">pi</span> <span class="o">/</span> <span class="mf">360.</span>
+    <span class="n">d1</span><span class="p">,</span> <span class="n">d2</span> <span class="o">=</span> <span class="n">rotate_certain_angle</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">angle</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="s2">&quot;right&quot;</span> <span class="ow">in</span> <span class="n">status</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">d2</span><span class="p">,</span> <span class="n">d1</span>
+    <span class="k">elif</span> <span class="s2">&quot;left&quot;</span> <span class="ow">in</span> <span class="n">status</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">d1</span><span class="p">,</span> <span class="n">d2</span>
+
+</div>
+<div class="viewcode-block" id="rotate_12_NE"><a class="viewcode-back" href="../../../pytomo3d.signal.html#pytomo3d.signal.rotate.rotate_12_NE">[docs]</a><span class="k">def</span> <span class="nf">rotate_12_NE</span><span class="p">(</span><span class="n">d1</span><span class="p">,</span> <span class="n">d2</span><span class="p">,</span> <span class="n">azim1</span><span class="p">,</span> <span class="n">azim2</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Rotate from any two orthogonal horizontal components to EN components</span>
+
+<span class="sd">    :type d1: :class:`~numpy.ndarray`</span>
+<span class="sd">    :param d1: Data of one of the two horizontal components</span>
+<span class="sd">    :type d2: :class:`~numpy.ndarray`</span>
+<span class="sd">    :param d2: Data of the other horizontal components</span>
+<span class="sd">    :type azim1: float</span>
+<span class="sd">    :param azim1: component azimuth of data1</span>
+<span class="sd">    :type azim2: float</span>
+<span class="sd">    :param azim2: component azimuth of data2</span>
+<span class="sd">    :return: East and North component of seismogram.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="n">check_orthogonality</span><span class="p">(</span><span class="n">azim1</span><span class="p">,</span> <span class="n">azim2</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">status</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;azim1 and azim2 not orthogonal&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">&quot;right&quot;</span> <span class="ow">in</span> <span class="n">status</span><span class="p">:</span>
+        <span class="c1"># flip to left-hand</span>
+        <span class="n">d1</span><span class="p">,</span> <span class="n">d2</span> <span class="o">=</span> <span class="n">d2</span><span class="p">,</span> <span class="n">d1</span>
+        <span class="n">azim1</span><span class="p">,</span> <span class="n">azim2</span> <span class="o">=</span> <span class="n">azim2</span><span class="p">,</span> <span class="n">azim1</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">d1</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">d2</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Component 1 and 2 have different length&quot;</span><span class="p">)</span>
+
+    <span class="c1"># caculate the angle of rotation</span>
+    <span class="n">angle</span> <span class="o">=</span> <span class="o">-</span> <span class="n">azim1</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">pi</span> <span class="o">/</span> <span class="mf">360.</span>
+    <span class="n">n</span><span class="p">,</span> <span class="n">e</span> <span class="o">=</span> <span class="n">rotate_certain_angle</span><span class="p">(</span><span class="n">d1</span><span class="p">,</span> <span class="n">d2</span><span class="p">,</span> <span class="n">angle</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">n</span><span class="p">,</span> <span class="n">e</span>
+
+</div>
+<div class="viewcode-block" id="rotate_NE_12"><a class="viewcode-back" href="../../../pytomo3d.signal.html#pytomo3d.signal.rotate.rotate_NE_12">[docs]</a><span class="k">def</span> <span class="nf">rotate_NE_12</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">azim1</span><span class="p">,</span> <span class="n">azim2</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Rotate from East and North components to give two orghogonal horizontal</span>
+<span class="sd">    components. Returned values are (d1, d2) and (d1, d2, Vertical) will</span>
+<span class="sd">    form a left-handed coordinate system.</span>
+
+<span class="sd">    :type data1: :class:`~numpy.ndarray`</span>
+<span class="sd">    :param data1: Data of one of the two horizontal components</span>
+<span class="sd">    :type data2: :class:`~numpy.ndarray`</span>
+<span class="sd">    :param data2: Data of the other horizontal components</span>
+<span class="sd">    :type azim1: float</span>
+<span class="sd">    :param azim1: component azimuth of data1</span>
+<span class="sd">    :type azim2: float</span>
+<span class="sd">    :param azim2: component azimuth of data2</span>
+<span class="sd">    :return: two horizontal orthogonal seismogram after rotation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="n">check_orthogonality</span><span class="p">(</span><span class="n">azim1</span><span class="p">,</span> <span class="n">azim2</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">status</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;azim1 and azim2 not orthogonal&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">&quot;left&quot;</span> <span class="ow">in</span> <span class="n">status</span><span class="p">:</span>
+        <span class="n">azim</span> <span class="o">=</span> <span class="n">azim1</span>
+    <span class="k">elif</span> <span class="s2">&quot;right&quot;</span> <span class="ow">in</span> <span class="n">status</span><span class="p">:</span>
+        <span class="n">azim</span> <span class="o">=</span> <span class="n">azim2</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">e</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Component North and East have different length&quot;</span><span class="p">)</span>
+
+    <span class="c1"># caculate the angle of rotation</span>
+    <span class="n">angle</span> <span class="o">=</span> <span class="p">(</span><span class="n">azim</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">pi</span> <span class="o">/</span> <span class="mf">360.</span>
+    <span class="n">d1</span><span class="p">,</span> <span class="n">d2</span> <span class="o">=</span> <span class="n">rotate_certain_angle</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">e</span><span class="p">,</span> <span class="n">angle</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="s2">&quot;right&quot;</span> <span class="ow">in</span> <span class="n">status</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">d2</span><span class="p">,</span> <span class="n">d1</span>
+    <span class="k">elif</span> <span class="s2">&quot;left&quot;</span> <span class="ow">in</span> <span class="n">status</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">d1</span><span class="p">,</span> <span class="n">d2</span>
+
+</div>
+<div class="viewcode-block" id="extract_channel_orientation_info"><a class="viewcode-back" href="../../../pytomo3d.signal.html#pytomo3d.signal.rotate.extract_channel_orientation_info">[docs]</a><span class="k">def</span> <span class="nf">extract_channel_orientation_info</span><span class="p">(</span><span class="n">tr</span><span class="p">,</span> <span class="n">inv</span><span class="p">):</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">sta_inv</span> <span class="o">=</span> <span class="n">inv</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">loc</span> <span class="o">=</span> <span class="n">tr</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">location</span>
+        <span class="n">chan</span> <span class="o">=</span> <span class="n">tr</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">channel</span>
+        <span class="n">inv</span> <span class="o">=</span> <span class="n">sta_inv</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">location</span><span class="o">=</span><span class="n">loc</span><span class="p">,</span> <span class="n">channel</span><span class="o">=</span><span class="n">chan</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">inc</span> <span class="o">=</span> <span class="n">inv</span><span class="o">.</span><span class="n">dip</span>
+        <span class="n">azi</span> <span class="o">=</span> <span class="n">inv</span><span class="o">.</span><span class="n">azimuth</span>
+        <span class="k">return</span> <span class="n">inc</span><span class="p">,</span> <span class="n">azi</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span>
+
+</div>
+<div class="viewcode-block" id="rotate_12_RT_func"><a class="viewcode-back" href="../../../pytomo3d.signal.html#pytomo3d.signal.rotate.rotate_12_RT_func">[docs]</a><span class="k">def</span> <span class="nf">rotate_12_RT_func</span><span class="p">(</span><span class="n">st</span><span class="p">,</span> <span class="n">inv</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;12-&gt;RT&quot;</span><span class="p">,</span> <span class="n">back_azimuth</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Rotate 12 component to RT</span>
+
+<span class="sd">    :param st: input stream</span>
+<span class="sd">    :param inv: station inventory information</span>
+<span class="sd">    :param method: rotation method</span>
+<span class="sd">    :param back_azimuth: back azimuth(station to event azimuth)</span>
+<span class="sd">    :return: rotated stream</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">method</span> <span class="o">!=</span> <span class="s2">&quot;12-&gt;RT&quot;</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;rotate_12_RT only supports method = 12-&gt;RT now&quot;</span><span class="p">)</span>
+    <span class="n">input_components</span><span class="p">,</span> <span class="n">output_components</span> <span class="o">=</span> <span class="n">method</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;-&gt;&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_components</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">input_1</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">component</span><span class="o">=</span><span class="n">input_components</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">input_2</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">component</span><span class="o">=</span><span class="n">input_components</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">i_1</span><span class="p">,</span> <span class="n">i_2</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">input_1</span><span class="p">,</span> <span class="n">input_2</span><span class="p">):</span>
+            <span class="c1"># check</span>
+            <span class="n">dt</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">i_1</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">delta</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">i_1</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">i_2</span><span class="p">))</span> <span class="ow">or</span> \
+                    <span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">i_1</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">starttime</span> <span class="o">-</span> <span class="n">i_2</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">starttime</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">dt</span><span class="p">)</span> \
+                    <span class="ow">or</span> <span class="p">(</span><span class="n">i_1</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">sampling_rate</span> <span class="o">!=</span> <span class="n">i_2</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">sampling_rate</span><span class="p">):</span>
+                <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;All components need to have the same time span.&quot;</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+                <span class="k">continue</span>
+            <span class="n">inc1</span><span class="p">,</span> <span class="n">azi1</span> <span class="o">=</span> <span class="n">extract_channel_orientation_info</span><span class="p">(</span><span class="n">i_1</span><span class="p">,</span> <span class="n">inv</span><span class="p">)</span>
+            <span class="n">inc2</span><span class="p">,</span> <span class="n">azi2</span> <span class="o">=</span> <span class="n">extract_channel_orientation_info</span><span class="p">(</span><span class="n">i_2</span><span class="p">,</span> <span class="n">inv</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">inc1</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> <span class="n">inc2</span> <span class="ow">is</span> <span class="bp">None</span> \
+                    <span class="ow">or</span> <span class="n">inc1</span> <span class="o">!=</span> <span class="mf">0.0</span> <span class="ow">or</span> <span class="n">inc2</span> <span class="o">!=</span> <span class="mf">0.0</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="n">output_1</span><span class="p">,</span> <span class="n">output_2</span> <span class="o">=</span> <span class="n">rotate_12_RT</span><span class="p">(</span><span class="n">i_1</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">i_2</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">back_azimuth</span><span class="p">,</span>
+                                              <span class="n">azi1</span><span class="p">,</span> <span class="n">azi2</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">output_1</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> <span class="n">output_2</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="n">i_1</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">output_1</span>
+            <span class="n">i_2</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">output_2</span>
+            <span class="c1"># Rename the components</span>
+            <span class="n">i_1</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">channel</span> <span class="o">=</span> <span class="n">i_1</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">channel</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">output_components</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">i_2</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">channel</span> <span class="o">=</span> <span class="n">i_2</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">channel</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">output_components</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="c1"># Add the azimuth backj to stats object</span>
+            <span class="k">for</span> <span class="n">comp</span> <span class="ow">in</span> <span class="p">(</span><span class="n">i_1</span><span class="p">,</span> <span class="n">i_2</span><span class="p">):</span>
+                <span class="n">comp</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">back_azimuth</span> <span class="o">=</span> <span class="n">back_azimuth</span>
+    <span class="k">return</span> <span class="n">st</span>
+
+</div>
+<div class="viewcode-block" id="rotate_stream"><a class="viewcode-back" href="../../../pytomo3d.signal.html#pytomo3d.signal.rotate.rotate_stream">[docs]</a><span class="k">def</span> <span class="nf">rotate_stream</span><span class="p">(</span><span class="n">st</span><span class="p">,</span> <span class="n">event_latitude</span><span class="p">,</span> <span class="n">event_longitude</span><span class="p">,</span>
+                  <span class="n">station_latitude</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">station_longitude</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                  <span class="n">inventory</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;ALL&quot;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Rotate a stream to radial and transverse components based on the</span>
+<span class="sd">    station information and event information</span>
+
+<span class="sd">    :param st: input stream</span>
+<span class="sd">    :type st: obspy.Stream</span>
+<span class="sd">    :param event_latitude: event latitude</span>
+<span class="sd">    :type event_latitude: float</span>
+<span class="sd">    :param event_longitude: event longitude</span>
+<span class="sd">    :type event_longitude: float</span>
+<span class="sd">    :param station_latitude: station latitude. If not provided, extract</span>
+<span class="sd">        information from inventory</span>
+<span class="sd">    :type station_latitude: float</span>
+<span class="sd">    :param station_longitude: station longitude. If not provided, extrace</span>
+<span class="sd">        information from inventory</span>
+<span class="sd">    :type station_longitude: float</span>
+<span class="sd">    :param inv: station inventory information. If you want to rotate</span>
+<span class="sd">    &quot;12&quot; components, you need to provide inventory since only station</span>
+<span class="sd">    and station_longitude is not enough.</span>
+<span class="sd">    :type inv: obspy.Inventory</span>
+<span class="sd">    :param mode: rotation mode, could be one of:</span>
+<span class="sd">        1) &quot;NE&quot;: rotate only North and East channel to RT</span>
+<span class="sd">        2) &quot;12&quot;: rotate only 1 and 2 channel, like &quot;BH1&quot; and &quot;BH2&quot; to RT</span>
+<span class="sd">        3) &quot;all&quot;: rotate all components to RT</span>
+<span class="sd">    :return: rotated stream(obspy.Stream)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">station_longitude</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> <span class="n">station_latitude</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">station_latitude</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">inventory</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">latitude</span><span class="p">)</span>
+        <span class="n">station_longitude</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">inventory</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">longitude</span><span class="p">)</span>
+
+    <span class="n">mode</span> <span class="o">=</span> <span class="n">mode</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;NE&quot;</span><span class="p">,</span> <span class="s2">&quot;ALL&quot;</span><span class="p">,</span> <span class="s2">&quot;12&quot;</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;rotate_stream supports mode: 1) 12; 2) NE; 3) ALL&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">mode</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;12&quot;</span><span class="p">,</span> <span class="s2">&quot;ALL&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">inventory</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Mode </span><span class="si">%s</span><span class="s2"> required inventory(stationxml) &quot;</span>
+                         <span class="s2">&quot;information provided&quot;</span> <span class="o">%</span> <span class="n">mode</span><span class="p">)</span>
+
+    <span class="n">_</span><span class="p">,</span> <span class="n">baz</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">gps2DistAzimuth</span><span class="p">(</span><span class="n">station_latitude</span><span class="p">,</span> <span class="n">station_longitude</span><span class="p">,</span>
+                                <span class="n">event_latitude</span><span class="p">,</span> <span class="n">event_longitude</span><span class="p">)</span>
+
+    <span class="n">components</span> <span class="o">=</span> <span class="p">[</span><span class="n">tr</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">channel</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">tr</span> <span class="ow">in</span> <span class="n">st</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">mode</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;NE&quot;</span><span class="p">,</span> <span class="s2">&quot;ALL&quot;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="s2">&quot;N&quot;</span> <span class="ow">in</span> <span class="n">components</span> <span class="ow">and</span> <span class="s2">&quot;E&quot;</span> <span class="ow">in</span> <span class="n">components</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">&quot;NE-&gt;RT&quot;</span><span class="p">,</span> <span class="n">back_azimuth</span><span class="o">=</span><span class="n">baz</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">print</span> <span class="n">e</span>
+
+    <span class="k">if</span> <span class="n">mode</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;12&quot;</span><span class="p">,</span> <span class="s2">&quot;ALL&quot;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="s2">&quot;1&quot;</span> <span class="ow">in</span> <span class="n">components</span> <span class="ow">and</span> <span class="s2">&quot;2&quot;</span> <span class="ow">in</span> <span class="n">components</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">rotate_12_RT_func</span><span class="p">(</span><span class="n">st</span><span class="p">,</span> <span class="n">inventory</span><span class="p">,</span> <span class="n">back_azimuth</span><span class="o">=</span><span class="n">baz</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="k">print</span> <span class="n">e</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">pytomo3d 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2016, Wenjie Lei.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>
