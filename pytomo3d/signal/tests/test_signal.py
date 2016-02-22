@@ -6,14 +6,24 @@ import obspy
 import pytomo3d.signal.process as proc
 
 
+def _upper_level(path, nlevel=4):
+    """
+    Go the nlevel dir up
+    """
+    for i in range(nlevel):
+        path = os.path.dirname(path)
+    return path
+
 # Most generic way to get the data folder path.
-DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(
-    inspect.getfile(inspect.currentframe()))), "data")
+TESTBASE_DIR = _upper_level(os.path.abspath(
+    inspect.getfile(inspect.currentframe())), 4)
+DATA_DIR = os.path.join(TESTBASE_DIR, "tests", "data")
+
 teststaxml = os.path.join(DATA_DIR, "stationxml", "IU.KBL.xml")
 testquakeml = os.path.join(DATA_DIR, "quakeml", "C201009031635A.xml")
-testobs = os.path.join(DATA_DIR, "raw_obs", "IU.KBL.obs.mseed")
-testsyn = os.path.join(DATA_DIR, "raw_syn", "IU.KBL.syn.mseed")
-small_mseed = os.path.join(DATA_DIR, "raw_obs", "BW.RJOB.obs.mseed")
+testobs = os.path.join(DATA_DIR, "raw", "IU.KBL.obs.mseed")
+testsyn = os.path.join(DATA_DIR, "raw", "IU.KBL.syn.mseed")
+small_mseed = os.path.join(DATA_DIR, "raw", "BW.RJOB.obs.mseed")
 
 
 def test_check_array():
@@ -106,7 +116,7 @@ def test_process_obsd():
                           taper_percentage=0.05, rotate_flag=True,
                           event_latitude=event_lat,
                           event_longitude=event_lon)
-    bmfile = os.path.join(DATA_DIR, "benchmark", "IU.KBL.obs.proc.mseed")
+    bmfile = os.path.join(DATA_DIR, "proc", "IU.KBL.obs.proc.mseed")
     st_compare = obspy.read(bmfile)
     assert compare_stream_kernel(st_new, st_compare)
 
@@ -131,6 +141,6 @@ def test_process_synt():
                           taper_percentage=0.05, rotate_flag=True,
                           event_latitude=event_lat,
                           event_longitude=event_lon)
-    bmfile = os.path.join(DATA_DIR, "benchmark", "IU.KBL.syn.proc.mseed")
+    bmfile = os.path.join(DATA_DIR, "proc", "IU.KBL.syn.proc.mseed")
     st_compare = obspy.read(bmfile)
     assert compare_stream_kernel(st_new, st_compare)

@@ -7,17 +7,29 @@ import pytomo3d.adjoint.adjsrc as adj
 import json
 # from pytomo3d.adjoint.plot_util import plot_adjoint_source
 
+
+def _upper_level(path, nlevel=4):
+    """
+    Go the nlevel dir up
+    """
+    for i in range(nlevel):
+        path = os.path.dirname(path)
+    return path
+
 # Most generic way to get the data folder path.
-DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(
-    inspect.getfile(inspect.currentframe()))), "data")
-obsfile = os.path.join(DATA_DIR, "IU.KBL.obs.proc.mseed")
-synfile = os.path.join(DATA_DIR, "IU.KBL.syn.proc.mseed")
-winfile_bm = os.path.join(DATA_DIR, "benchmark",
-                          "IU.KBL..BHR.window.json")
+TESTBASE_DIR = _upper_level(os.path.abspath(
+    inspect.getfile(inspect.currentframe())), 4)
+DATA_DIR = os.path.join(TESTBASE_DIR, "tests", "data")
+
+# Most generic way to get the data folder path.
+obsfile = os.path.join(DATA_DIR, "proc", "IU.KBL.obs.proc.mseed")
+synfile = os.path.join(DATA_DIR, "proc", "IU.KBL.syn.proc.mseed")
+winfile = os.path.join(DATA_DIR, "window", "IU.KBL..BHR.window.json")
 
 
 def test_read_config():
-    config_file = os.path.join(DATA_DIR, "waveform.adjoint.config.yaml")
+    config_file = os.path.join(DATA_DIR, "adjoint",
+                               "waveform.adjoint.config.yaml")
     config = adj.load_adjoint_config_yaml(config_file)
     assert isinstance(config, pyadjoint.Config)
     assert config.max_period == 60.0
@@ -26,7 +38,8 @@ def test_read_config():
     assert config.taper_type == 'hann'
     assert not config.use_cc_error
 
-    config_file = os.path.join(DATA_DIR, "cc_traveltime.adjoint.config.yaml")
+    config_file = os.path.join(DATA_DIR, "adjoint",
+                               "cc_traveltime.adjoint.config.yaml")
     config = adj.load_adjoint_config_yaml(config_file)
     assert isinstance(config, pyadjoint.Config)
     assert config.max_period == 60.0
@@ -36,7 +49,8 @@ def test_read_config():
     assert config.taper_type == 'hann'
     assert config.use_cc_error
 
-    config_file = os.path.join(DATA_DIR, "multitaper.adjoint.config.yaml")
+    config_file = os.path.join(DATA_DIR, "adjoint",
+                               "multitaper.adjoint.config.yaml")
     config = adj.load_adjoint_config_yaml(config_file)
     assert isinstance(config, pyadjoint.Config)
     assert config.max_period == 60.0
@@ -61,7 +75,6 @@ def test_read_config():
 def test_waveform_adjoint():
     obs = read(obsfile).select(channel="*R")[0]
     syn = read(synfile).select(channel="*R")[0]
-    winfile = os.path.join(DATA_DIR, "IU.KBL..BHR.window.json")
 
     with open(winfile) as fh:
         wins_json = json.load(fh)
@@ -69,7 +82,8 @@ def test_waveform_adjoint():
     for _win in wins_json:
         windows.append(Window._load_from_json_content(_win))
 
-    config_file = os.path.join(DATA_DIR, "waveform.adjoint.config.yaml")
+    config_file = os.path.join(DATA_DIR, "adjoint",
+                               "waveform.adjoint.config.yaml")
     config = adj.load_adjoint_config_yaml(config_file)
 
     win_time, _ = adj._extract_window_time(windows)
@@ -88,7 +102,6 @@ def test_waveform_adjoint():
 def test_multitaper_adjoint():
     obs = read(obsfile).select(channel="*R")[0]
     syn = read(synfile).select(channel="*R")[0]
-    winfile = os.path.join(DATA_DIR, "IU.KBL..BHR.window.json")
 
     with open(winfile) as fh:
         wins_json = json.load(fh)
@@ -96,7 +109,8 @@ def test_multitaper_adjoint():
     for _win in wins_json:
         windows.append(Window._load_from_json_content(_win))
 
-    config_file = os.path.join(DATA_DIR, "multitaper.adjoint.config.yaml")
+    config_file = os.path.join(DATA_DIR, "adjoint",
+                               "multitaper.adjoint.config.yaml")
     config = adj.load_adjoint_config_yaml(config_file)
 
     win_time, _ = adj._extract_window_time(windows)
@@ -114,14 +128,14 @@ def test_multitaper_adjoint():
 def test_cc_traveltime_adjoint():
     obs = read(obsfile).select(channel="*R")[0]
     syn = read(synfile).select(channel="*R")[0]
-    winfile = os.path.join(DATA_DIR, "IU.KBL..BHR.window.json")
     with open(winfile) as fh:
         wins_json = json.load(fh)
     windows = []
     for _win in wins_json:
         windows.append(Window._load_from_json_content(_win))
 
-    config_file = os.path.join(DATA_DIR, "cc_traveltime.adjoint.config.yaml")
+    config_file = os.path.join(DATA_DIR, "adjoint",
+                               "cc_traveltime.adjoint.config.yaml")
     config = adj.load_adjoint_config_yaml(config_file)
 
     win_time, _ = adj._extract_window_time(windows)
