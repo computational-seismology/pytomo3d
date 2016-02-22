@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 from __future__ import (print_function, division)
+import os
 import yaml
 import numpy as np
 from obspy import Stream, Trace
 from obspy.core.util.geodetics import gps2DistAzimuth
 import pyadjoint
 from pyadjoint import AdjointSource
+from .plot_util import plot_adjoint_source
 
 
 def _stats_channel_window(windows):
@@ -86,7 +88,8 @@ def _extract_window_time(windows):
 
 
 def calculate_adjsrc_on_trace(obs, syn, window_time, config, adj_src_type,
-                              adjoint_src_flag=True, figure_mode=False):
+                              figure_mode=False, figure_dir=None,
+                              adjoint_src_flag=True):
     """
     Calculate adjoint source on a pair of trace and windows selected
 
@@ -131,12 +134,20 @@ def calculate_adjsrc_on_trace(obs, syn, window_time, config, adj_src_type,
     except:
         adjsrc = None
 
+    if figure_mode:
+        if figure_dir is None:
+            figname = None
+        else:
+            figname = os.path.join(figure_dir, "%s.pdf" % obs.id)
+        plot_adjoint_source(adjsrc, win_times=windows, obs_tr=obs,
+                            syn_tr=syn, figname=figname)
+
     return adjsrc
 
 
 def calculate_adjsrc_on_stream(observed, synthetic, windows, config,
                                adj_src_type, figure_mode=False,
-                               adjoint_src_flag=True):
+                               figure_dir=None, adjoint_src_flag=True):
     """
     calculate adjoint source on a pair of stream and windows selected
 
@@ -183,7 +194,7 @@ def calculate_adjsrc_on_stream(observed, synthetic, windows, config,
         adjsrc = calculate_adjsrc_on_trace(
             obs, syn, win_time, config, adj_src_type,
             adjoint_src_flag=adjoint_src_flag,
-            figure_mode=figure_mode)
+            figure_mode=figure_mode, figure_dir=figure_dir)
 
         if adjsrc is None:
             continue
@@ -225,7 +236,8 @@ def adjsrc_function(observed, synthetic, windows, config,
     channel_nwins_dict = _stats_channel_window(windows)
     channel_adj_dict = \
         calculate_adjsrc_on_stream(observed, synthetic, windows, config,
-                                   adj_src_type)
+                                   adj_src_type, figure_mode=figure_mode,
+                                   figure_dir=figure_dir)
 
     return _clean_adj_results(channel_adj_dict, channel_nwins_dict)
 
