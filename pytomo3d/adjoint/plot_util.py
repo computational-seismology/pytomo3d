@@ -1,3 +1,14 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+Methods that handles plotting adjoint sources
+
+:copyright:
+    Wenjie Lei (lei@princeton.edu), 2016
+:license:
+    GNU General Public License, Version 3
+    (http://www.gnu.org/copyleft/gpl.html)
+"""
 import matplotlib.pyplot as plt
 from obspy import Trace
 from pyadjoint import AdjointSource

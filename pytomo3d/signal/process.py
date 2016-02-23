@@ -1,8 +1,21 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+Methods that handles signal data processing
+
+:copyright:
+    Wenjie Lei (lei@princeton.edu), 2016
+:license:
+    GNU General Public License, Version 3
+    (http://www.gnu.org/copyleft/gpl.html)
+"""
+
+from __future__ import (division, print_function, absolute_import)
 import obspy
 from obspy.signal.invsim import c_sac_taper
 from obspy.signal.util import _npts2nfft
 import numpy as np
-from rotate import rotate_stream
+from .rotate import rotate_stream
 
 
 def check_array_order(array, order="ascending"):
@@ -22,28 +35,28 @@ def check_array_order(array, order="ascending"):
     return (array == sorted(array)).all()
 
 
-def flex_cut_trace(tr, cut_starttime, cut_endtime):
+def flex_cut_trace(trace, cut_starttime, cut_endtime):
     """
     not cut strictly(but also based on the original trace length)
 
-    :param tr: input trace
-    :type tr: obspy.Trace
+    :param trace: input trace
+    :type trace: obspy.Trace
     :param cut_starttime: starttime of cutting
     :type cut_starttime: obspy.UTCDateTime
     :param cut_endtime: endtime of cutting
     :type cut_endtime: obspy.UTCDateTime
     """
-    if not isinstance(tr, obspy.Trace):
+    if not isinstance(trace, obspy.Trace):
         raise ValueError("cut_trace method only accepts obspy.Trace"
                          "as the first argument")
 
-    starttime = tr.stats.starttime
-    endtime = tr.stats.endtime
+    starttime = trace.stats.starttime
+    endtime = trace.stats.endtime
     cut_starttime = max(starttime, cut_starttime)
     cut_endtime = min(endtime, cut_endtime)
     if cut_starttime > cut_endtime:
         raise ValueError("Cut starttime is larger than cut endtime")
-    return tr.slice(cut_starttime, cut_endtime)
+    return trace.slice(cut_starttime, cut_endtime)
 
 
 def flex_cut_stream(st, cut_start, cut_end, dynamic_length=10.0):
@@ -72,6 +85,20 @@ def flex_cut_stream(st, cut_start, cut_end, dynamic_length=10.0):
                          "obspy.Stream as the first Argument")
 
 
+def filter_stream(st, pre_filt):
+    """
+    Filter a stream
+
+    :param st:
+    :param per_filt:
+    :return:
+    """
+    if not isinstance(st, obspy.Stream):
+        raise ValueError("Input st should be type of Stream")
+    for tr in st:
+        filter_trace(tr, pre_filt)
+
+
 def filter_trace(tr, pre_filt):
     """
     Perform a frequency domain taper mimicing the behavior during the
@@ -83,7 +110,7 @@ def filter_trace(tr, pre_filt):
     :type pre_filt: Numpy.array or list
     :return: filtered trace
     """
-    if type(tr) != obspy.Trace:
+    if not isinstance(tr, obspy.Trace):
         raise ValueError("First Argument should be trace: %s" % type(tr))
 
     if not check_array_order(pre_filt):
@@ -194,8 +221,7 @@ def process(st, remove_response_flag=False, inventory=None,
     elif filter_flag:
         # Perform a frequency domain taper like during the response removal
         # just without an actual response...
-        for tr in st:
-            filter_trace(tr, pre_filt)
+        filter_stream(st, pre_filt)
 
     # detrend, demean or taper
     st.detrend("linear")

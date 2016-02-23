@@ -1,4 +1,14 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+Methods that handles Window selection
+
+:copyright:
+    Wenjie Lei (lei@princeton.edu), 2016
+:license:
+    GNU General Public License, Version 3
+    (http://www.gnu.org/copyleft/gpl.html)
+"""
 import os
 import yaml
 import pyflex
