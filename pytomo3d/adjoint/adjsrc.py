@@ -8,22 +8,7 @@ from obspy.core.util.geodetics import gps2DistAzimuth
 import pyadjoint
 from pyadjoint import AdjointSource
 from .plot_util import plot_adjoint_source
-
-
-def _stats_channel_window(windows):
-    """
-    Determine number of windows on each channel of each component.
-    """
-    channel_win_dict = dict()
-    for chan_win in windows:
-        if isinstance(chan_win[0], dict):
-            chan_id = chan_win[0]["channel_id"]
-        else:
-            chan_id = chan_win[0].channel_id
-        nwin = len(chan_win)
-        channel_win_dict[chan_id] = nwin
-
-    return channel_win_dict
+from pytomo3d.signal.process import filter_trace, check_array_order
 
 
 def load_adjoint_config_yaml(filename):
@@ -213,20 +198,20 @@ def calculate_baz(elat, elon, slat, slon):
     return baz
 
 
-def _convert_adj_to_trace(adj, starttime, chan_id):
+def _convert_adj_to_trace(adj):
     """
     Convert AdjointSource to Trace,for internal use only
     """
 
     tr = Trace()
     tr.data = adj.adjoint_source
-    tr.stats.starttime = starttime
+    tr.stats.starttime = adj.starttime
     tr.stats.delta = adj.dt
 
-    tr.stats.channel = str(chan_id.split(".")[-1])
+    tr.stats.channel = adj.component
     tr.stats.station = adj.station
     tr.stats.network = adj.network
-    tr.stats.location = chan_id.split(".")[2]
+    tr.stats.location = adj.location
 
     return tr
 
@@ -237,10 +222,13 @@ def _convert_trace_to_adj(tr, adj_src_type, minp, maxp):
     """
     adj = AdjointSource(adj_src_type, 0.0, 0.0, minp, maxp, "")
     adj.dt = tr.stats.delta
-    adj.component = tr.stats.channel[-1]
     adj.adjoint_source = tr.data
     adj.station = tr.stats.station
     adj.network = tr.stats.network
+    adj.location = tr.stats.location
+    adj.component = tr.stats.channel
+    adj.starttime = tr.stats.starttime
+
     return adj
 
 
@@ -313,6 +301,7 @@ def sum_adj_on_component(adj_stream, weight_flag, weight_dict=None):
                     comp_tr = adj_stream.select(id=chan_id)[0]
                     comp_tr.data *= chan_weight
                     comp_tr.stats.location = ""
+                    comp_tr.stats.channel = comp
                     new_stream.append(comp_tr)
                 else:
                     comp_tr = new_stream.select(channel="*%s" % comp)[0]
@@ -347,10 +336,11 @@ def rotate_adj(adj_stream, event, inventory):
             print(e)
 
 
-def postprocess_adjsrc(adjsrcs, adj_starttime, interp_starttime, interp_delta,
+def postprocess_adjsrc(adjsrcs, interp_starttime, interp_delta,
                        interp_npts, rotate_flag=False, inventory=None,
                        event=None, sum_over_comp_flag=False,
-                       weight_flag=False, weight_dict=None):
+                       weight_flag=False, weight_dict=None,
+                       filter_flag=False, pre_filt=None):
     """
     Postprocess adjoint sources to fit SPECFEM input(same as raw_synthetic)
     1) zero padding the adjoint sources
@@ -372,14 +362,14 @@ def postprocess_adjsrc(adjsrcs, adj_starttime, interp_starttime, interp_delta,
     :param weight_dict: weight dictionary
     """
 
-    if not isinstance(adjsrcs, dict):
-        raise ValueError("Input adjsrcs should be type of dict, for example,"
-                         "{'tr.id': pyadjoint.AdjointSource, ...}")
+    if not isinstance(adjsrcs, list):
+        raise ValueError("Input adjsrcs should be type of list of adjoint "
+                         "sources")
 
     # transfer AdjointSource type to stream for easy processing
     adj_stream = Stream()
-    for chan_id, adj in adjsrcs.iteritems():
-        _tr = _convert_adj_to_trace(adj, adj_starttime, chan_id)
+    for adj in adjsrcs:
+        _tr = _convert_adj_to_trace(adj)
         adj_stream.append(_tr)
 
     # zero padding
@@ -412,12 +402,22 @@ def postprocess_adjsrc(adjsrcs, adj_starttime, interp_starttime, interp_delta,
     if rotate_flag:
         rotate_adj(adj_stream, event, inventory)
 
+    if filter_flag:
+        # filter the adjoint source
+        if pre_filt is None or len(pre_filt) != 4:
+            raise ValueError("Input pre_filt should be a list or tuple with "
+                             "length of 4")
+        if not check_array_order(pre_filt, order="ascending"):
+            raise ValueError("Input pre_filt must a in ascending order. The "
+                             "unit is Hz")
+        for tr in adj_stream:
+            filter_trace(tr, pre_filt)
+
     # convert the stream to pyadjoint.AdjointSource
     final_adjsrcs = []
-    _temp_id = adjsrcs.keys()[0]
-    adj_src_type = adjsrcs[_temp_id].adj_src_type
-    minp = adjsrcs[_temp_id].min_period
-    maxp = adjsrcs[_temp_id].max_period
+    adj_src_type = adjsrcs[0].adj_src_type
+    minp = adjsrcs[0].min_period
+    maxp = adjsrcs[0].max_period
     for tr in adj_stream:
         final_adjsrcs.append(_convert_trace_to_adj(tr, adj_src_type,
                                                    minp, maxp))
