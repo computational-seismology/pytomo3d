@@ -41,6 +41,13 @@ git clone --branch dev https://github.com/chukren/pyadjoint
 cd pyadjoint
 pip install -v -e .
 cd ..
+
+5. Install pytomo3d.
+```
+git clone https://github.com/wjlei1990/pytomo3d
+cd pytomo3d
+pip install -v -e .
+cd ..
 ```
 
 ### Script installation
@@ -52,6 +59,8 @@ pip install -r requirements.txt
 ```
 
 ---
+
+After installation, you can run `py.test` in pytomo3d directory to see if you installed all the things correctly.
 
 ### Notes
 1. If you already have some of the packages, please make sure to update them(not including anaconda)
