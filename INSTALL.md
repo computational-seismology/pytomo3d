@@ -41,6 +41,7 @@ git clone --branch dev https://github.com/chukren/pyadjoint
 cd pyadjoint
 pip install -v -e .
 cd ..
+```
 
 5. Install pytomo3d.
 ```
