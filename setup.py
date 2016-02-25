@@ -48,7 +48,7 @@ setup(
         "seismology", "tomography", "adjoint", "signal", "inversion", "window"
     ],
     install_requires=[
-        "numpy", "obspy", "flake8", "pytest", "nose", "future>=0.14.1",
+        "numpy", "obspy>=0.10.2", "flake8", "pytest", "nose", "future>=0.14.1",
         "pyflex", "pyadjoint"
     ],
     extras_require={

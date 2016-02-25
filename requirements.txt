@@ -1,3 +1,2 @@
-obspy
 git+git://github.com/wjlei1990/pyflex.git@devel
 git+git://github.com/wjlei1990/pyadjoint.git@dev

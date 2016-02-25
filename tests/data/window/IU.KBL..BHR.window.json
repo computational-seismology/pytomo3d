@@ -1,15 +1,15 @@
 [
   {
-    "absolute_endtime":"2010-09-03T16:52:22.900000Z",
-    "absolute_starttime":"2010-09-03T16:50:50.900000Z",
+    "absolute_endtime":"2010-09-03T16:52:21.900000Z",
+    "absolute_starttime":"2010-09-03T16:50:52.400000Z",
     "cc_shift_in_samples":1,
     "cc_shift_in_seconds":0.5,
     "center_index":1878,
     "channel_id":"IU.KBL..BHR",
-    "dlnA":0.48803955316543579,
+    "dlnA":0.48552751541137695,
     "dt":0.5,
-    "left_index":1786,
-    "max_cc_value":0.8766710162162781,
+    "left_index":1789,
+    "max_cc_value":0.8778460621833801,
     "min_period":27.0,
     "phase_arrivals":[
       {
@@ -31,23 +31,23 @@
         "time":927.01890281265969
       }
     ],
-    "relative_endtime":985.0,
-    "relative_starttime":893.0,
-    "right_index":1970,
+    "relative_endtime":984.0,
+    "relative_starttime":894.5,
+    "right_index":1968,
     "time_of_first_sample":"2010-09-03T16:35:57.900000Z",
-    "window_weight":2.9871753145147255
+    "window_weight":2.9098971320523157
   },
   {
-    "absolute_endtime":"2010-09-03T16:57:31.400000Z",
-    "absolute_starttime":"2010-09-03T16:54:01.900000Z",
+    "absolute_endtime":"2010-09-03T16:57:31.900000Z",
+    "absolute_starttime":"2010-09-03T16:54:02.400000Z",
     "cc_shift_in_samples":-1,
     "cc_shift_in_seconds":-0.5,
-    "center_index":2377,
+    "center_index":2378,
     "channel_id":"IU.KBL..BHR",
-    "dlnA":0.48111575841903687,
+    "dlnA":0.48230868577957153,
     "dt":0.5,
-    "left_index":2168,
-    "max_cc_value":0.8718979954719543,
+    "left_index":2169,
+    "max_cc_value":0.8720169067382812,
     "min_period":27.0,
     "phase_arrivals":[
       {
@@ -93,11 +93,11 @@
         "time":1226.4648460852875
       }
     ],
-    "relative_endtime":1293.5,
-    "relative_starttime":1084.0,
-    "right_index":2587,
+    "relative_endtime":1294.0,
+    "relative_starttime":1084.5,
+    "right_index":2588,
     "time_of_first_sample":"2010-09-03T16:35:57.900000Z",
-    "window_weight":6.7652825944953499
+    "window_weight":6.7662052578396272
   },
   {
     "absolute_endtime":"2010-09-03T17:04:37.900000Z",
@@ -106,10 +106,10 @@
     "cc_shift_in_seconds":2.5,
     "center_index":3320,
     "channel_id":"IU.KBL..BHR",
-    "dlnA":0.216083824634552,
+    "dlnA":0.21606998145580292,
     "dt":0.5,
     "left_index":3200,
-    "max_cc_value":0.8694591522216797,
+    "max_cc_value":0.8694694638252258,
     "min_period":27.0,
     "phase_arrivals":[
       {
@@ -141,7 +141,7 @@
     "relative_starttime":1600.0,
     "right_index":3440,
     "time_of_first_sample":"2010-09-03T16:35:57.900000Z",
-    "window_weight":3.864262898763021
+    "window_weight":3.8643087281121149
   },
   {
     "absolute_endtime":"2010-09-03T17:15:43.900000Z",
@@ -150,10 +150,10 @@
     "cc_shift_in_seconds":0.5,
     "center_index":4571,
     "channel_id":"IU.KBL..BHR",
-    "dlnA":0.34011611342430115,
+    "dlnA":0.34011590480804443,
     "dt":0.5,
     "left_index":4370,
-    "max_cc_value":0.9845609664916992,
+    "max_cc_value":0.9845608472824097,
     "min_period":27.0,
     "phase_arrivals":[
       {
@@ -185,7 +185,7 @@
     "relative_starttime":2185.0,
     "right_index":4772,
     "time_of_first_sample":"2010-09-03T16:35:57.900000Z",
-    "window_weight":7.3295094172159834
+    "window_weight":7.3295085297690497
   },
   {
     "absolute_endtime":"2010-09-03T17:19:57.900000Z",
@@ -194,16 +194,16 @@
     "cc_shift_in_seconds":2.5,
     "center_index":5100,
     "channel_id":"IU.KBL..BHR",
-    "dlnA":0.32002359628677368,
+    "dlnA":0.3200240433216095,
     "dt":0.5,
     "left_index":4921,
-    "max_cc_value":0.8598634004592896,
+    "max_cc_value":0.8598626852035522,
     "min_period":27.0,
     "phase_arrivals":[],
     "relative_endtime":2640.0,
     "relative_starttime":2460.5,
     "right_index":5280,
     "time_of_first_sample":"2010-09-03T16:35:57.900000Z",
-    "window_weight":5.7164992734237954
+    "window_weight":5.7164945182976901
   }
 ]

@@ -36,25 +36,36 @@ def test_check_array():
 
 
 def test_flex_cut_trace():
-    st = obspy.read(small_mseed)
-    tr = st[0]
-    tstart = tr.stats.starttime
-    tend = tr.stats.endtime
-    npts = tr.stats.npts
-    dt = tr.stats.delta
 
+    st = obspy.read(small_mseed)
+    tr_old = st[0]
+    tstart = tr_old.stats.starttime
+    tend = tr_old.stats.endtime
+    npts = tr_old.stats.npts
+    dt = tr_old.stats.delta
+
+    tr = tr_old.copy()
     t1 = tstart + int(npts / 4) * dt
     t2 = tend - int(npts / 4) * dt
-    tr_cut = proc.flex_cut_trace(tr, t1, t2)
-    assert tr_cut.stats.starttime == t1
-    assert tr_cut.stats.endtime == t2
+    proc.flex_cut_trace(tr, t1, t2)
+    assert tr.stats.starttime == t1
+    assert tr.stats.endtime == t2
 
+    tr = tr_old.copy()
+    t1 = tstart + 20 * dt
+    t2 = tend - 20 * dt
+    proc.flex_cut_trace(tr, t1, t2, dynamic_npts=10)
+    assert tr.stats.starttime == (t1 - 10 * dt)
+    assert tr.stats.endtime == (t2 + 10 * dt)
+
+    tr = tr_old.copy()
     t1 = tstart - int(npts / 4) * dt
     t2 = tend + int(npts / 4) * dt
-    tr_cut = proc.flex_cut_trace(tr, t1, t2)
-    assert tr_cut.stats.starttime == tstart
-    assert tr_cut.stats.endtime == tend
+    proc.flex_cut_trace(tr, t1, t2)
+    assert tr.stats.starttime == tstart
+    assert tr.stats.endtime == tend
 
+    tr = tr_old.copy()
     t1 = tstart + int(npts * 0.8) * dt
     t2 = tend - int(npts * 0.8) * dt
     with pytest.raises(ValueError):
@@ -65,13 +76,14 @@ def test_flex_cut_stream():
     st = obspy.read(small_mseed)
     tstart = st[0].stats.starttime
     tend = st[0].stats.endtime
-    t1 = tstart + 10
-    t2 = tend - 10
-    dynamic_length = 5
-    st = proc.flex_cut_stream(st, t1, t2, dynamic_length=dynamic_length)
+    dt = st[0].stats.delta
+    t1 = tstart + 100 * dt
+    t2 = tend - 100 * dt
+    dynamic_npts = 5
+    proc.flex_cut_stream(st, t1, t2, dynamic_npts=dynamic_npts)
     for tr in st:
-        assert tr.stats.starttime == t1 - dynamic_length
-        assert tr.stats.endtime == t2 + dynamic_length
+        assert tr.stats.starttime == t1 - dynamic_npts * dt
+        assert tr.stats.endtime == t2 + dynamic_npts * dt
 
 
 def test_filter_trace():

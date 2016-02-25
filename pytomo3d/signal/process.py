@@ -11,9 +11,9 @@ Methods that handles signal data processing
 """
 
 from __future__ import (division, print_function, absolute_import)
-import obspy
 from obspy.signal.invsim import c_sac_taper
 from obspy.signal.util import _npts2nfft
+from obspy import Stream, Trace
 import numpy as np
 from .rotate import rotate_stream
 
@@ -35,7 +35,7 @@ def check_array_order(array, order="ascending"):
     return (array == sorted(array)).all()
 
 
-def flex_cut_trace(trace, cut_starttime, cut_endtime):
+def flex_cut_trace(trace, cut_starttime, cut_endtime, dynamic_npts=0):
     """
     not cut strictly(but also based on the original trace length)
 
@@ -46,43 +46,33 @@ def flex_cut_trace(trace, cut_starttime, cut_endtime):
     :param cut_endtime: endtime of cutting
     :type cut_endtime: obspy.UTCDateTime
     """
-    if not isinstance(trace, obspy.Trace):
-        raise ValueError("cut_trace method only accepts obspy.Trace"
-                         "as the first argument")
+    if not isinstance(trace, Trace):
+        raise TypeError("flex_cut_trace method only accepts obspy.Trace "
+                        "as the first argument")
 
-    starttime = trace.stats.starttime
-    endtime = trace.stats.endtime
-    cut_starttime = max(starttime, cut_starttime)
-    cut_endtime = min(endtime, cut_endtime)
-    if cut_starttime > cut_endtime:
-        raise ValueError("Cut starttime is larger than cut endtime")
-    return trace.slice(cut_starttime, cut_endtime)
+    delta = trace.stats.delta
+    cut_starttime = cut_starttime - dynamic_npts * delta
+    cut_endtime = cut_endtime + dynamic_npts * delta
+    trace.trim(cut_starttime, cut_endtime)
 
 
-def flex_cut_stream(st, cut_start, cut_end, dynamic_length=10.0):
+def flex_cut_stream(st, cut_start, cut_end, dynamic_npts=0):
     """
     Flexible cut stream
 
     :param st: input stream
     :param cut_start: cut starttime
     :param cut_end: cut endtime
-    :param dynamic_length: the dynamic length before cut_start and after
+    :param dynamic_npts: the dynamic number of points before cut_start
+        and after
         cut_end
     :return:
     """
-    t1 = cut_start - dynamic_length
-    t2 = cut_end + dynamic_length
-
-    if isinstance(st, obspy.Trace):
-        return flex_cut_trace(st, t1, t2)
-    elif isinstance(st, obspy.Stream):
-        tr_list = []
-        for tr in st:
-            tr_list.append(flex_cut_trace(tr, t1, t2))
-        return obspy.Stream(traces=tr_list)
-    else:
-        raise ValueError("cut_func method only accepts obspy. Trace or"
-                         "obspy.Stream as the first Argument")
+    if not isinstance(st, Stream):
+        raise TypeError("flex_cut_stream method only accepts obspy.Stream "
+                        "the first Argument")
+    for tr in st:
+        flex_cut_trace(tr, cut_start, cut_end, dynamic_npts=dynamic_npts)
 
 
 def filter_stream(st, pre_filt):
@@ -93,8 +83,8 @@ def filter_stream(st, pre_filt):
     :param per_filt:
     :return:
     """
-    if not isinstance(st, obspy.Stream):
-        raise ValueError("Input st should be type of Stream")
+    if not isinstance(st, Stream):
+        raise TypeError("Input st should be type of Stream")
     for tr in st:
         filter_trace(tr, pre_filt)
 
@@ -110,8 +100,8 @@ def filter_trace(tr, pre_filt):
     :type pre_filt: Numpy.array or list
     :return: filtered trace
     """
-    if not isinstance(tr, obspy.Trace):
-        raise ValueError("First Argument should be trace: %s" % type(tr))
+    if not isinstance(tr, Trace):
+        raise TypeError("First Argument should be trace: %s" % type(tr))
 
     if not check_array_order(pre_filt):
         raise ValueError("Frequency band should be in ascending order: %s"
@@ -133,6 +123,25 @@ def filter_trace(tr, pre_filt):
     data = np.fft.irfft(data)[0:len(data)]
     # assign processed data and store processing information
     tr.data = data
+
+
+def interpolate_stream(stream, sampling_rate, starttime=None, npts=None):
+    """
+    For a fairly large stream, use stream.interpolate() is not a wise
+    choice since if there is one trace fails, then the whole interpolation
+    will stop. So it is better to operate interpolation on the trace
+    level
+    """
+    st_new = Stream()
+    if not isinstance(stream, Stream):
+        raise TypeError("Input stream must be type of obspy.Stream")
+    for tr in stream:
+        try:
+            tr.interpolate(sampling_rate, starttime=starttime, npts=npts)
+            st_new.append(tr)
+        except ValueError as err:
+            print("Error message from interpolation:%s" % err)
+    return st_new
 
 
 def process(st, remove_response_flag=False, inventory=None,
@@ -183,13 +192,17 @@ def process(st, remove_response_flag=False, inventory=None,
     :type event_longitude: float
     :return: processed stream
     """
-    if not isinstance(st, obspy.Stream) and not isinstance(st, obspy.Trace):
-        raise ValueError("Input seismogram should be either obspy.Stream "
-                         "or obspy.Trace")
+    # keep an old copy
+    _st = st
+    if not isinstance(st, Stream) and not isinstance(st, Trace):
+        raise TypeError("Input seismogram should be either obspy.Stream "
+                        "or obspy.Trace")
+    if isinstance(st, Trace):
+        st = Stream(traces=[st, ])
 
     # cut the stream out before processing to reduce computation
     if starttime is not None and endtime is not None:
-        flex_cut_stream(st, starttime, endtime)
+        flex_cut_stream(st, starttime, endtime, dynamic_npts=10)
 
     # detrend ,demean, taper
     st.detrend("linear")
@@ -234,31 +247,31 @@ def process(st, remove_response_flag=False, inventory=None,
         if sampling_rate is None:
             raise ValueError("sampling rate should be provided if you set"
                              "resample_flag=True")
+
         if endtime is not None and starttime is not None:
             npts = int((endtime - starttime) * sampling_rate) + 1
-            st.interpolate(sampling_rate=sampling_rate,
-                           starttime=starttime,
-                           npts=npts)
+            st = interpolate_stream(st, sampling_rate, starttime=starttime,
+                                    npts=npts)
         else:
-            st.interpolate(sampling_rate=sampling_rate,
-                           starttime=starttime)
+            # it doesn't matter if starttime is None or not, cause
+            # obspy will handle this case
+            st = interpolate_stream(st, sampling_rate, starttime=starttime)
     else:
         if starttime is not None and endtime is not None:
             # just cut
             st.trim(starttime, endtime)
 
-    if isinstance(st, obspy.Trace):
-        if rotate_flag:
-            raise ValueError("Rotation could not be performed on the "
-                             "obspy.Trace. Please turn the rotate_flag "
-                             "to False.")
-        st.data = np.require(st.data, dtype="float32")
-    elif isinstance(st, obspy.Stream):
-        if rotate_flag:
-            rotate_stream(st, event_latitude, event_longitude,
-                          inventory=inventory, mode="ALL")
-        # Convert to single precision to save space.
-        for tr in st:
-            tr.data = np.require(tr.data, dtype="float32")
+    # rotate
+    if rotate_flag:
+        rotate_stream(st, event_latitude, event_longitude,
+                      inventory=inventory, mode="ALL")
+
+    # Convert to single precision to save space.
+    for tr in st:
+        tr.data = np.require(tr.data, dtype="float32")
+
+    # transfer back to trace if input type is Trace
+    if isinstance(_st, Trace):
+        st = st[0]
 
     return st

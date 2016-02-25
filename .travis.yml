@@ -19,7 +19,7 @@ before_install:
     - conda create -n condaenv python=$TRAVIS_PYTHON_VERSION
     - conda install -n condaenv pip
     - source activate condaenv
-    - conda install -c obspy obspy
+    - conda install -c obspy obspy=0.10.2
     - conda install python=$TRAVIS_PYTHON_VERSION pyyaml
     - conda install python=$TRAVIS_PYTHON_VERSION atlas numpy scipy matplotlib nose pytest flake8 sphinx lxml sqlalchemy mock future yaml
     - pip install --user -r requirements.txt
