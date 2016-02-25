@@ -15,49 +15,49 @@ Wenjie: If you are new to python, [anaconda](https://www.continuum.io/downloads)
 1. downwnload Anaconda for Python 2.7 and 64 bit Linux and install it (http://continuum.io/downloads)(**optional**)
 
 2. install obspy using anaconda.
-```
-conda install -c obspy obspy
-```
+  ```
+  conda install -c obspy obspy
+  ```
 
-Or install from source code:
-```
-git clone https://github.com/obspy/obspy.git
-cd obspy
-pip install -v -e .
-cd ..
-```
+  Or install from source code:
+  ```
+  git clone https://github.com/obspy/obspy.git
+  cd obspy
+  pip install -v -e .
+  cd ..
+  ```
 
 3. install pyflex.
-```
-git clone --branch devel https://github.com/wjlei1990/pyflex 
-cd pyflex
-pip install -v -e .
-cd ..
-```
+  ```
+  git clone --branch devel https://github.com/wjlei1990/pyflex 
+  cd pyflex
+  pip install -v -e .
+  cd ..
+  ```
 
 4. Install pyadjoint
-```
-git clone --branch dev https://github.com/chukren/pyadjoint 
-cd pyadjoint
-pip install -v -e .
-cd ..
-```
+  ```
+  git clone --branch dev https://github.com/chukren/pyadjoint 
+  cd pyadjoint
+  pip install -v -e .
+  cd ..
+  ```
 
 5. Install pytomo3d.
-```
-git clone https://github.com/wjlei1990/pytomo3d
-cd pytomo3d
-pip install -v -e .
-cd ..
-```
+  ```
+  git clone https://github.com/wjlei1990/pytomo3d
+  cd pytomo3d
+  pip install -v -e .
+  cd ..
+  ```
 
 ### Script installation
 
 Wenjie: recommended for experienced user
 
-```
-pip install -r requirements.txt
-```
+  ```
+  pip install -r requirements.txt
+  ```
 
 ---
 
