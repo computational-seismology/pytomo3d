@@ -107,13 +107,10 @@ def calculate_adjsrc_on_trace(obs, syn, window_time, config, adj_src_type,
         raise ValueError("Input windows dimension incorrect, dimention"
                          "(*, 2) expected")
 
-    try:
-        adjsrc = pyadjoint.calculate_adjoint_source(
-            adj_src_type=adj_src_type, observed=obs, synthetic=syn,
-            config=config, window=window_time, adjoint_src=adjoint_src_flag,
-            plot=figure_mode)
-    except:
-        adjsrc = None
+    adjsrc = pyadjoint.calculate_adjoint_source(
+        adj_src_type=adj_src_type, observed=obs, synthetic=syn,
+        config=config, window=window_time, adjoint_src=adjoint_src_flag,
+        plot=figure_mode)
 
     if figure_mode:
         if figure_dir is None:
