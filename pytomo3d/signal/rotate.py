@@ -8,8 +8,7 @@ Methods that handles rotation of seismograms
     GNU General Public License, Version 3
     (http://www.gnu.org/copyleft/gpl.html)
 """
-
-
+from __future__ import print_function
 from obspy.core.util.geodetics import gps2DistAzimuth
 from math import pi, cos, sin
 from obspy import Stream
@@ -283,8 +282,13 @@ def rotate_one_station_stream(st, event_latitude, event_longitude,
         nw = st[0].stats.network
         station = st[0].stats.station
         _inv = inventory.select(network=nw, station=station)
-        station_latitude = float(_inv[0][0].latitude)
-        station_longitude = float(_inv[0][0].longitude)
+        try:
+            station_latitude = float(_inv[0][0].latitude)
+            station_longitude = float(_inv[0][0].longitude)
+        except Exception as err:
+            print("Error extracting station('%s.%s') info:%s"
+                  % (nw, station, err))
+            return
 
     mode = mode.upper()
     if mode not in ["NE", "ALL", "12"]:
@@ -303,14 +307,14 @@ def rotate_one_station_stream(st, event_latitude, event_longitude,
             try:
                 st.rotate(method="NE->RT", back_azimuth=baz)
             except Exception as e:
-                print e
+                print("Error rotating NE->RT:%s" % e)
 
     if mode in ["12", "ALL"]:
         if "1" in components and "2" in components:
             try:
                 rotate_12_RT_func(st, inventory, back_azimuth=baz)
             except Exception as e:
-                print e
+                print("Error rotating 12->RT:%s" % e)
 
 
 def sort_stream_by_station(st):
@@ -377,8 +381,14 @@ def rotate_stream(st, event_latitude, event_longitude,
             nw = sta_stream[0].stats.network
             station = sta_stream[0].stats.station
             loc = sta_stream[0].stats.location
-            station_inv = inventory.select(network=nw, station=station,
-                                           location=loc)
+
+            if loc == "S3":
+                # SPECFEM TUNE
+                station_inv = inventory.select(network=nw, station=station)
+            else:
+                station_inv = inventory.select(network=nw, station=station,
+                                               location=loc)
+
             rotate_one_station_stream(sta_stream, event_latitude,
                                       event_longitude, inventory=station_inv,
                                       mode=mode)
