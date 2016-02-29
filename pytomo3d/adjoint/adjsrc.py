@@ -200,7 +200,7 @@ def calculate_baz(elat, elon, slat, slon):
     :return: back azimuth
     """
 
-    _, baz, _ = gps2DistAzimuth(elat, elon, slat, slon)
+    _, _, baz = gps2DistAzimuth(elat, elon, slat, slon)
 
     return baz
 

@@ -315,8 +315,8 @@ def rotate_stream(st, event_latitude, event_longitude,
         raise ValueError("Mode %s required inventory(stationxml) "
                          "information provided" % mode)
 
-    _, baz, _ = gps2DistAzimuth(station_latitude, station_longitude,
-                                event_latitude, event_longitude)
+    _, _, baz = gps2DistAzimuth(event_latitude, event_longitude,
+                                station_latitude, station_longitude)
 
     components = [tr.stats.channel[-1] for tr in st]
 
