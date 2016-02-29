@@ -12,6 +12,7 @@ Welcome to pytomo3d's documentation!
    :maxdepth: 2
 
    intro
+   install
    tutorial
 
 

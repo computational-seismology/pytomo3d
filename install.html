@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Python Module Index &mdash; pytomo3d 0.1.0 documentation</title>
+  <title>Installation &mdash; pytomo3d 0.1.0 documentation</title>
   
 
   
@@ -31,9 +31,8 @@
 
   
     <link rel="top" title="pytomo3d 0.1.0 documentation" href="index.html"/>
- 
-
-
+        <link rel="next" title="Tutorial" href="tutorial.html"/>
+        <link rel="prev" title="Introduction" href="intro.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -82,9 +81,9 @@
           
             
             
-                <ul>
+                <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="intro.html">Introduction</a></li>
-<li class="toctree-l1"><a class="reference internal" href="install.html">Installation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
 </ul>
 
@@ -116,9 +115,11 @@
   <ul class="wy-breadcrumbs">
     <li><a href="index.html">Docs</a> &raquo;</li>
       
-    <li></li>
+    <li>Installation</li>
       <li class="wy-breadcrumbs-aside">
         
+          
+            <a href="_sources/install.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -128,74 +129,39 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-
-   <h1>Python Module Index</h1>
-
-   <div class="modindex-jumpbox">
-   <a href="#cap-p"><strong>p</strong></a>
-   </div>
-
-   <table class="indextable modindextable" cellspacing="0" cellpadding="2">
-     <tr class="pcap"><td></td><td>&nbsp;</td><td></td></tr>
-     <tr class="cap" id="cap-p"><td></td><td>
-       <strong>p</strong></td><td></td></tr>
-     <tr>
-       <td><img src="_static/minus.png" class="toggler"
-              id="toggle-1" style="display: none" alt="-" /></td>
-       <td>
-       <a href="pytomo3d.html#module-pytomo3d"><tt class="xref">pytomo3d</tt></a></td><td>
-       <em></em></td></tr>
-     <tr class="cg-1">
-       <td></td>
-       <td>&nbsp;&nbsp;&nbsp;
-       <a href="pytomo3d.adjoint.html#module-pytomo3d.adjoint"><tt class="xref">pytomo3d.adjoint</tt></a></td><td>
-       <em></em></td></tr>
-     <tr class="cg-1">
-       <td></td>
-       <td>&nbsp;&nbsp;&nbsp;
-       <a href="pytomo3d.adjoint.html#module-pytomo3d.adjoint.adjsrc"><tt class="xref">pytomo3d.adjoint.adjsrc</tt></a></td><td>
-       <em></em></td></tr>
-     <tr class="cg-1">
-       <td></td>
-       <td>&nbsp;&nbsp;&nbsp;
-       <a href="pytomo3d.adjoint.html#module-pytomo3d.adjoint.plot_util"><tt class="xref">pytomo3d.adjoint.plot_util</tt></a></td><td>
-       <em></em></td></tr>
-     <tr class="cg-1">
-       <td></td>
-       <td>&nbsp;&nbsp;&nbsp;
-       <a href="pytomo3d.signal.html#module-pytomo3d.signal"><tt class="xref">pytomo3d.signal</tt></a></td><td>
-       <em></em></td></tr>
-     <tr class="cg-1">
-       <td></td>
-       <td>&nbsp;&nbsp;&nbsp;
-       <a href="pytomo3d.signal.html#module-pytomo3d.signal.process"><tt class="xref">pytomo3d.signal.process</tt></a></td><td>
-       <em></em></td></tr>
-     <tr class="cg-1">
-       <td></td>
-       <td>&nbsp;&nbsp;&nbsp;
-       <a href="pytomo3d.signal.html#module-pytomo3d.signal.rotate"><tt class="xref">pytomo3d.signal.rotate</tt></a></td><td>
-       <em></em></td></tr>
-     <tr class="cg-1">
-       <td></td>
-       <td>&nbsp;&nbsp;&nbsp;
-       <a href="pytomo3d.window.html#module-pytomo3d.window"><tt class="xref">pytomo3d.window</tt></a></td><td>
-       <em></em></td></tr>
-     <tr class="cg-1">
-       <td></td>
-       <td>&nbsp;&nbsp;&nbsp;
-       <a href="pytomo3d.window.html#module-pytomo3d.window.window"><tt class="xref">pytomo3d.window.window</tt></a></td><td>
-       <em></em></td></tr>
-     <tr class="cg-1">
-       <td></td>
-       <td>&nbsp;&nbsp;&nbsp;
-       <a href="pytomo3d.window.html#module-pytomo3d.window.write_window"><tt class="xref">pytomo3d.window.write_window</tt></a></td><td>
-       <em></em></td></tr>
-   </table>
+  <div class="section" id="installation">
+<h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
+<p>Pytomo3d has dependency on <tt class="docutils literal"><span class="pre">obspy</span></tt> (version 0.10.2), <tt class="docutils literal"><span class="pre">pyflex</span></tt> and <tt class="docutils literal"><span class="pre">pyadjoint</span></tt>. Please
+install those packages first. To detailed instruction, check <a class="reference external" href="https://github.com/wjlei1990/pytomo3d/blob/master/INSTALL.md">INSTALL.md</a>.</p>
+<ol class="arabic">
+<li><p class="first">Install from source(recommended):</p>
+<div class="highlight-python"><div class="highlight"><pre>git clone https://github.com/wjlei1990/pytomo3d
+cd pytomo3d
+pip install -v -e .
+</pre></div>
+</div>
+</li>
+<li><p class="first">Install from pip:</p>
+<div class="highlight-python"><div class="highlight"><pre>pip install pytomo3d
+</pre></div>
+</div>
+</li>
+</ol>
+</div>
 
 
            </div>
           </div>
           <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="tutorial.html" class="btn btn-neutral float-right" title="Tutorial" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="intro.html" class="btn btn-neutral" title="Introduction" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
   
 
   <hr/>

@@ -1,48 +1,130 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
 
-<html xmlns="http://www.w3.org/1999/xhtml">
-  <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>pytomo3d.adjoint package &mdash; pytomo3d 0.1.0 documentation</title>
-    
-    <link rel="stylesheet" href="_static/default.css" type="text/css" />
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
-        VERSION:     '0.1.0',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
-      };
-    </script>
-    <script type="text/javascript" src="_static/jquery.js"></script>
-    <script type="text/javascript" src="_static/underscore.js"></script>
-    <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="pytomo3d 0.1.0 documentation" href="index.html" /> 
-  </head>
-  <body>
-    <div class="related">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li><a href="index.html">pytomo3d 0.1.0 documentation</a> &raquo;</li> 
-      </ul>
-    </div>  
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>pytomo3d.adjoint package &mdash; pytomo3d 0.1.0 documentation</title>
+  
 
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
-          <div class="body">
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+    <link rel="top" title="pytomo3d 0.1.0 documentation" href="index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> pytomo3d
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.1.0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="intro.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">pytomo3d</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>pytomo3d.adjoint package</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/pytomo3d.adjoint.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
             
   <div class="section" id="pytomo3d-adjoint-package">
 <h1>pytomo3d.adjoint package<a class="headerlink" href="#pytomo3d-adjoint-package" title="Permalink to this headline">¶</a></h1>
@@ -51,34 +133,21 @@
 </div>
 <div class="section" id="module-pytomo3d.adjoint.adjsrc">
 <span id="pytomo3d-adjoint-adjsrc-module"></span><h2>pytomo3d.adjoint.adjsrc module<a class="headerlink" href="#module-pytomo3d.adjoint.adjsrc" title="Permalink to this headline">¶</a></h2>
-<dl class="function">
-<dt id="pytomo3d.adjoint.adjsrc.adjsrc_function">
-<tt class="descclassname">pytomo3d.adjoint.adjsrc.</tt><tt class="descname">adjsrc_function</tt><big>(</big><em>observed</em>, <em>synthetic</em>, <em>windows</em>, <em>config</em>, <em>adj_src_type='multitaper_misfit'</em>, <em>figure_mode=False</em>, <em>figure_dir=None</em>, <em>_verbose=False</em><big>)</big><a class="reference internal" href="_modules/pytomo3d/adjoint/adjsrc.html#adjsrc_function"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytomo3d.adjoint.adjsrc.adjsrc_function" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calculate adjoint sources using the time windows selected by pyflex
-and stats the window information at the same time</p>
+<p>Methods that handles adjoint sources</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>observed</strong> (<em>An obspy.core.stream.Stream object.</em>) &#8211; Observed data for one station</li>
-<li><strong>synthetic</strong> (<em>An obspy.core.stream.Stream object</em>) &#8211; Synthetic data for one station</li>
-<li><strong>windows</strong> (<em>a dictionary instance with all time windows for each
-contained traces in the stream object.</em>) &#8211; window files for one station, produced by
-FLEXWIN/pyflexwin</li>
-<li><strong>config</strong> (<em>a class instance with all necessary constants/parameters</em>) &#8211; parameters</li>
-<li><strong>adj_src_type</strong> (<a class="reference external" href="http://docs.python.org/library/functions.html#str" title="(in Python v2.7)"><em>str</em></a>) &#8211; measurement type (&#8220;cc_traveltime_misfit&#8221;,
-&#8220;multitaper_misfit&#8221;, &#8220;waveform_misfit&#8221;)</li>
-</ul>
-</td>
+<tr class="field-odd field"><th class="field-name">copyright:</th><td class="field-body">Wenjie Lei (<a class="reference external" href="mailto:lei&#37;&#52;&#48;princeton&#46;edu">lei<span>&#64;</span>princeton<span>&#46;</span>edu</a>), 2016</td>
+</tr>
+<tr class="field-even field"><th class="field-name">license:</th><td class="field-body">GNU General Public License, Version 3
+(<a class="reference external" href="http://www.gnu.org/copyleft/gpl.html">http://www.gnu.org/copyleft/gpl.html</a>)</td>
 </tr>
 </tbody>
 </table>
-</dd></dl>
-
 <dl class="function">
 <dt id="pytomo3d.adjoint.adjsrc.calculate_adjsrc_on_stream">
-<tt class="descclassname">pytomo3d.adjoint.adjsrc.</tt><tt class="descname">calculate_adjsrc_on_stream</tt><big>(</big><em>observed</em>, <em>synthetic</em>, <em>windows</em>, <em>config</em>, <em>adj_src_type</em>, <em>figure_mode=False</em>, <em>adjoint_src_flag=True</em><big>)</big><a class="reference internal" href="_modules/pytomo3d/adjoint/adjsrc.html#calculate_adjsrc_on_stream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytomo3d.adjoint.adjsrc.calculate_adjsrc_on_stream" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">pytomo3d.adjoint.adjsrc.</tt><tt class="descname">calculate_adjsrc_on_stream</tt><big>(</big><em>observed</em>, <em>synthetic</em>, <em>windows</em>, <em>config</em>, <em>adj_src_type</em>, <em>figure_mode=False</em>, <em>figure_dir=None</em>, <em>adjoint_src_flag=True</em><big>)</big><a class="reference internal" href="_modules/pytomo3d/adjoint/adjsrc.html#calculate_adjsrc_on_stream"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytomo3d.adjoint.adjsrc.calculate_adjsrc_on_stream" title="Permalink to this definition">¶</a></dt>
 <dd><p>calculate adjoint source on a pair of stream and windows selected</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -108,7 +177,7 @@ to calculate adjoint sources</li>
 
 <dl class="function">
 <dt id="pytomo3d.adjoint.adjsrc.calculate_adjsrc_on_trace">
-<tt class="descclassname">pytomo3d.adjoint.adjsrc.</tt><tt class="descname">calculate_adjsrc_on_trace</tt><big>(</big><em>obs</em>, <em>syn</em>, <em>window_time</em>, <em>config</em>, <em>adj_src_type</em>, <em>adjoint_src_flag=True</em>, <em>figure_mode=False</em><big>)</big><a class="reference internal" href="_modules/pytomo3d/adjoint/adjsrc.html#calculate_adjsrc_on_trace"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytomo3d.adjoint.adjsrc.calculate_adjsrc_on_trace" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">pytomo3d.adjoint.adjsrc.</tt><tt class="descname">calculate_adjsrc_on_trace</tt><big>(</big><em>obs</em>, <em>syn</em>, <em>window_time</em>, <em>config</em>, <em>adj_src_type</em>, <em>figure_mode=False</em>, <em>figure_dir=None</em>, <em>adjoint_src_flag=True</em><big>)</big><a class="reference internal" href="_modules/pytomo3d/adjoint/adjsrc.html#calculate_adjsrc_on_trace"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytomo3d.adjoint.adjsrc.calculate_adjsrc_on_trace" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculate adjoint source on a pair of trace and windows selected</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -169,7 +238,7 @@ a adjoint source figure right after calculation</li>
 
 <dl class="function">
 <dt id="pytomo3d.adjoint.adjsrc.postprocess_adjsrc">
-<tt class="descclassname">pytomo3d.adjoint.adjsrc.</tt><tt class="descname">postprocess_adjsrc</tt><big>(</big><em>adjsrcs</em>, <em>adj_starttime</em>, <em>interp_starttime</em>, <em>interp_delta</em>, <em>interp_npts</em>, <em>rotate_flag=False</em>, <em>inventory=None</em>, <em>event=None</em>, <em>sum_over_comp_flag=False</em>, <em>weight_flag=False</em>, <em>weight_dict=None</em><big>)</big><a class="reference internal" href="_modules/pytomo3d/adjoint/adjsrc.html#postprocess_adjsrc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytomo3d.adjoint.adjsrc.postprocess_adjsrc" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">pytomo3d.adjoint.adjsrc.</tt><tt class="descname">postprocess_adjsrc</tt><big>(</big><em>adjsrcs</em>, <em>interp_starttime</em>, <em>interp_delta</em>, <em>interp_npts</em>, <em>rotate_flag=False</em>, <em>inventory=None</em>, <em>event=None</em>, <em>sum_over_comp_flag=False</em>, <em>weight_flag=False</em>, <em>weight_dict=None</em>, <em>filter_flag=False</em>, <em>pre_filt=None</em><big>)</big><a class="reference internal" href="_modules/pytomo3d/adjoint/adjsrc.html#postprocess_adjsrc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytomo3d.adjoint.adjsrc.postprocess_adjsrc" title="Permalink to this definition">¶</a></dt>
 <dd><p>Postprocess adjoint sources to fit SPECFEM input(same as raw_synthetic)
 1) zero padding the adjoint sources
 2) interpolation
@@ -237,6 +306,18 @@ together, like &#8220;II.AAK.00.BHZ&#8221; and &#8220;II.AAK.10.BHZ&#8221; to fo
 </div>
 <div class="section" id="module-pytomo3d.adjoint.plot_util">
 <span id="pytomo3d-adjoint-plot-util-module"></span><h2>pytomo3d.adjoint.plot_util module<a class="headerlink" href="#module-pytomo3d.adjoint.plot_util" title="Permalink to this headline">¶</a></h2>
+<p>Methods that handles plotting adjoint sources</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">copyright:</th><td class="field-body">Wenjie Lei (<a class="reference external" href="mailto:lei&#37;&#52;&#48;princeton&#46;edu">lei<span>&#64;</span>princeton<span>&#46;</span>edu</a>), 2016</td>
+</tr>
+<tr class="field-even field"><th class="field-name">license:</th><td class="field-body">GNU General Public License, Version 3
+(<a class="reference external" href="http://www.gnu.org/copyleft/gpl.html">http://www.gnu.org/copyleft/gpl.html</a>)</td>
+</tr>
+</tbody>
+</table>
 <dl class="function">
 <dt id="pytomo3d.adjoint.plot_util.plot_adjoint_and_data">
 <tt class="descclassname">pytomo3d.adjoint.plot_util.</tt><tt class="descname">plot_adjoint_and_data</tt><big>(</big><em>adjsrc</em>, <em>win_times</em>, <em>obs_tr</em>, <em>syn_tr</em><big>)</big><a class="reference internal" href="_modules/pytomo3d/adjoint/plot_util.html#plot_adjoint_and_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pytomo3d.adjoint.plot_util.plot_adjoint_and_data" title="Permalink to this definition">¶</a></dt>
@@ -274,59 +355,62 @@ together, like &#8220;II.AAK.00.BHZ&#8221; and &#8220;II.AAK.10.BHZ&#8221; to fo
 </div>
 
 
+           </div>
           </div>
-        </div>
-      </div>
-      <div class="sphinxsidebar">
-        <div class="sphinxsidebarwrapper">
-  <h3><a href="index.html">Table Of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">pytomo3d.adjoint package</a><ul>
-<li><a class="reference internal" href="#submodules">Submodules</a></li>
-<li><a class="reference internal" href="#module-pytomo3d.adjoint.adjsrc">pytomo3d.adjoint.adjsrc module</a></li>
-<li><a class="reference internal" href="#module-pytomo3d.adjoint.plot_util">pytomo3d.adjoint.plot_util module</a></li>
-<li><a class="reference internal" href="#module-pytomo3d.adjoint">Module contents</a></li>
-</ul>
-</li>
-</ul>
+          <footer>
+  
 
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="_sources/pytomo3d.adjoint.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
-  <h3>Quick search</h3>
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" />
-      <input type="submit" value="Go" />
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
-    <p class="searchtip" style="font-size: 90%">
-    Enter search terms or a module, class or function name.
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Wenjie Lei.
+
     </p>
-</div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
         </div>
       </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="related">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             >index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li><a href="index.html">pytomo3d 0.1.0 documentation</a> &raquo;</li> 
-      </ul>
-    </div>
-    <div class="footer">
-        &copy; Copyright 2016, Wenjie Lei.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
-    </div>
-  </body>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.1.0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
 </html>
