@@ -72,7 +72,7 @@ def plot_two_trace(tr1, tr2, trace1_tag="trace 1", trace2_tag="trace 2",
 
     bt = t1 - t_ref
     times1 = [bt + i * tr1.stats.delta for i in range(tr1.stats.npts)]
-    plt.plot(times1, tr1.data, linestyle='', color='r', marker="*",
+    plt.plot(times1, tr1.data, linestyle='-', color='r', marker="*",
              markersize=3, label=trace1_tag, markerfacecolor='r',
              markeredgecolor='none')
 

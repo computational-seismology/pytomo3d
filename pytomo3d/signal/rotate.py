@@ -12,6 +12,7 @@ Methods that handles rotation of seismograms
 
 from obspy.core.util.geodetics import gps2DistAzimuth
 from math import pi, cos, sin
+from obspy import Stream
 
 
 SMALL_DEGREE = 0.01
@@ -274,39 +275,16 @@ def rotate_12_RT_func(st, inv, method="12->RT", back_azimuth=None):
     return st
 
 
-def rotate_stream(st, event_latitude, event_longitude,
-                  station_latitude=None, station_longitude=None,
-                  inventory=None, mode="ALL"):
-    """
-    Rotate a stream to radial and transverse components based on the
-    station information and event information
+def rotate_one_station_stream(st, event_latitude, event_longitude,
+                              station_latitude=None, station_longitude=None,
+                              inventory=None, mode="ALL"):
 
-    :param st: input stream
-    :type st: obspy.Stream
-    :param event_latitude: event latitude
-    :type event_latitude: float
-    :param event_longitude: event longitude
-    :type event_longitude: float
-    :param station_latitude: station latitude. If not provided, extract
-        information from inventory
-    :type station_latitude: float
-    :param station_longitude: station longitude. If not provided, extrace
-        information from inventory
-    :type station_longitude: float
-    :param inv: station inventory information. If you want to rotate
-    "12" components, you need to provide inventory since only station
-    and station_longitude is not enough.
-    :type inv: obspy.Inventory
-    :param mode: rotation mode, could be one of:
-        1) "NE": rotate only North and East channel to RT
-        2) "12": rotate only 1 and 2 channel, like "BH1" and "BH2" to RT
-        3) "all": rotate all components to RT
-    :return: rotated stream(obspy.Stream)
-    """
-
-    if station_longitude is None or station_latitude is None:
-        station_latitude = float(inventory[0][0].latitude)
-        station_longitude = float(inventory[0][0].longitude)
+    if station_latitude is None or station_longitude is None:
+        nw = st[0].stats.network
+        station = st[0].stats.station
+        _inv = inventory.select(network=nw, station=station)
+        station_latitude = float(_inv[0][0].latitude)
+        station_longitude = float(_inv[0][0].longitude)
 
     mode = mode.upper()
     if mode not in ["NE", "ALL", "12"]:
@@ -333,3 +311,76 @@ def rotate_stream(st, event_latitude, event_longitude,
                 rotate_12_RT_func(st, inventory, back_azimuth=baz)
             except Exception as e:
                 print e
+
+
+def sort_stream_by_station(st):
+    ntotal = len(st)
+    sta_dict = {}
+    n_added = 0
+    for tr in st:
+        nw = tr.stats.network
+        station = tr.stats.station
+        loc = tr.stats.location
+        station_id = "%s.%s.%s" % (nw, station, loc)
+        if station_id not in sta_dict:
+            sta_dict[station_id] = st.select(network=nw, station=station,
+                                             location=loc)
+            n_added += len(sta_dict[station_id])
+
+    if n_added != ntotal:
+        raise ValueError("Sort stream by station errors: number of traces "
+                         "is inconsistent")
+    return sta_dict
+
+
+def rotate_stream(st, event_latitude, event_longitude,
+                  inventory=None, mode="ALL"):
+    """
+    Rotate a stream to radial and transverse components based on the
+    station information and event information
+
+    :param st: input stream
+    :type st: obspy.Stream
+    :param event_latitude: event latitude
+    :type event_latitude: float
+    :param event_longitude: event longitude
+    :type event_longitude: float
+    :param inv: station inventory information. If you want to rotate
+    "12" components, you need to provide inventory since only station
+    and station_longitude is not enough.
+    :type inv: obspy.Inventory
+    :param mode: rotation mode, could be one of:
+        1) "NE": rotate only North and East channel to RT
+        2) "12": rotate only 1 and 2 channel, like "BH1" and "BH2" to RT
+        3) "all": rotate all components to RT
+    :return: rotated stream(obspy.Stream)
+    """
+
+    rotated_stream = Stream()
+
+    mode = mode.upper()
+    if mode not in ["NE", "ALL", "12"]:
+        raise ValueError("rotate_stream supports mode: 1) 12; 2) NE; 3) ALL")
+    if mode in ["12", "ALL"] and inventory is None:
+        raise ValueError("Mode %s required inventory(stationxml) "
+                         "information provided" % mode)
+
+    sorted_st_dict = sort_stream_by_station(st)
+
+    if len(sorted_st_dict) == 1:
+        # if there is only one station
+        rotate_one_station_stream(st, event_latitude, event_longitude,
+                                  inventory=inventory, mode=mode)
+    else:
+        # if there are multiple stations
+        for sta_stream in sorted_st_dict.itervalues():
+            nw = sta_stream[0].stats.network
+            station = sta_stream[0].stats.station
+            loc = sta_stream[0].stats.location
+            station_inv = inventory.select(network=nw, station=station,
+                                           location=loc)
+            rotate_one_station_stream(sta_stream, event_latitude,
+                                      event_longitude, inventory=station_inv,
+                                      mode=mode)
+            rotated_stream += sta_stream
+            st = rotated_stream
