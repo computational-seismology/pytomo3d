@@ -32,15 +32,16 @@ Wenjie: If you are new to python, [anaconda](https://www.continuum.io/downloads)
   ```
   git clone --branch devel https://github.com/wjlei1990/pyflex 
   cd pyflex
-  pip install -v -e .
+  pip install -v -e . (--user)
   cd ..
   ```
-
+  **If you *pip* tool is from system module, please add `--user` at installation to make sure it is installed at your home directory. If you install conda yourself, then you don't need to do this.**
+  
 4. Install pyadjoint
   ```
   git clone --branch dev https://github.com/chukren/pyadjoint 
   cd pyadjoint
-  pip install -v -e .
+  pip install -v -e . (--user)
   cd ..
   ```
 
