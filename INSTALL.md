@@ -24,9 +24,10 @@ Wenjie: If you are new to python, [anaconda](https://www.continuum.io/downloads)
   ```
   git clone https://github.com/obspy/obspy.git
   cd obspy
-  pip install -v -e .
+  pip install -v -e . (--user)
   cd ..
   ```
+  **If you *pip* tool is from system module, please add `--user` at installation to make sure it is installed at your home directory. If you install conda yourself, then you don't need to do this.**
 
 3. install pyflex.
   ```
@@ -35,7 +36,7 @@ Wenjie: If you are new to python, [anaconda](https://www.continuum.io/downloads)
   pip install -v -e . (--user)
   cd ..
   ```
-  **If you *pip* tool is from system module, please add `--user` at installation to make sure it is installed at your home directory. If you install conda yourself, then you don't need to do this.**
+
   
 4. Install pyadjoint
   ```
@@ -49,7 +50,7 @@ Wenjie: If you are new to python, [anaconda](https://www.continuum.io/downloads)
   ```
   git clone https://github.com/wjlei1990/pytomo3d
   cd pytomo3d
-  pip install -v -e .
+  pip install -v -e . (--user)
   cd ..
   ```
 
