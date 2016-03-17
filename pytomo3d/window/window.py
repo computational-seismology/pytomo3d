@@ -159,10 +159,6 @@ def window_on_stream(observed, synthetic, config_dict, station=None,
                 event=event, _verbose=_verbose,
                 figure_mode=figure_mode, figure_dir=figure_dir)
 
-            if _verbose:
-                print("Station %s picked %i windows" % (
-                    obs_tr.id, len(windows)))
-
             if windows is None or len(windows) == 0:
                 continue
             all_windows.append(windows)

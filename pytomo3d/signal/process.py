@@ -140,7 +140,7 @@ def interpolate_stream(stream, sampling_rate, starttime=None, npts=None):
             tr.interpolate(sampling_rate, starttime=starttime, npts=npts)
             st_new.append(tr)
         except ValueError as err:
-            print("Error message from interpolation:%s" % err)
+            print("Error in interpolation on '%s':%s" % (tr.id, err))
     return st_new
 
 
