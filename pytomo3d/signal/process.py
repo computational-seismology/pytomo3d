@@ -264,7 +264,7 @@ def process(st, remove_response_flag=False, inventory=None,
     # rotate
     if rotate_flag:
         rotate_stream(st, event_latitude, event_longitude,
-                      inventory=inventory, mode="ALL")
+                      inventory=inventory, mode="ALL->RT")
 
     # Convert to single precision to save space.
     for tr in st:

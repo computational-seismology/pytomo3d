@@ -276,7 +276,13 @@ def rotate_12_RT_func(st, inv, method="12->RT", back_azimuth=None):
 
 def rotate_one_station_stream(st, event_latitude, event_longitude,
                               station_latitude=None, station_longitude=None,
-                              inventory=None, mode="ALL"):
+                              inventory=None, mode="ALL->RT"):
+
+    mode = mode.upper()
+    mode_options = ["NE->RT", "ALL->RT", "12->RT", "RT->NE"]
+    if mode not in mode_options:
+        raise ValueError("rotate_stream mode(%s) should be within %s"
+                         % (mode, mode_options))
 
     if station_latitude is None or station_longitude is None:
         nw = st[0].stats.network
@@ -290,31 +296,27 @@ def rotate_one_station_stream(st, event_latitude, event_longitude,
                   % (nw, station, err))
             return
 
-    mode = mode.upper()
-    if mode not in ["NE", "ALL", "12"]:
-        raise ValueError("rotate_stream supports mode: 1) 12; 2) NE; 3) ALL")
-    if mode in ["12", "ALL"] and inventory is None:
-        raise ValueError("Mode %s required inventory(stationxml) "
-                         "information provided" % mode)
-
     _, _, baz = gps2DistAzimuth(event_latitude, event_longitude,
                                 station_latitude, station_longitude)
 
     components = [tr.stats.channel[-1] for tr in st]
 
-    if mode in ["NE", "ALL"]:
+    if mode in ["NE->RT", "ALL->RT"]:
         if "N" in components and "E" in components:
             try:
                 st.rotate(method="NE->RT", back_azimuth=baz)
             except Exception as e:
                 print("Error rotating NE->RT:%s" % e)
 
-    if mode in ["12", "ALL"]:
+    if mode in ["12->RT", "ALL->RT"]:
         if "1" in components and "2" in components:
             try:
                 rotate_12_RT_func(st, inventory, back_azimuth=baz)
             except Exception as e:
                 print("Error rotating 12->RT:%s" % e)
+
+    if mode in ["RT->NE"]:
+        st.rotate(method="RT->NE", back_azimuth=baz)
 
 
 def sort_stream_by_station(st):
@@ -338,7 +340,7 @@ def sort_stream_by_station(st):
 
 
 def rotate_stream(st, event_latitude, event_longitude,
-                  inventory=None, mode="ALL"):
+                  inventory=None, mode="ALL->RT"):
     """
     Rotate a stream to radial and transverse components based on the
     station information and event information
@@ -354,20 +356,24 @@ def rotate_stream(st, event_latitude, event_longitude,
     and station_longitude is not enough.
     :type inv: obspy.Inventory
     :param mode: rotation mode, could be one of:
-        1) "NE": rotate only North and East channel to RT
-        2) "12": rotate only 1 and 2 channel, like "BH1" and "BH2" to RT
-        3) "all": rotate all components to RT
+        1) "NE->RT": rotate only North and East channel to RT
+        2) "12->RT": rotate only 1 and 2 channel, like "BH1" and "BH2" to RT
+        3) "ALL->RT": rotate all components to RT
+        4) "RT->NE": rotate RT to NE
     :return: rotated stream(obspy.Stream)
     """
 
     rotated_stream = Stream()
 
     mode = mode.upper()
-    if mode not in ["NE", "ALL", "12"]:
-        raise ValueError("rotate_stream supports mode: 1) 12; 2) NE; 3) ALL")
-    if mode in ["12", "ALL"] and inventory is None:
+    mode_options = ["NE->RT", "ALL->RT", "12->RT", "RT->NE"]
+    if mode not in mode_options:
+        raise ValueError("rotate_stream mode(%s) should be within %s"
+                         % (mode, mode_options))
+
+    if mode in ["12->RT", "ALL->RT"] and inventory is None:
         raise ValueError("Mode %s required inventory(stationxml) "
-                         "information provided" % mode)
+                         "information provided(to rotate '12')" % mode)
 
     sorted_st_dict = sort_stream_by_station(st)
 
