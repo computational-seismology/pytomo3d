@@ -302,7 +302,6 @@ def process_adjoint(adjsrcs, interp_flag=False, interp_starttime=None,
 
     # transfer AdjointSource type to stream for easy processing
     adj_stream, adj_meta = convert_adjs_to_stream(adjsrcs)
-    print("adj meta:", adj_meta)
 
     if interp_flag:
         interp_adj_stream(adj_stream, interp_starttime, interp_delta,
