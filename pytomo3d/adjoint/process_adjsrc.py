@@ -34,6 +34,21 @@ def calculate_baz(elat, elon, slat, slon):
     return baz
 
 
+def change_channel_name(stream, channel_name):
+    for tr in stream:
+        tr.stats.channel = channel_name + tr.stats.channel[-1]
+
+
+def time_reverse_array(stream):
+    """
+    Time reverse the data array of stream. Pyadjoint output
+    is time-reversed version of adjoint source. However, as
+    SPECFEM adjoint input, we need to time reversed again.
+    """
+    for tr in stream:
+        tr.data = tr.data[::-1]
+
+
 def convert_adjs_to_stream(adjsrcs):
     """
     Convert adjoint sources into stream. So all obspy
@@ -151,7 +166,7 @@ def zero_padding_stream(stream, starttime, endtime):
         tr.stats.starttime = padding_starttime
 
 
-def sum_adj_on_component(adj_stream, weight_flag, weight_dict=None):
+def sum_adj_on_component(adj_stream, weight_flag=False, weight_dict=None):
     """
     Sum adjoint source on different channels but same component
     together, like "II.AAK.00.BHZ" and "II.AAK.10.BHZ" to form
@@ -164,7 +179,7 @@ def sum_adj_on_component(adj_stream, weight_flag, weight_dict=None):
          "T":{"II.AAK..BHT": 1.0}}
     :return: summed adjoint source stream
     """
-    if weight_dict is None:
+    if weight_flag and weight_dict is None:
         raise ValueError("weight_dict should be assigned if you want")
 
     new_stream = Stream()
@@ -200,7 +215,7 @@ def sum_adj_on_component(adj_stream, weight_flag, weight_dict=None):
     return new_stream
 
 
-def add_missing_components(stream, component_list):
+def add_missing_components(stream, component_list=["Z", "R", "T"]):
     """
     Add zero-trace to stream if one component is missing.
     Usually, this shouldn't not be done for a stream. However,
@@ -238,11 +253,6 @@ def rotate_adj_stream(adj_stream, event, inventory):
     """
     Rotate adjoint stream from "RT" to "EN"
     """
-    # add zero trace for missing components, otherwise, we won't
-    # be able to rotate with missing one horizontal component
-    component_list = ["Z", "R", "T"]
-    add_missing_components(adj_stream, component_list)
-
     if event is None or inventory is None:
         raise ValueError("Event and Station must be provied to rotate the"
                          "adjoint source")
@@ -275,7 +285,9 @@ def process_adjoint(adjsrcs, interp_flag=False, interp_starttime=None,
                     weight_dict=None,
                     filter_flag=False, pre_filt=None,
                     taper_percentage=0.05, taper_type="hann",
-                    rotate_flag=False, inventory=None, event=None):
+                    add_missing_comp_flag=False,
+                    rotate_flag=False, inventory=None, event=None,
+                    default_adjoint_channel="MX"):
     """
     Process adjoint sources function, to fit user's needs. Provide:
     1) zero padding the adjoint sources, and then interpolation
@@ -303,14 +315,19 @@ def process_adjoint(adjsrcs, interp_flag=False, interp_starttime=None,
     # transfer AdjointSource type to stream for easy processing
     adj_stream, adj_meta = convert_adjs_to_stream(adjsrcs)
 
+    change_channel_name(adj_stream, default_adjoint_channel)
+
+    # time reverse the array
+    time_reverse_array(adj_stream)
+
     if interp_flag:
         interp_adj_stream(adj_stream, interp_starttime, interp_delta,
                           interp_npts)
 
     # sum multiple instruments
     if sum_over_comp_flag:
-        adj_stream = sum_adj_on_component(adj_stream, weight_flag,
-                                          weight_dict)
+        adj_stream = sum_adj_on_component(adj_stream, weight_flag=weight_flag,
+                                          weight_dict=weight_dict)
 
     if filter_flag:
         # after filtering, taper should be applied to ensure the adjoint
@@ -330,6 +347,9 @@ def process_adjoint(adjsrcs, interp_flag=False, interp_starttime=None,
         # after filtering, taper should be applied to ensure the adjoint
         # source would be zero at two ends
         adj_stream.taper(max_percentage=taper_percentage, type=taper_type)
+
+    if rotate_flag or add_missing_comp_flag:
+        add_missing_components(adj_stream, component_list=["Z", "R", "T"])
 
     if rotate_flag:
         rotate_adj_stream(adj_stream, event, inventory)
