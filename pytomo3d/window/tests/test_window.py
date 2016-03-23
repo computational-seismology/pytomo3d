@@ -1,5 +1,7 @@
 import os
 import inspect
+import matplotlib as mpl
+import matplotlib.pyplot as plt
 from obspy import read, read_inventory, readEvents
 import pyflex
 from pyflex.window import Window
@@ -15,6 +17,27 @@ def _upper_level(path, nlevel=4):
     for i in range(nlevel):
         path = os.path.dirname(path)
     return path
+
+
+def reset_matplotlib():
+    """
+    Reset matplotlib to a common default.
+    """
+    # Set all default values.
+    mpl.rcdefaults()
+    # Force agg backend.
+    plt.switch_backend('agg')
+    # These settings must be hardcoded for running the comparision tests and
+    # are not necessarily the default values.
+    mpl.rcParams['font.family'] = 'Bitstream Vera Sans'
+    mpl.rcParams['text.hinting'] = False
+    # Not available for all matplotlib versions.
+    try:
+        mpl.rcParams['text.hinting_factor'] = 8
+    except KeyError:
+        pass
+    import locale
+    locale.setlocale(locale.LC_ALL, str('en_US.UTF-8'))
 
 
 # Most generic way to get the data folder path.
@@ -91,6 +114,8 @@ def test_window_on_stream():
 
 
 def test_plot_window_figure(tmpdir):
+    reset_matplotlib()
+
     obs_tr = read(obsfile).select(channel="*R")[0]
     syn_tr = read(synfile).select(channel="*R")[0]
 
