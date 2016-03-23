@@ -35,6 +35,12 @@ def calculate_baz(elat, elon, slat, slon):
 
 
 def change_channel_name(stream, channel_name):
+    if not isinstance(channel_name, str):
+        raise TypeError("Incorrect type of channel_name: %s"
+                        % type(channel_name))
+    if len(channel_name) != 2:
+        raise ValueError("Length of channel name(%s) should be 2"
+                         % channel_name)
     for tr in stream:
         tr.stats.channel = channel_name + tr.stats.channel[-1]
 
@@ -44,6 +50,8 @@ def time_reverse_array(stream):
     Time reverse the data array of stream. Pyadjoint output
     is time-reversed version of adjoint source. However, as
     SPECFEM adjoint input, we need to time reversed again.
+    Also, for the zero-paddding and interpolation, it is
+    necessary to reverse the data back.
     """
     for tr in stream:
         tr.data = tr.data[::-1]
@@ -287,7 +295,7 @@ def process_adjoint(adjsrcs, interp_flag=False, interp_starttime=None,
                     taper_percentage=0.05, taper_type="hann",
                     add_missing_comp_flag=False,
                     rotate_flag=False, inventory=None, event=None,
-                    default_adjoint_channel="MX"):
+                    default_adjoint_channel=None):
     """
     Process adjoint sources function, to fit user's needs. Provide:
     1) zero padding the adjoint sources, and then interpolation
@@ -315,7 +323,8 @@ def process_adjoint(adjsrcs, interp_flag=False, interp_starttime=None,
     # transfer AdjointSource type to stream for easy processing
     adj_stream, adj_meta = convert_adjs_to_stream(adjsrcs)
 
-    change_channel_name(adj_stream, default_adjoint_channel)
+    if default_adjoint_channel is not None:
+        change_channel_name(adj_stream, default_adjoint_channel)
 
     # time reverse the array
     time_reverse_array(adj_stream)

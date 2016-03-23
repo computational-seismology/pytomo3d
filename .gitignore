@@ -65,4 +65,4 @@ target/
 .idea
 
 # temp files
-*.swp
+*.sw*
