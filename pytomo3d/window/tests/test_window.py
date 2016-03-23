@@ -5,6 +5,7 @@ import pyflex
 from pyflex.window import Window
 import pytomo3d.window.window as win
 import json
+from pyflex import WindowSelector
 
 
 def _upper_level(path, nlevel=4):
@@ -28,7 +29,7 @@ staxml = os.path.join(DATA_DIR, "stationxml", "IU.KBL.xml")
 quakeml = os.path.join(DATA_DIR, "quakeml", "C201009031635A.xml")
 
 
-def test_read_config():
+def test_load_window_config_yaml():
     config_file = os.path.join(DATA_DIR, "window", "27_60.BHZ.config.yaml")
     config = win.load_window_config_yaml(config_file)
     assert isinstance(config, pyflex.Config)
@@ -67,3 +68,42 @@ def test_window_on_trace():
     for _win, _win_json_bm in zip(windows, windows_json):
         _win_bm = Window._load_from_json_content(_win_json_bm)
         assert _win == _win_bm
+
+
+def test_window_on_stream():
+    obs_tr = read(obsfile)
+    syn_tr = read(synfile)
+
+    config_file = os.path.join(DATA_DIR, "window", "27_60.BHZ.config.yaml")
+    config = win.load_window_config_yaml(config_file)
+    config_dict = {"Z": config, "R": config, "T": config}
+
+    config_file = os.path.join(DATA_DIR, "window", "27_60.BHZ.config.yaml")
+    config = win.load_window_config_yaml(config_file)
+
+    cat = readEvents(quakeml)
+    inv = read_inventory(staxml)
+
+    windows = win.window_on_stream(obs_tr, syn_tr, config_dict, station=inv,
+                                   event=cat, _verbose=False,
+                                   figure_mode=False)
+    assert len(windows) > 0
+
+
+def test_plot_window_figure(tmpdir):
+    obs_tr = read(obsfile).select(channel="*R")[0]
+    syn_tr = read(synfile).select(channel="*R")[0]
+
+    config_file = os.path.join(DATA_DIR, "window", "27_60.BHZ.config.yaml")
+    config = win.load_window_config_yaml(config_file)
+
+    cat = readEvents(quakeml)
+    inv = read_inventory(staxml)
+
+    ws = WindowSelector(obs_tr, syn_tr, config, event=cat, station=inv)
+    windows = ws.select_windows()
+
+    assert len(windows) > 0
+
+    win.plot_window_figure(str(tmpdir), obs_tr.id, ws, True,
+                           figure_format="png")
