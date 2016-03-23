@@ -144,16 +144,30 @@ def window_on_stream(observed, synthetic, config_dict, station=None,
 
     all_windows = []
 
-    components = config_dict.keys()
+    for category in config_dict:
+        if len(category) == 1:
+            # then it is component
+            obs = observed.select(component=category)
+        elif len(category) == 3:
+            # then it is channel
+            obs = observed.select(channel=category)
+        else:
+            raise ValueError("The length of Config_dict.keys()[%s] should be "
+                             "either 1 or 3, for example, ['E', 'N', 'Z'] "
+                             "or ['BHE', 'BHN', 'BHZ']" % config_dict.keys())
 
-    for component in components:
-        obs = observed.select(component=component)
-        syn_tr = synthetic.select(component=component)[0]
-        if not obs or not syn_tr:
-            continue
         for obs_tr in obs:
-            config = config_dict[component]
+            component = obs_tr.stats.channel[-1]
+            try:
+                syn_tr = synthetic.select(station=obs_tr.stats.station,
+                                          network=obs_tr.stats.network,
+                                          component=component)[0]
+            except Exception as err:
+                print("Couldn't find corresponding synt for obsd trace(%s):"
+                      "%s" % (obs_tr.id, err))
+                continue
 
+            config = config_dict[component]
             windows = window_on_trace(
                 obs_tr, syn_tr, config, station=station,
                 event=event, _verbose=_verbose,
