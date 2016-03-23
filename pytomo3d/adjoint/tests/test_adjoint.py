@@ -86,7 +86,7 @@ def test_waveform_adjoint():
                                "waveform.adjoint.config.yaml")
     config = adj.load_adjoint_config_yaml(config_file)
 
-    win_time, _ = adj._extract_window_time(windows)
+    win_time, _, _ = adj._extract_window_time(windows)
 
     adjsrc = adj.calculate_adjsrc_on_trace(
         obs, syn, win_time, config, adj_src_type="waveform_misfit",
@@ -113,7 +113,7 @@ def test_multitaper_adjoint():
                                "multitaper.adjoint.config.yaml")
     config = adj.load_adjoint_config_yaml(config_file)
 
-    win_time, _ = adj._extract_window_time(windows)
+    win_time, _, _ = adj._extract_window_time(windows)
 
     adjsrc = adj.calculate_adjsrc_on_trace(
         obs, syn, win_time, config, adj_src_type="multitaper_misfit",
@@ -138,7 +138,7 @@ def test_cc_traveltime_adjoint():
                                "cc_traveltime.adjoint.config.yaml")
     config = adj.load_adjoint_config_yaml(config_file)
 
-    win_time, _ = adj._extract_window_time(windows)
+    win_time, _, _ = adj._extract_window_time(windows)
 
     adjsrc = adj.calculate_adjsrc_on_trace(
         obs, syn, win_time, config, adj_src_type="cc_traveltime_misfit",

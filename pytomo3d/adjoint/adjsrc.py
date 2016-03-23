@@ -42,27 +42,41 @@ def _extract_window_time(windows):
         starttime and endtime
     """
     wins = []
-    if isinstance(windows[0], dict):
-        id_base = windows[0]["channel_id"]
-        for _win in windows:
-            if _win["channel_id"] != id_base:
-                raise ValueError("Windows come from different channel: %s, %s"
-                                 % (id_base, _win["channel_id"]))
+    obs_ids = []
+    syn_ids = []
+    for _win in windows:
+        if isinstance(_win, dict):
+            obs_id = _win["channel_id"]
+            try:
+                syn_id = _win["channel_id_2"]
+            except:
+                syn_id = "UNKNOWN"
             win_b = _win["relative_starttime"]
             win_e = _win["relative_endtime"]
-            wins.append([win_b, win_e])
-    else:
-        id_base = windows[0].channel_id
-        for _win in windows:
-            if _win.channel_id != id_base:
-                raise ValueError("Windows come from different channel: %s, %s"
-                                 % (id_base, _win["channel_id"]))
+        else:
+            obs_id = _win.channel_id
+            try:
+                syn_id = _win.channel_id_2
+            except:
+                syn_id = "UNKNOWN"
             win_b = _win.relative_starttime
             win_e = _win.relative_endtime
-            wins.append([win_b, win_e])
+        obs_ids.append(obs_id)
+        syn_ids.append(syn_id)
+        wins.append([win_b, win_e])
 
+    # sanity check for windows in the same channel
+    if len(set(obs_ids)) != 1:
+        raise ValueError("Windows in for the same channel not consistent for"
+                         "obsd id:%s" % obs_ids)
+    if len(set(syn_ids)) != 1:
+        raise ValueError("Windows in for the same channel not consistent for"
+                         "obsd id:%s" % syn_ids)
+
+    obs_id = obs_ids[0]
+    syn_id = syn_ids[0]
     # read windows for this trace
-    return np.array(wins), id_base
+    return np.array(wins), obs_id, syn_id
 
 
 def calculate_adjsrc_on_trace(obs, syn, window_time, config, adj_src_type,
@@ -161,18 +175,17 @@ def calculate_adjsrc_on_stream(observed, synthetic, windows, config,
         if len(chan_win) == 0:
             continue
 
-        win_time, obsd_id = _extract_window_time(chan_win)
+        win_time, obsd_id, synt_id = _extract_window_time(chan_win)
 
         try:
             obs = observed.select(id=obsd_id)[0]
         except:
             raise ValueError("Missing observed trace for window: %s" % obsd_id)
 
-        try:
+        if synt_id == "UNKNOWN":
             syn = synthetic.select(channel="*%s" % obs.stats.channel[-1])[0]
-        except:
-            raise ValueError("Missing synthetic trace matching obsd id: %s"
-                             % obsd_id)
+        else:
+            syn = synthetic.select(id=synt_id)[0]
 
         adjsrc = calculate_adjsrc_on_trace(
             obs, syn, win_time, config, adj_src_type,
