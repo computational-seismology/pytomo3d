@@ -111,6 +111,20 @@ def test_rotate_NE_12():
     npt.assert_almost_equal(dnew2, dnew2_true)
 
 
+def test_rotate_NE_and_12():
+    # test if rotate_NE_12 and rotate_12_NE are reversable
+
+    n = np.array([1.0, 0.0])
+    e = np.array([0.0, 1.0])
+
+    d1, d2 = rotate.rotate_NE_12(n, e, 30, 120)
+
+    n_new, e_new = rotate.rotate_12_NE(d1, d2, 30, 120)
+
+    npt.assert_almost_equal(n, n_new)
+    npt.assert_almost_equal(e, e_new)
+
+
 def test_rotate_12_RT():
 
     d1 = np.array([1.0, 0.0])
@@ -140,6 +154,21 @@ def test_rotate_RT_12():
 
     n, e = rotate.rotate_12_NE(r, t, baz-180, baz-90)
     d1_true, d2_true = rotate.rotate_NE_12(n, e, azi1, azi2)
+
+
+def test_rotate_RT_and_12():
+
+    r = np.array([1.0, 0.0])
+    t = np.array([0.0, 1.0])
+    azi1 = 30
+    azi2 = 120
+    baz = 240
+
+    d1, d2 = rotate.rotate_RT_12(r, t, baz, azi1, azi2)
+    r_new, t_new = rotate.rotate_12_RT(d1, d2, baz, azi1, azi2)
+
+    npt.assert_almost_equal(r, r_new)
+    npt.assert_almost_equal(t, t_new)
 
 
 def test_extract_channel_orientation_info():

@@ -204,10 +204,11 @@ def process(st, remove_response_flag=False, inventory=None,
     if starttime is not None and endtime is not None:
         flex_cut_stream(st, starttime, endtime, dynamic_npts=10)
 
-    # detrend ,demean, taper
-    st.detrend("linear")
-    st.detrend("demean")
-    st.taper(max_percentage=taper_percentage, type=taper_type)
+    if filter_flag or remove_response_flag:
+        # detrend ,demean, taper
+        st.detrend("linear")
+        st.detrend("demean")
+        st.taper(max_percentage=taper_percentage, type=taper_type)
 
     # remove response or filter
     if filter_flag:
@@ -236,10 +237,11 @@ def process(st, remove_response_flag=False, inventory=None,
         # just without an actual response...
         filter_stream(st, pre_filt)
 
-    # detrend, demean or taper
-    st.detrend("linear")
-    st.detrend("demean")
-    st.taper(max_percentage=taper_percentage, type=taper_type)
+    if filter_flag or remove_response_flag:
+        # detrend, demean or taper
+        st.detrend("linear")
+        st.detrend("demean")
+        st.taper(max_percentage=taper_percentage, type=taper_type)
 
     # resample
     if resample_flag:
