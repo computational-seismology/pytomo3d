@@ -167,7 +167,7 @@ def window_on_stream(observed, synthetic, config_dict, station=None,
                       "%s" % (obs_tr.id, err))
                 continue
 
-            config = config_dict[component]
+            config = config_dict[category]
             windows = window_on_trace(
                 obs_tr, syn_tr, config, station=station,
                 event=event, _verbose=_verbose,
