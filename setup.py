@@ -49,7 +49,7 @@ setup(
     ],
     install_requires=[
         "numpy", "obspy>=0.10.2", "flake8", "pytest", "nose", "future>=0.14.1",
-        "pyflex", "pyadjoint"
+        "pyflex", "pyadjoint", "geographiclib"
     ],
     extras_require={
         "docs": ["sphinx", "ipython", "runipy"]

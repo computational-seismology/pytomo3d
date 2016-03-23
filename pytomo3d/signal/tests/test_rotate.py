@@ -30,16 +30,21 @@ def test_calculate_baz():
     elat = 0.0
     elon = 0.0
     slat = 10.0
-    slon = 0.0
-    assert rotate.calculate_baz(elat, elon, slat, slon) == 180.0
-    assert rotate.calculate_baz(slat, slon, elat, elon) == 0.0
+    # put a very small value here
+    slon = 0.000000001
+    npt.assert_almost_equal(rotate.calculate_baz(elat, elon, slat, slon),
+                            180.0)
+    npt.assert_almost_equal(rotate.calculate_baz(slat, slon, elat, elon),
+                            0.0)
 
     elat = 0.0
     elon = 0.0
     slat = 0.0
     slon = 10.0
-    assert rotate.calculate_baz(elat, elon, slat, slon) == 270.0
-    assert rotate.calculate_baz(slat, slon, elat, elon) == 90.0
+    npt.assert_almost_equal(rotate.calculate_baz(elat, elon, slat, slon),
+                            270.0)
+    npt.assert_almost_equal(rotate.calculate_baz(slat, slon, elat, elon),
+                            90.0)
 
 
 def test_check_orthogonality():
