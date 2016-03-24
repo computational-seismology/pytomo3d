@@ -16,7 +16,9 @@ import numpy as np
 
 def write_txtfile(windows, filename):
     """
-    Write windows to text file
+    Write windows to text file, for a list of windows. Notice that
+    this method only works on LISTS of windows, for example,
+    windows on a pair of traces.
 
     :param windows: list of windows(from same observed and synthetic)
     :type windows: list
@@ -42,16 +44,11 @@ def get_json_content(window):
     """
     # to be comptabile with olde pyflex, which doesn't has
     # channel_id_2. If not, assign it with "UNKNOWN"
-    try:
-        synt_id = window.channel_id_2
-    except:
-        synt_id = "UNKNOWN"
     info = {
         "left_index": window.left,
         "right_index": window.right,
         "center_index": window.center,
         "channel_id": window.channel_id,
-        "channel_id_2": synt_id,
         "time_of_first_sample": window.time_of_first_sample,
         "max_cc_value":  window.max_cc_value,
         "cc_shift_in_samples":  window.cc_shift,
@@ -65,6 +62,9 @@ def get_json_content(window):
         "relative_starttime": window.relative_starttime,
         "relative_endtime": window.relative_endtime,
         "window_weight": window.weight}
+
+    if "channel_id_2" in dir(window):
+        info["channel_id_2"] = window.channel_id_2
 
     return info
 
@@ -88,7 +88,8 @@ class WindowEncoder(json.JSONEncoder):
 
 def write_jsonfile(windows, filename):
     """
-    Write windows to a json file
+    Write windows to a json file. Also, this requires windows to be
+    type of list.
 
     :param windows: list of windows
     :param filename: output filename

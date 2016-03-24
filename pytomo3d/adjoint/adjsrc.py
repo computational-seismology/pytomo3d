@@ -171,7 +171,7 @@ def calculate_adjsrc_on_stream(observed, synthetic, windows, config,
 
     adjsrcs_list = []
 
-    for chan_win in windows:
+    for chan_win in windows.itervalues():
         if len(chan_win) == 0:
             continue
 

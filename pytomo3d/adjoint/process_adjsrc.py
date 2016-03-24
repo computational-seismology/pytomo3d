@@ -294,8 +294,7 @@ def process_adjoint(adjsrcs, interp_flag=False, interp_starttime=None,
                     filter_flag=False, pre_filt=None,
                     taper_percentage=0.05, taper_type="hann",
                     add_missing_comp_flag=False,
-                    rotate_flag=False, inventory=None, event=None,
-                    default_adjoint_channel=None):
+                    rotate_flag=False, inventory=None, event=None):
     """
     Process adjoint sources function, to fit user's needs. Provide:
     1) zero padding the adjoint sources, and then interpolation
@@ -322,9 +321,6 @@ def process_adjoint(adjsrcs, interp_flag=False, interp_starttime=None,
 
     # transfer AdjointSource type to stream for easy processing
     adj_stream, adj_meta = convert_adjs_to_stream(adjsrcs)
-
-    if default_adjoint_channel is not None:
-        change_channel_name(adj_stream, default_adjoint_channel)
 
     # time reverse the array
     time_reverse_array(adj_stream)

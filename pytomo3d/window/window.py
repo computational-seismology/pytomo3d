@@ -13,6 +13,7 @@ import os
 import yaml
 import pyflex
 import obspy
+import copy
 
 
 def plot_window_figure(figure_dir, figure_id, ws, _verbose=False,
@@ -142,9 +143,10 @@ def window_on_stream(observed, synthetic, config_dict, station=None,
     if not isinstance(config_dict, dict):
         raise ValueError("Input config_dict should be dict")
 
-    all_windows = []
+    all_windows = {}
 
     for category in config_dict:
+        config_base = config_dict[category]
         if len(category) == 1:
             # then it is component
             obs = observed.select(component=category)
@@ -167,14 +169,18 @@ def window_on_stream(observed, synthetic, config_dict, station=None,
                       "%s" % (obs_tr.id, err))
                 continue
 
-            config = config_dict[category]
+            config = copy.deepcopy(config_base)
             windows = window_on_trace(
                 obs_tr, syn_tr, config, station=station,
                 event=event, _verbose=_verbose,
                 figure_mode=figure_mode, figure_dir=figure_dir)
 
-            if windows is None or len(windows) == 0:
+            if windows is None:
                 continue
-            all_windows.append(windows)
+
+            # Notice: Ebru suggests to write out window even its length is
+            # zero, which means no windows selected on the traces, in order
+            # to keep track of every thing
+            all_windows[obs_tr.id] = windows
 
     return all_windows
