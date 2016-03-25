@@ -12,9 +12,12 @@ Pytomo3d has dependancies on the following packages:
 
 Wenjie: If you are new to python, [anaconda](https://www.continuum.io/downloads) is recommmended. Please download the newest version( >= Anaconda2 - 2.5.0) since it already contains a lot of useful python packages, like pip, numpy and scipy.  Older versions is not recommended since it usually has compliers inside, like gfortran and gcc. It is always better to use comiplers coming from your system rather than the very old ones embeded in anaconda. If you are expert in python, please choose the way you like.
 
-1. downwnload Anaconda for Python 2.7 and 64 bit Linux and install it (http://continuum.io/downloads) (**optional**)
+1. downwnload Anaconda for Python 2.7 and 64 bit Linux and install it (http://continuum.io/downloads) (**optional**) or you get download the install binary using:
   ```
   wget https://3230d63b5fc54e62148e-c95ac804525aac4b6dba79b00b39d1d3.ssl.cf1.rackcdn.com/Anaconda2-2.5.0-Linux-x86_64.sh
+  ```
+  And then install anaconda using:
+  ```
   bash Anaconda2-2.5.0-Linux-x86_64.sh
   ```
 
@@ -40,7 +43,7 @@ Wenjie: If you are new to python, [anaconda](https://www.continuum.io/downloads)
   pip install -v -e . (--user)
   cd ..
   ```
-
+  pyflex is used for seismic window selection.
   
 4. Install pyadjoint
   ```
@@ -49,6 +52,7 @@ Wenjie: If you are new to python, [anaconda](https://www.continuum.io/downloads)
   pip install -v -e . (--user)
   cd ..
   ```
+  pyadjoint is used for calculating adjoint sources.
 
 5. Install pytomo3d.
   ```
@@ -60,12 +64,21 @@ Wenjie: If you are new to python, [anaconda](https://www.continuum.io/downloads)
 
 ### Script installation
 
-Wenjie: recommended for experienced user
+Wenjie: recommended for experienced user.
 
+1. install obspy and pip yourself.
+
+2. get the pytomo3d code using:
+  ```
+  git clone https://github.com/wjlei1990/pytomo3d
+  cd pytomo3d
+  ```
+  
+3. install pyflex and pyadjoint by:
   ```
   pip install -r requirements.txt
   ```
-
+  
 ---
 
 After installation, you can run `py.test` in pytomo3d directory to see if you installed all the things correctly.
