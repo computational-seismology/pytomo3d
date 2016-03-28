@@ -108,6 +108,7 @@ def filter_trace(tr, pre_filt):
                          % pre_filt)
 
     data = tr.data.astype(np.float64)
+    origin_len = len(data)
 
     # smart calculation of nfft dodging large primes
     nfft = _npts2nfft(len(data))
@@ -120,7 +121,7 @@ def filter_trace(tr, pre_filt):
     data *= c_sac_taper(freqs, flimit=pre_filt)
     data[-1] = abs(data[-1]) + 0.0j
     # transform data back into the time domain
-    data = np.fft.irfft(data)[0:len(data)]
+    data = np.fft.irfft(data)[0:origin_len]
     # assign processed data and store processing information
     tr.data = data
 
