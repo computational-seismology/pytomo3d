@@ -346,6 +346,7 @@ def process_adjoint(adjsrcs, interp_flag=False, interp_starttime=None,
         if not check_array_order(pre_filt, order="ascending"):
             raise ValueError("Input pre_filt must a in ascending order. The "
                              "unit is Hz")
+
         for tr in adj_stream:
             filter_trace(tr, pre_filt)
 

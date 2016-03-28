@@ -87,7 +87,13 @@ def test_flex_cut_stream():
 
 
 def test_filter_trace():
-    assert True
+    st = obspy.read(testsyn)
+    pre_filt = [1/90., 1/60., 1/27.0, 1/22.5]
+
+    # check length doesn't change after filtering
+    tr = st[0].copy()
+    proc.filter_trace(tr, pre_filt)
+    assert len(tr.data) == len(st[0].data)
 
 
 def compare_stream_kernel(st1, st2):
