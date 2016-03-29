@@ -174,53 +174,67 @@ def zero_padding_stream(stream, starttime, endtime):
         tr.stats.starttime = padding_starttime
 
 
-def sum_adj_on_component(adj_stream, weight_flag=False, weight_dict=None):
+def sum_adj_on_component(adj_stream, meta_info, weight_flag=False,
+                         weight_dict=None):
     """
     Sum adjoint source on different channels but same component
     together, like "II.AAK.00.BHZ" and "II.AAK.10.BHZ" to form
-    "II.AAK.BHZ"
+    "II.AAK.MXZ". Also, misfit values will be added accordingly.
+    Please remember after adding, the channel will be renamed to
+    "MX" by default if weight_flag is False. If weight_flag is true,
+    then the channel is depandant on the dict key.
 
     :param adj_stream: adjoint source stream
     :param weight_dict: weight dictionary, should be something like
-        {"Z":{"II.AAK.00.BHZ": 0.5, "II.AAK.10.BHZ": 0.5},
-         "R":{"II.AAK.00.BHR": 0.3, "II.AAK.10.BHR": 0.7},
-         "T":{"II.AAK..BHT": 1.0}}
+        {"MXZ":{"II.AAK.00.BHZ": 0.5, "II.AAK.10.BHZ": 0.5},
+         "MXR":{"II.AAK.00.BHR": 0.3, "II.AAK.10.BHR": 0.7},
+         "MXT":{"II.AAK..BHT": 1.0}}
     :return: summed adjoint source stream
     """
     if weight_flag and weight_dict is None:
         raise ValueError("weight_dict should be assigned if you want")
 
     new_stream = Stream()
+    new_meta = {}
     done_comps = []
 
     if not weight_flag:
-        # just add same components without weight
+        # just add same components together without weight
         for tr in adj_stream:
             comp = tr.stats.channel[-1]
             if comp not in done_comps:
-                comp_tr = tr
+                comp_tr = tr.copy()
                 comp_tr.stats.location = ""
+                comp_tr.stats.channel = "MX" + comp
                 new_stream.append(comp_tr)
+                new_meta[comp_tr.id] = meta_info[tr.id].copy()
             else:
                 comp_tr = new_stream.select("*%s" % comp)
                 comp_tr.data += tr.data
+                new_meta[comp_tr.id]["misfit"] += meta_info[tr.id]["misfit"]
     else:
         # sum using components weight
         for comp, comp_weights in weight_dict.iteritems():
             for chan_id, chan_weight in comp_weights.iteritems():
                 if comp not in done_comps:
                     done_comps.append(comp)
-                    comp_tr = adj_stream.select(id=chan_id)[0]
+                    adj_tr = adj_stream.select(id=chan_id)[0]
+                    comp_tr = adj_tr.copy()
                     comp_tr.data *= chan_weight
                     comp_tr.stats.location = ""
                     comp_tr.stats.channel = comp
                     new_stream.append(comp_tr)
+                    new_meta[comp_tr.id] = meta_info[adj_tr.id].copy()
+                    new_meta[comp_tr.id]["misfit"] = \
+                        chan_weight * meta_info[adj_tr.id]["misfit"]
                 else:
+                    adj_tr = adj_stream.select(id=chan_id)[0]
                     comp_tr = new_stream.select(channel="*%s" % comp)[0]
-                    comp_tr.data += \
-                        chan_weight * adj_stream.select(id=chan_id)[0].data
+                    comp_tr.data += chan_weight * adj_tr.data
+                    new_meta[comp_tr.id]["misfit"] += \
+                        chan_weight * meta_info[adj_tr.id]["misfit"]
 
-    return new_stream
+    return new_stream, new_meta
 
 
 def add_missing_components(stream, component_list=["Z", "R", "T"]):
@@ -331,8 +345,10 @@ def process_adjoint(adjsrcs, interp_flag=False, interp_starttime=None,
 
     # sum multiple instruments
     if sum_over_comp_flag:
-        adj_stream = sum_adj_on_component(adj_stream, weight_flag=weight_flag,
-                                          weight_dict=weight_dict)
+        adj_stream, adj_meta = \
+            sum_adj_on_component(adj_stream, adj_meta,
+                                 weight_flag=weight_flag,
+                                 weight_dict=weight_dict)
 
     if filter_flag:
         # after filtering, taper should be applied to ensure the adjoint
