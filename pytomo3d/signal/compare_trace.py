@@ -1,3 +1,14 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+"""
+Functions that compare two seismograms
+
+:copyright:
+    Wenjie Lei (lei@princeton.edu), 2016
+:license:
+    GNU Lesser General Public License, version 3 (LGPLv3)
+    (http://www.gnu.org/licenses/lgpl-3.0.en.html)
+"""
 import matplotlib.pyplot as plt
 import numpy as np
 from obspy import Trace

@@ -19,7 +19,7 @@ class PyTest(TestCommand):
 setup(
     name="pytomo3d",
     version="0.1.0",
-    license='GNU General Public License, Version 3 (GPLv3)',
+    license='GNU Lesser General Public License, version 3 (LGPLv3)',
     description="Python toolkits for seismic tomograpy",
     author="Wenjie Lei",
     author_email="lei@princeton.edu",
@@ -42,7 +42,6 @@ setup(
         "Programming Language :: Python :: Implementation :: CPython",
         "Topic :: Scientific/Engineering",
         "Topic :: Scientific/Engineering :: Physics",
-        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)"
     ],
     keywords=[
         "seismology", "tomography", "adjoint", "signal", "inversion", "window"

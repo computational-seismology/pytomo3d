@@ -2,11 +2,12 @@
 # -*- coding: utf-8 -*-
 """
 Methods that handles rotation of seismograms
+
 :copyright:
     Wenjie Lei (lei@princeton.edu), 2016
 :license:
-    GNU General Public License, Version 3
-    (http://www.gnu.org/copyleft/gpl.html)
+    GNU Lesser General Public License, version 3 (LGPLv3)
+    (http://www.gnu.org/licenses/lgpl-3.0.en.html)
 """
 from __future__ import print_function
 from obspy.core.util.geodetics import gps2DistAzimuth
