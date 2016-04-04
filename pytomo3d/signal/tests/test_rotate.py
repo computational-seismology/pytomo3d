@@ -83,12 +83,12 @@ def test_rotate_certain_angle():
     npt.assert_almost_equal(dnew2, dnew2_true)
 
 
-def test_rotate_12_NE():
+def test_rotate_12_ne():
 
     d1 = np.array([1.0, 0.0])
     d2 = np.array([0.0, 1.0])
 
-    n, e = rotate.rotate_12_NE(d1, d2, 30, 120)
+    n, e = rotate.rotate_12_ne(d1, d2, 30, 120)
 
     n_true = np.array([np.sqrt(3)/2.0, -0.5])
     e_true = np.array([0.5, np.sqrt(3)/2.0])
@@ -96,12 +96,12 @@ def test_rotate_12_NE():
     npt.assert_almost_equal(e, e_true)
 
 
-def test_rotate_NE_12():
+def test_rotate_ne_12():
 
     n = np.array([1.0, 0.0])
     e = np.array([0.0, 1.0])
 
-    dnew1, dnew2 = rotate.rotate_NE_12(n, e, 30, 120)
+    dnew1, dnew2 = rotate.rotate_ne_12(n, e, 30, 120)
 
     assert rotate.check_orthogonality(30, 120) == "left-hand"
 
@@ -111,21 +111,21 @@ def test_rotate_NE_12():
     npt.assert_almost_equal(dnew2, dnew2_true)
 
 
-def test_rotate_NE_and_12():
+def test_rotate_ne_and_12():
     # test if rotate_NE_12 and rotate_12_NE are reversable
 
     n = np.array([1.0, 0.0])
     e = np.array([0.0, 1.0])
 
-    d1, d2 = rotate.rotate_NE_12(n, e, 30, 120)
+    d1, d2 = rotate.rotate_ne_12(n, e, 30, 120)
 
-    n_new, e_new = rotate.rotate_12_NE(d1, d2, 30, 120)
+    n_new, e_new = rotate.rotate_12_ne(d1, d2, 30, 120)
 
     npt.assert_almost_equal(n, n_new)
     npt.assert_almost_equal(e, e_new)
 
 
-def test_rotate_12_RT():
+def test_rotate_12_rt():
 
     d1 = np.array([1.0, 0.0])
     d2 = np.array([0.0, 1.0])
@@ -133,16 +133,16 @@ def test_rotate_12_RT():
     azi2 = 120
     baz = 240
 
-    r, t = rotate.rotate_12_RT(d1, d2, baz, azi1, azi2)
+    r, t = rotate.rotate_12_rt(d1, d2, baz, azi1, azi2)
 
-    n, e = rotate.rotate_12_NE(d1, d2, azi1, azi2)
-    r_true, t_true = rotate.rotate_NE_12(n, e, baz-180, baz-90)
+    n, e = rotate.rotate_12_ne(d1, d2, azi1, azi2)
+    r_true, t_true = rotate.rotate_ne_12(n, e, baz - 180, baz - 90)
 
     npt.assert_almost_equal(r, r_true)
     npt.assert_almost_equal(t, t_true)
 
 
-def test_rotate_RT_12():
+def test_rotate_rt_12():
 
     r = np.array([1.0, 0.0])
     t = np.array([0.0, 1.0])
@@ -150,13 +150,13 @@ def test_rotate_RT_12():
     azi2 = 120
     baz = 240
 
-    d1, d2 = rotate.rotate_RT_12(r, t, baz, azi1, azi2)
+    d1, d2 = rotate.rotate_rt_12(r, t, baz, azi1, azi2)
 
-    n, e = rotate.rotate_12_NE(r, t, baz-180, baz-90)
-    d1_true, d2_true = rotate.rotate_NE_12(n, e, azi1, azi2)
+    n, e = rotate.rotate_12_ne(r, t, baz - 180, baz - 90)
+    d1_true, d2_true = rotate.rotate_ne_12(n, e, azi1, azi2)
 
 
-def test_rotate_RT_and_12():
+def test_rotate_rt_and_12():
 
     r = np.array([1.0, 0.0])
     t = np.array([0.0, 1.0])
@@ -164,8 +164,8 @@ def test_rotate_RT_and_12():
     azi2 = 120
     baz = 240
 
-    d1, d2 = rotate.rotate_RT_12(r, t, baz, azi1, azi2)
-    r_new, t_new = rotate.rotate_12_RT(d1, d2, baz, azi1, azi2)
+    d1, d2 = rotate.rotate_rt_12(r, t, baz, azi1, azi2)
+    r_new, t_new = rotate.rotate_12_rt(d1, d2, baz, azi1, azi2)
 
     npt.assert_almost_equal(r, r_new)
     npt.assert_almost_equal(t, t_new)
