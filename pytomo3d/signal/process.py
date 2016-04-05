@@ -58,7 +58,7 @@ def flex_cut_trace(trace, cut_starttime, cut_endtime, dynamic_npts=0):
 
 def flex_cut_stream(st, cut_start, cut_end, dynamic_npts=0):
     """
-    Flexible cut stream
+    Flexible cut stream. But checks for the time.
 
     :param st: input stream
     :param cut_start: cut starttime
@@ -66,13 +66,23 @@ def flex_cut_stream(st, cut_start, cut_end, dynamic_npts=0):
     :param dynamic_npts: the dynamic number of points before cut_start
         and after
         cut_end
-    :return:
+    :return: the cutted stream
     """
     if not isinstance(st, Stream):
         raise TypeError("flex_cut_stream method only accepts obspy.Stream "
                         "the first Argument")
+    new_st = Stream()
+    count = 0
     for tr in st:
         flex_cut_trace(tr, cut_start, cut_end, dynamic_npts=dynamic_npts)
+        # throw out small piece of data at this step
+        if tr.stats.starttime <= cut_start and tr.stats.endtime >= cut_end:
+            new_st.append(tr)
+            count += 1
+    if count == 0:
+        raise ValueError("None of traces in Stream satisfy the "
+                         "cut time length")
+    return new_st
 
 
 def filter_stream(st, pre_filt):
@@ -195,17 +205,19 @@ def process(st, remove_response_flag=False, inventory=None,
     :type event_longitude: float
     :return: processed stream
     """
-    # keep an old copy
-    _st = st
-    if not isinstance(st, Stream) and not isinstance(st, Trace):
-        raise TypeError("Input seismogram should be either obspy.Stream "
-                        "or obspy.Trace")
+    # check input data type
     if isinstance(st, Trace):
         st = Stream(traces=[st, ])
+        _is_trace = True
+    elif isinstance(st, Stream):
+        _is_trace = False
+    else:
+        raise TypeError("Input seismogram should be either obspy.Stream "
+                        "or obspy.Trace")
 
     # cut the stream out before processing to reduce computation
     if starttime is not None and endtime is not None:
-        flex_cut_stream(st, starttime, endtime, dynamic_npts=10)
+        st = flex_cut_stream(st, starttime, endtime, dynamic_npts=10)
 
     if filter_flag or remove_response_flag:
         # detrend ,demean, taper
@@ -227,14 +239,12 @@ def process(st, remove_response_flag=False, inventory=None,
         if inventory is None:
             raise ValueError("Station information(inv) should be provided if"
                              "you want to remove instrument response")
-
         st.attach_response(inventory)
         if filter_flag:
             st.remove_response(output="DISP", pre_filt=pre_filt,
                                zero_mean=False, taper=False)
         else:
             st.remove_response(output="DISP", zero_mean=False, taper=False)
-
     elif filter_flag:
         # Perform a frequency domain taper like during the response removal
         # just without an actual response...
@@ -268,15 +278,15 @@ def process(st, remove_response_flag=False, inventory=None,
 
     # rotate
     if rotate_flag:
-        rotate_stream(st, event_latitude, event_longitude,
-                      inventory=inventory, mode="ALL->RT")
+        st = rotate_stream(st, event_latitude, event_longitude,
+                           inventory=inventory, mode="ALL->RT")
 
     # Convert to single precision to save space.
     for tr in st:
         tr.data = np.require(tr.data, dtype="float32")
 
     # transfer back to trace if input type is Trace
-    if isinstance(_st, Trace):
+    if _is_trace:
         st = st[0]
 
     return st

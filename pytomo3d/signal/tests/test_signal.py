@@ -80,7 +80,7 @@ def test_flex_cut_stream():
     t1 = tstart + 100 * dt
     t2 = tend - 100 * dt
     dynamic_npts = 5
-    proc.flex_cut_stream(st, t1, t2, dynamic_npts=dynamic_npts)
+    st = proc.flex_cut_stream(st, t1, t2, dynamic_npts=dynamic_npts)
     for tr in st:
         assert tr.stats.starttime == t1 - dynamic_npts * dt
         assert tr.stats.endtime == t2 + dynamic_npts * dt
