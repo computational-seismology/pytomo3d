@@ -88,7 +88,7 @@ def rotate_certain_angle(d1, d2, angle, unit="degree"):
     return dnew1, dnew2
 
 
-def rotate_12_RT(d1, d2, baz, azim1, azim2):
+def rotate_12_rt(d1, d2, baz, azim1, azim2):
     """
     Rotate from any two orthogonal horizontal components to RT components
 
@@ -127,7 +127,7 @@ def rotate_12_RT(d1, d2, baz, azim1, azim2):
     return r, t
 
 
-def rotate_RT_12(r, t, baz, azim1, azim2):
+def rotate_rt_12(r, t, baz, azim1, azim2):
     """
     Rotate from any two orthogonal horizontal components to RT components
 
@@ -166,7 +166,7 @@ def rotate_RT_12(r, t, baz, azim1, azim2):
         return d1, d2
 
 
-def rotate_12_NE(d1, d2, azim1, azim2):
+def rotate_12_ne(d1, d2, azim1, azim2):
     """
     Rotate from any two orthogonal horizontal components to EN components
 
@@ -197,7 +197,7 @@ def rotate_12_NE(d1, d2, azim1, azim2):
     return n, e
 
 
-def rotate_NE_12(n, e, azim1, azim2):
+def rotate_ne_12(n, e, azim1, azim2):
     """
     Rotate from East and North components to give two orghogonal horizontal
     components. Returned values are (d1, d2) and (d1, d2, Vertical) will
@@ -248,7 +248,7 @@ def extract_channel_orientation_info(tr, inv):
         return None, None
 
 
-def rotate_12_RT_func(st, inv, method="12->RT", back_azimuth=None):
+def rotate_12_rt_func(st, inv, method="12->RT", back_azimuth=None):
     """
     Rotate 12 component to RT
 
@@ -279,7 +279,7 @@ def rotate_12_RT_func(st, inv, method="12->RT", back_azimuth=None):
                     or inc1 != 0.0 or inc2 != 0.0:
                 continue
 
-            output_1, output_2 = rotate_12_RT(i_1.data, i_2.data, back_azimuth,
+            output_1, output_2 = rotate_12_rt(i_1.data, i_2.data, back_azimuth,
                                               azi1, azi2)
             if output_1 is None or output_2 is None:
                 continue
@@ -377,7 +377,7 @@ def rotate_one_station_stream(st, event_latitude, event_longitude,
     if mode in ["12->RT", "ALL->RT"]:
         if "1" in components and "2" in components:
             try:
-                rotate_12_RT_func(st, inventory, back_azimuth=baz)
+                rotate_12_rt_func(st, inventory, back_azimuth=baz)
             except Exception as e:
                 print("Error rotating 12->RT:%s" % e)
 

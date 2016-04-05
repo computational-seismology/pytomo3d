@@ -1,14 +1,14 @@
 from __future__ import print_function
 import sys
 from setuptools import setup, find_packages
-from setuptools.command.test import test as TestCommand
+from setuptools.command.test import test as test_command
 
 
-class PyTest(TestCommand):
+class PyTest(test_command):
     user_options = [('pytest-args=', 'a', "Arguments to pass to py.test")]
 
     def initialize_options(self):
-        TestCommand.initialize_options(self)
+        test_command.initialize_options(self)
         self.pytest_args = []
 
     def run_tests(self):
