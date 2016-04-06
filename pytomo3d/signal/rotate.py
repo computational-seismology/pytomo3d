@@ -472,4 +472,5 @@ def rotate_stream(st, event_latitude, event_longitude,
                                   event_longitude, inventory=station_inv,
                                   mode=mode)
         rotated_stream += sta_stream
-        st = rotated_stream
+
+    return rotated_stream
