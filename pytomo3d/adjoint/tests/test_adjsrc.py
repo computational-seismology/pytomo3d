@@ -4,12 +4,10 @@ import json
 from obspy import read, Stream
 from pyflex.window import Window
 import pytomo3d.adjoint.adjsrc as adj
-from pytomo3d.adjoint.plot_util import plot_adjoint_source
 import pytest
 import matplotlib.pyplot as plt
-import matplotlib as mpl
 import pyadjoint.adjoint_source
-import mock
+
 
 def _upper_level(path, nlevel=4):
     """
@@ -107,6 +105,7 @@ def setup_calculate_adjsrc_on_trace_args():
 
     return obs, syn, win_time
 
+
 def test_calculate_adjsrc_on_trace_raises_if_obs_is_not_trace():
     obs, syn, win_time = setup_calculate_adjsrc_on_trace_args()
     config = load_config_multitaper()
@@ -198,7 +197,7 @@ def setup_calculate_adjsrc_on_stream_args():
 
 
 # FIXME: fails because of win_time being different for streams
-#def test_calculate_adjsrc_on_stream_raises_if_obs_is_not_stream():
+# def test_calculate_adjsrc_on_stream_raises_if_obs_is_not_stream():
 #    obs, syn, win_time = setup_calculate_adjsrc_on_stream_args()
 #    config = load_config_multitaper()
 #    # obs = []
