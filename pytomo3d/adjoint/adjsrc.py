@@ -115,7 +115,7 @@ def calculate_adjsrc_on_trace(obs, syn, window_time, config, adj_src_type,
         raise ValueError("Input config should be pyadjoint.Config")
     windows = np.array(window_time)
     if len(windows.shape) != 2 or windows.shape[1] != 2:
-        raise ValueError("Input windows dimension incorrect, dimention"
+        raise ValueError("Input windows dimension incorrect, dimension"
                          "(*, 2) expected")
 
     adjsrc = pyadjoint.calculate_adjoint_source(
