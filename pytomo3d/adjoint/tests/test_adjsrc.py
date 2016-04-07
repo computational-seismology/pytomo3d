@@ -193,12 +193,12 @@ def setup_calculate_adjsrc_on_stream_args():
 
 
 def test_calculate_adjsrc_on_stream_raises_if_obs_is_not_stream():
-   _, syn, windows = setup_calculate_adjsrc_on_stream_args()
-   config = load_config_multitaper()
-   obs = []
-   with pytest.raises(ValueError):
-       adj.calculate_adjsrc_on_stream(obs, syn, windows, config,
-                                      adj_src_type="multitaper_misfit")
+    _, syn, windows = setup_calculate_adjsrc_on_stream_args()
+    config = load_config_multitaper()
+    obs = []
+    with pytest.raises(ValueError):
+        adj.calculate_adjsrc_on_stream(obs, syn, windows, config,
+                                       adj_src_type="multitaper_misfit")
 
 
 def test_calculate_adjsrc_on_stream_raises_if_syn_is_not_stream():
@@ -217,12 +217,13 @@ def test_calculate_adjsrc_on_stream_raises_if_config_is_not_config():
         adj.calculate_adjsrc_on_stream(obs, syn, windows, config,
                                        adj_src_type="multitaper_misfit")
 
+
 def test_calculate_adjsrc_on_stream_raises_if_windows_is_empty():
     obs, syn, _ = setup_calculate_adjsrc_on_stream_args()
     config = load_config_multitaper()
     windows = None
-    ret =  adj.calculate_adjsrc_on_stream(obs, syn, windows, config,
-                                          adj_src_type="multitaper_misfit")
+    ret = adj.calculate_adjsrc_on_stream(obs, syn, windows, config,
+                                         adj_src_type="multitaper_misfit")
     assert ret is None
     windows = {}
     ret = adj.calculate_adjsrc_on_stream(obs, syn, windows, config,
