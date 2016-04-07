@@ -188,20 +188,74 @@ def setup_calculate_adjsrc_on_stream_args():
 
     with open(winfile) as fh:
         wins_json = json.load(fh)
-    windows = []
-    for _win in wins_json:
-        windows.append(Window._load_from_json_content(_win))
-    win_time, _, _ = adj._extract_window_time(windows)
 
-    return obs, syn, win_time
+    return obs, syn, {obs[0].id: wins_json}
 
 
-# FIXME: fails because of win_time being different for streams
-# def test_calculate_adjsrc_on_stream_raises_if_obs_is_not_stream():
-#    obs, syn, win_time = setup_calculate_adjsrc_on_stream_args()
-#    config = load_config_multitaper()
-#    # obs = []
-#    #with pytest.raises(ValueError):
-#    a = adj.calculate_adjsrc_on_stream(obs, syn, win_time, config,
-#                                       adj_src_type="multitaper_misfit")
-#    assert a
+def test_calculate_adjsrc_on_stream_raises_if_obs_is_not_stream():
+    _, syn, windows = setup_calculate_adjsrc_on_stream_args()
+    config = load_config_multitaper()
+    obs = []
+    with pytest.raises(ValueError):
+        adj.calculate_adjsrc_on_stream(obs, syn, windows, config,
+                                       adj_src_type="multitaper_misfit")
+
+
+def test_calculate_adjsrc_on_stream_raises_if_syn_is_not_stream():
+    obs, _, windows = setup_calculate_adjsrc_on_stream_args()
+    config = load_config_multitaper()
+    syn = []
+    with pytest.raises(ValueError):
+        adj.calculate_adjsrc_on_stream(obs, syn, windows, config,
+                                       adj_src_type="multitaper_misfit")
+
+
+def test_calculate_adjsrc_on_stream_raises_if_config_is_not_config():
+    obs, syn, windows = setup_calculate_adjsrc_on_stream_args()
+    config = []
+    with pytest.raises(ValueError):
+        adj.calculate_adjsrc_on_stream(obs, syn, windows, config,
+                                       adj_src_type="multitaper_misfit")
+
+
+def test_calculate_adjsrc_on_stream_raises_if_windows_is_empty():
+    obs, syn, _ = setup_calculate_adjsrc_on_stream_args()
+    config = load_config_multitaper()
+    windows = None
+    ret = adj.calculate_adjsrc_on_stream(obs, syn, windows, config,
+                                         adj_src_type="multitaper_misfit")
+    assert ret is None
+    windows = {}
+    ret = adj.calculate_adjsrc_on_stream(obs, syn, windows, config,
+                                         adj_src_type="multitaper_misfit")
+    assert ret is None
+
+
+def test_calculate_adjsrc_on_stream_multitaper_misfit_produces_adjsrc():
+    obs, syn, windows = setup_calculate_adjsrc_on_stream_args()
+    config = load_config_traveltime()
+
+    adjsrc = adj.calculate_adjsrc_on_stream(
+        obs, syn, windows, config, adj_src_type="multitaper_misfit",
+        adjoint_src_flag=True, figure_mode=False)
+    assert adjsrc
+
+
+def test_calculate_adjsrc_on_stream_waveform_misfit_produces_adjsrc():
+    obs, syn, windows = setup_calculate_adjsrc_on_stream_args()
+    config = load_config_traveltime()
+
+    adjsrc = adj.calculate_adjsrc_on_stream(
+        obs, syn, windows, config, adj_src_type="waveform_misfit",
+        adjoint_src_flag=True, figure_mode=False)
+    assert adjsrc
+
+
+def test_calculate_adjsrc_on_stream_traveltime_misfit_produces_adjsrc():
+    obs, syn, windows = setup_calculate_adjsrc_on_stream_args()
+    config = load_config_traveltime()
+
+    adjsrc = adj.calculate_adjsrc_on_stream(
+        obs, syn, windows, config, adj_src_type="cc_traveltime_misfit",
+        adjoint_src_flag=True, figure_mode=False)
+    assert adjsrc

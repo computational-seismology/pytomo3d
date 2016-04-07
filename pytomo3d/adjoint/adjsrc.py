@@ -165,7 +165,7 @@ def calculate_adjsrc_on_stream(observed, synthetic, windows, config,
     if not isinstance(synthetic, Stream):
         raise ValueError("Input synthetic should be obspy.Stream")
     if windows is None or len(windows) == 0:
-        return
+        return None
     if not isinstance(config, pyadjoint.Config):
         raise ValueError("Input config should be pyadjoint.Config")
 
