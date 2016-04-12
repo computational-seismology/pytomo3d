@@ -309,21 +309,44 @@ def _check_inventory_orientation(inv):
     "15(1110)" -> Z,N,E component error, but "NE" are still orthogonal
                   to each other
     """
+    def __is_subset(dict1, dict2):
+        # check if dict1 is subset of dict2
+        for key in dict1:
+            if key not in dict2:
+                return False
+            if isinstance(dict1[key], float):
+                if not np.isclose(dict1[key], dict2[key]):
+                    return False
+            else:
+                if dict1[key] != dict2[key]:
+                    return False
+        return True
+
     error = 0
-    inv_z = inv.select(channel="*Z")[0][0][0]
-    if np.abs(inv_z.dip) != 90 or inv_z.azimuth != 0.0:
-        error += 8
+    # right information of components
+    right_info = {"Z": {"dip": 90., "azi": 0.0},
+                  "N": {"dip": 0., "azi": 0.0},
+                  "E": {"dip": 0., "azi": 90.0}}
+    error_code = {"Z": 8, "N": 4, "E": 2}
+    # extract real value out from inventory
+    real_info = {}
+    for comp in right_info.keys():
+        try:
+            comp_inv = inv.select(channel="*%s" % comp)[0][0][0]
+        except IndexError:
+            continue
+        real_info[comp] = {"dip": abs(comp_inv.dip), "azi": comp_inv.azimuth}
 
-    inv_n = inv.select(channel="*N")[0][0][0]
-    if inv_n.dip != 0.0 or inv_n.azimuth != 0.0:
-        error += 4
+    # compare real_info with error_info
+    for comp in real_info:
+        if not __is_subset(real_info[comp], right_info[comp]):
+            error += error_code[comp]
 
-    inv_e = inv.select(channel="*E")[0][0][0]
-    if inv_e.dip != 0.0 or inv_e.azimuth != 90.0:
-        error += 2
-
-    if not check_orthogonality(inv_e.azimuth, inv_n.azimuth):
-        error += 1
+    # check NE orthogonality
+    if "N" in real_info and "E" in real_info:
+        if not check_orthogonality(real_info["N"]["azi"],
+                                   real_info["E"]["azi"]):
+            error += 1
 
     return error
 
