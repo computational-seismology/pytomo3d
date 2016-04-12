@@ -465,8 +465,9 @@ def sort_stream_by_station(st):
         chan = tr.stats.channel[0:2]
         station_id = "%s.%s.%s.%s" % (nw, station, loc, chan)
         if station_id not in sta_dict:
-            sta_dict[station_id] = st.select(network=nw, station=station,
-                                             location=loc)
+            sta_dict[station_id] = \
+                st.select(network=nw, station=station,
+                          location=loc, channel= "%s*" % chan)
             n_added += len(sta_dict[station_id])
 
     if n_added != ntotal:
