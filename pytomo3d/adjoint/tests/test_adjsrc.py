@@ -101,9 +101,8 @@ def setup_calculate_adjsrc_on_trace_args():
     windows = []
     for _win in wins_json:
         windows.append(Window._load_from_json_content(_win))
-    win_time, _, _ = adj._extract_window_time(windows)
 
-    return obs, syn, win_time
+    return obs, syn, windows
 
 
 def test_calculate_adjsrc_on_trace_raises_if_obs_is_not_trace():

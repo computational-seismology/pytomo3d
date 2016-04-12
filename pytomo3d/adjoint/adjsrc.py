@@ -32,16 +32,15 @@ def load_adjoint_config_yaml(filename):
     return pyadjoint.Config(**data)
 
 
-def _extract_window_time(windows):
+def _extract_window_id(windows):
     """
-    Extract window time information from a list of windows(pyflex.Window).
+    Extract obsd id and synt id associated with the windows.
     Windows should come from the same channel.
 
     :param windows: a list of pyflex.Window
     :return: a two dimension numpy.array of time window, with window
         starttime and endtime
     """
-    wins = []
     obs_ids = []
     syn_ids = []
     for _win in windows:
@@ -51,19 +50,14 @@ def _extract_window_time(windows):
                 syn_id = _win["channel_id_2"]
             except:
                 syn_id = "UNKNOWN"
-            win_b = _win["relative_starttime"]
-            win_e = _win["relative_endtime"]
         else:
             obs_id = _win.channel_id
             try:
                 syn_id = _win.channel_id_2
             except:
                 syn_id = "UNKNOWN"
-            win_b = _win.relative_starttime
-            win_e = _win.relative_endtime
         obs_ids.append(obs_id)
         syn_ids.append(syn_id)
-        wins.append([win_b, win_e])
 
     # sanity check for windows in the same channel
     if len(set(obs_ids)) != 1:
@@ -76,10 +70,25 @@ def _extract_window_time(windows):
     obs_id = obs_ids[0]
     syn_id = syn_ids[0]
     # read windows for this trace
-    return np.array(wins), obs_id, syn_id
+    return obs_id, syn_id
 
 
-def calculate_adjsrc_on_trace(obs, syn, window_time, config, adj_src_type,
+def _extract_window_time(windows):
+    """
+    Extract window time information from a list of windows.
+    """
+    win_time = []
+    for _win in windows:
+        if isinstance(_win, dict):
+            win_time.append([_win["relative_starttime"],
+                             _win["relative_endtime"]])
+        else:
+            win_time.append([_win.relative_starttime,
+                             _win.relative_endtime])
+    return np.array(win_time)
+
+
+def calculate_adjsrc_on_trace(obs, syn, windows, config, adj_src_type,
                               figure_mode=False, figure_dir=None,
                               adjoint_src_flag=True):
     """
@@ -113,8 +122,8 @@ def calculate_adjsrc_on_trace(obs, syn, window_time, config, adj_src_type,
         raise ValueError("Input syn should be obspy.Trace")
     if not isinstance(config, pyadjoint.Config):
         raise ValueError("Input config should be pyadjoint.Config")
-    windows = np.array(window_time)
-    if len(windows.shape) != 2 or windows.shape[1] != 2:
+    window_time = _extract_window_time(windows)
+    if len(window_time.shape) != 2 or window_time.shape[1] != 2:
         raise ValueError("Input windows dimension incorrect, dimension"
                          "(*, 2) expected")
 
@@ -128,7 +137,7 @@ def calculate_adjsrc_on_trace(obs, syn, window_time, config, adj_src_type,
             figname = None
         else:
             figname = os.path.join(figure_dir, "%s.pdf" % obs.id)
-        plot_adjoint_source(adjsrc, win_times=windows, obs_tr=obs,
+        plot_adjoint_source(adjsrc, win_times=window_time, obs_tr=obs,
                             syn_tr=syn, figname=figname)
 
     return adjsrc
@@ -175,7 +184,7 @@ def calculate_adjsrc_on_stream(observed, synthetic, windows, config,
         if len(chan_win) == 0:
             continue
 
-        win_time, obsd_id, synt_id = _extract_window_time(chan_win)
+        obsd_id, synt_id = _extract_window_id(chan_win)
 
         try:
             obs = observed.select(id=obsd_id)[0]
@@ -188,7 +197,7 @@ def calculate_adjsrc_on_stream(observed, synthetic, windows, config,
             syn = synthetic.select(id=synt_id)[0]
 
         adjsrc = calculate_adjsrc_on_trace(
-            obs, syn, win_time, config, adj_src_type,
+            obs, syn, windows[obsd_id], config, adj_src_type,
             adjoint_src_flag=adjoint_src_flag,
             figure_mode=figure_mode, figure_dir=figure_dir)
 
