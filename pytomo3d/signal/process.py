@@ -163,7 +163,8 @@ def process(st, remove_response_flag=False, inventory=None,
             resample_flag=False, sampling_rate=1.0,
             taper_type="hann", taper_percentage=0.05,
             rotate_flag=False, event_latitude=None,
-            event_longitude=None, **kwargs):
+            event_longitude=None, sanity_check=False,
+            **kwargs):
     """
     Stream processing function defined for general purpose of tomography.
     The advantage of using Stream, rather than than Trace, is that rotation
@@ -203,6 +204,9 @@ def process(st, remove_response_flag=False, inventory=None,
     :type event_latitude: float
     :param event_longitude: longitude of event, for rotation usage
     :type event_longitude: float
+    :param sanity_check: sanity check the inventory information when
+        rotating.
+    :type sanity_check: bool
     :return: processed stream
     """
     # check input data type
@@ -279,7 +283,8 @@ def process(st, remove_response_flag=False, inventory=None,
     # rotate
     if rotate_flag:
         st = rotate_stream(st, event_latitude, event_longitude,
-                           inventory=inventory, mode="ALL->RT")
+                           inventory=inventory, mode="ALL->RT",
+                           sanity_check=sanity_check)
 
     # Convert to single precision to save space.
     for tr in st:

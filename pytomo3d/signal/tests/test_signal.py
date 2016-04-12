@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 import obspy
 import pytomo3d.signal.process as proc
+from copy import deepcopy
 
 
 def _upper_level(path, nlevel=4):
@@ -19,10 +20,13 @@ TESTBASE_DIR = _upper_level(os.path.abspath(
     inspect.getfile(inspect.currentframe())), 4)
 DATA_DIR = os.path.join(TESTBASE_DIR, "tests", "data")
 
-teststaxml = os.path.join(DATA_DIR, "stationxml", "IU.KBL.xml")
+staxmlfile = os.path.join(DATA_DIR, "stationxml", "IU.KBL.xml")
+teststaxml = obspy.read_inventory(staxmlfile)
 testquakeml = os.path.join(DATA_DIR, "quakeml", "C201009031635A.xml")
-testobs = os.path.join(DATA_DIR, "raw", "IU.KBL.obs.mseed")
-testsyn = os.path.join(DATA_DIR, "raw", "IU.KBL.syn.mseed")
+obsfile = os.path.join(DATA_DIR, "raw", "IU.KBL.obs.mseed")
+testobs = obspy.read(obsfile)
+synfile = os.path.join(DATA_DIR, "raw", "IU.KBL.syn.mseed")
+testsyn = obspy.read(synfile)
 small_mseed = os.path.join(DATA_DIR, "raw", "BW.RJOB.obs.mseed")
 
 
@@ -87,7 +91,7 @@ def test_flex_cut_stream():
 
 
 def test_filter_trace():
-    st = obspy.read(testsyn)
+    st = testsyn.copy()
     pre_filt = [1/90., 1/60., 1/27.0, 1/22.5]
 
     # check length doesn't change after filtering
@@ -101,23 +105,29 @@ def compare_stream_kernel(st1, st2):
         return False
     for tr1 in st1:
         tr2 = st2.select(id=tr1.id)[0]
-        if tr1.stats.starttime != tr2.stats.starttime:
+        if not compare_trace_kernel(tr1, tr2):
             return False
-        if tr1.stats.endtime != tr2.stats.endtime:
-            return False
-        if tr1.stats.sampling_rate != tr2.stats.sampling_rate:
-            return False
-        if tr1.stats.npts != tr2.stats.npts:
-            return False
-        if not np.allclose(tr1.data, tr2.data):
-            return False
+    return True
+
+
+def compare_trace_kernel(tr1, tr2):
+    if tr1.stats.starttime != tr2.stats.starttime:
+        return False
+    if tr1.stats.endtime != tr2.stats.endtime:
+        return False
+    if tr1.stats.sampling_rate != tr2.stats.sampling_rate:
+        return False
+    if tr1.stats.npts != tr2.stats.npts:
+        return False
+    if not np.allclose(tr1.data, tr2.data):
+        return False
     return True
 
 
 def test_process_obsd():
 
-    st = obspy.read(testobs)
-    inv = obspy.read_inventory(teststaxml)
+    st = testobs.copy()
+    inv = deepcopy(teststaxml)
     event = obspy.readEvents(testquakeml)[0]
     origin = event.preferred_origin() or event.origins[0]
     event_lat = origin.latitude
@@ -139,10 +149,38 @@ def test_process_obsd():
     assert compare_stream_kernel(st_new, st_compare)
 
 
+def test_process_obsd_2():
+    st = testobs.copy()
+    inv = deepcopy(teststaxml)
+    event = obspy.readEvents(testquakeml)[0]
+    origin = event.preferred_origin() or event.origins[0]
+    event_lat = origin.latitude
+    event_lon = origin.longitude
+    event_time = origin.time
+
+    pre_filt = [1/90., 1/60., 1/27.0, 1/22.5]
+    t1 = event_time
+    t2 = event_time + 6000.0
+    st_new = proc.process(st, remove_response_flag=True, inventory=inv,
+                          filter_flag=True, pre_filt=pre_filt,
+                          starttime=t1, endtime=t2, resample_flag=True,
+                          sampling_rate=2.0, taper_type="hann",
+                          taper_percentage=0.05, rotate_flag=True,
+                          event_latitude=event_lat,
+                          event_longitude=event_lon,
+                          sanity_check=True)
+    bmfile = os.path.join(DATA_DIR, "proc", "IU.KBL.obs.proc.mseed")
+    st_compare = obspy.read(bmfile)
+    assert len(st_new) == 1
+    assert st_new[0].stats.channel == "BHZ"
+    assert compare_trace_kernel(st_new[0],
+                                st_compare.select(channel="BHZ")[0])
+
+
 def test_process_synt():
 
-    st = obspy.read(testsyn)
-    inv = obspy.read_inventory(teststaxml)
+    st = testsyn.copy()
+    inv = deepcopy(teststaxml)
     event = obspy.readEvents(testquakeml)[0]
     origin = event.preferred_origin() or event.origins[0]
     event_lat = origin.latitude

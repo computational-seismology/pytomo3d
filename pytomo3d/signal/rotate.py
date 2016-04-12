@@ -295,47 +295,74 @@ def rotate_12_rt_func(st, inv, method="12->RT", back_azimuth=None):
     return st
 
 
-def check_inventory_sanity(inv):
+def _check_inventory_orientation(inv):
     """
-    Check the sanity of inventory
+    Check the sanity of inventory from one group of instrument, like
+    "II.AAK.00.BH*"
     Error code based on binary calculation
-    ZNE = Z * 4 + N *2 + E * 1
-    For example,
-    "4(100)" -> Z component error
-    "3(011)" -> N,E component error
-    "7(111)" -> Z,N,E component error
+    ZNE = Z * 8 + N * 4 + E * 2 + Ortho * 1
+    The first three digits stands for three components, the last digits
+    is for checking whether two horizontal components are vertical to
+    each other. For example,
+    "8(1000)"  -> Z component error
+    "6(0110)"  -> N,E component error, but still orthogonal to each other
+    "15(1110)" -> Z,N,E component error, but "NE" are still orthogonal
+                  to each other
     """
     error = 0
-    inv_z = inv.select(channel="*Z")
-    for _inv in inv_z[0][0]:
-        if np.abs(_inv.dip) != 90:
-            error += 4
-        if _inv.azimuth != 0.0:
-            error += 4
+    inv_z = inv.select(channel="*Z")[0][0][0]
+    if np.abs(inv_z.dip) != 90 or inv_z.azimuth != 0.0:
+        error += 8
 
-    inv_n = inv.select(channel="*N")
-    for _inv in inv_n[0][0]:
-        if _inv.dip != 0.0:
-            error += 2
-        if _inv.azimuth != 0.0:
-            error += 2
+    inv_n = inv.select(channel="*N")[0][0][0]
+    if inv_n.dip != 0.0 or inv_n.azimuth != 0.0:
+        error += 4
 
-    inv_e = inv.select(channel="*E")
-    for _inv in inv_e[0][0]:
-        if _inv.dip != 0.0:
-            error += 1
-        if _inv.azimuth != 90.0:
-            error += 1
+    inv_e = inv.select(channel="*E")[0][0][0]
+    if inv_e.dip != 0.0 or inv_e.azimuth != 90.0:
+        error += 2
+
+    if not check_orthogonality(inv_e.azimuth, inv_n.azimuth):
+        error += 1
 
     return error
 
 
+def _check_inventory_sanity(stream, inventory):
+    """
+    Checks the inventory sanity based on the stream. The stream should
+    contains only one station. If one component doesn't pass the sanity
+    check, it will be removed from the stream.
+    """
+    nw = stream[0].stats.network
+    sta = stream[0].stats.station
+    loc = stream[0].stats.location
+    chan = stream[0].stats.channel[0:2]
+    sta_inv = inventory.select(network=nw, station=sta, location=loc,
+                               channel="%s*" % chan)
+    err_code = _check_inventory_orientation(inventory)
+
+    _format_bin = bin(err_code)[2:].zfill(4)
+    if _format_bin[0] == "1":
+        for tr in stream.select(component="Z"):
+            stream.remove(tr)
+    if _format_bin[1] == "1":
+        for tr in stream.select(component="N"):
+            stream.remove(tr)
+    if _format_bin[2] == "1":
+        for tr in stream.select(component="E"):
+            stream.remove(tr)
+    return stream, sta_inv
+
+
 def rotate_one_station_stream(st, event_latitude, event_longitude,
                               station_latitude=None, station_longitude=None,
-                              inventory=None, mode="NE->RT"):
+                              inventory=None, mode="NE->RT",
+                              sanity_check=False):
     """
-    TODO list: check inventory sanity in the future. Make sure
-        "NE" are real NE components
+    Rotate the stream from the same network, station, location and channel
+    code, for example the stream should only contains traces whose ids are
+    "II.AAK.00.BH*"
     """
 
     mode = mode.upper()
@@ -343,6 +370,9 @@ def rotate_one_station_stream(st, event_latitude, event_longitude,
     if mode not in mode_options:
         raise ValueError("rotate_stream mode(%s) should be within %s"
                          % (mode, mode_options))
+    if mode[0:2] == "RT" and sanity_check:
+        raise ValueError("if rotating from RT to NE, then set "
+                         "sanity_check to False")
 
     if inventory is None and \
             (station_latitude is None and station_longitude is None):
@@ -356,6 +386,9 @@ def rotate_one_station_stream(st, event_latitude, event_longitude,
     if len(sort_stream_by_station(st)) != 1:
         raise ValueError("This method only accepts stream that contains "
                          "one station")
+
+    if sanity_check:
+        st, inventory = _check_inventory_sanity(st, inventory)
 
     if station_latitude is None or station_longitude is None:
         nw = st[0].stats.network
@@ -391,8 +424,14 @@ def rotate_one_station_stream(st, event_latitude, event_longitude,
     if mode in ["RT->NE"]:
         st.rotate(method="RT->NE", back_azimuth=baz)
 
+    return st
+
 
 def sort_stream_by_station(st):
+    """
+    Sort the traces in stream. Group the traces from same network,
+    station, location, and channel code together
+    """
     ntotal = len(st)
     sta_dict = {}
     n_added = 0
@@ -400,7 +439,8 @@ def sort_stream_by_station(st):
         nw = tr.stats.network
         station = tr.stats.station
         loc = tr.stats.location
-        station_id = "%s.%s.%s" % (nw, station, loc)
+        chan = tr.stats.channel[0:2]
+        station_id = "%s.%s.%s.%s" % (nw, station, loc, chan)
         if station_id not in sta_dict:
             sta_dict[station_id] = st.select(network=nw, station=station,
                                              location=loc)
@@ -413,7 +453,7 @@ def sort_stream_by_station(st):
 
 
 def rotate_stream(st, event_latitude, event_longitude,
-                  inventory, mode="ALL->RT"):
+                  inventory, mode="ALL->RT", sanity_check=False):
     """
     Rotate a stream to radial and transverse components based on the
     station information and event information
@@ -433,6 +473,14 @@ def rotate_stream(st, event_latitude, event_longitude,
         2) "12->RT": rotate only 1 and 2 channel, like "BH1" and "BH2" to RT
         3) "ALL->RT": rotate all components to RT
         4) "RT->NE": rotate RT to NE
+    :param sanity_check: check the sanity of inventory, mianly of the
+        orientation of ZNE components.
+        1) If rotating observed data from NE(12)to RT, it is recommended
+            to set to True; if rotating from RT to NE, then you could set
+            it to False;
+        2) If rotating synthetic data, you could set it to False since
+            I assume for synthetic data, there should not be problem
+            associated with orientation
     :return: rotated stream(obspy.Stream)
     """
 
@@ -443,6 +491,9 @@ def rotate_stream(st, event_latitude, event_longitude,
     if mode not in mode_options:
         raise ValueError("rotate_stream mode(%s) should be within %s"
                          % (mode, mode_options))
+    if mode[0:2] == "RT" and sanity_check:
+        raise ValueError("if rotating from RT to NE, then set "
+                         "sanity_check to False")
 
     if mode in ["12->RT", "ALL->RT"] and inventory is None:
         raise ValueError("Mode %s required inventory(stationxml) "
@@ -468,9 +519,11 @@ def rotate_stream(st, event_latitude, event_longitude,
             station_inv = inventory.select(network=nw, station=station,
                                            location=loc)
 
-        rotate_one_station_stream(sta_stream, event_latitude,
-                                  event_longitude, inventory=station_inv,
-                                  mode=mode)
-        rotated_stream += sta_stream
+        _st = \
+            rotate_one_station_stream(sta_stream, event_latitude,
+                                      event_longitude, inventory=station_inv,
+                                      mode=mode, sanity_check=sanity_check)
+        if _st is not None:
+            rotated_stream += _st
 
     return rotated_stream
