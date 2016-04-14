@@ -137,13 +137,14 @@ def test_process_obsd():
     pre_filt = [1/90., 1/60., 1/27.0, 1/22.5]
     t1 = event_time
     t2 = event_time + 6000.0
-    st_new = proc.process(st, remove_response_flag=True, inventory=inv,
-                          filter_flag=True, pre_filt=pre_filt,
-                          starttime=t1, endtime=t2, resample_flag=True,
-                          sampling_rate=2.0, taper_type="hann",
-                          taper_percentage=0.05, rotate_flag=True,
-                          event_latitude=event_lat,
-                          event_longitude=event_lon)
+    st_new = proc.process_stream(
+        st, remove_response_flag=True, inventory=inv,
+        filter_flag=True, pre_filt=pre_filt,
+        starttime=t1, endtime=t2, resample_flag=True,
+        sampling_rate=2.0, taper_type="hann",
+        taper_percentage=0.05, rotate_flag=True,
+        event_latitude=event_lat,
+        event_longitude=event_lon)
     bmfile = os.path.join(DATA_DIR, "proc", "IU.KBL.obs.proc.mseed")
     st_compare = obspy.read(bmfile)
     assert compare_stream_kernel(st_new, st_compare)
@@ -161,14 +162,15 @@ def test_process_obsd_2():
     pre_filt = [1/90., 1/60., 1/27.0, 1/22.5]
     t1 = event_time
     t2 = event_time + 6000.0
-    st_new = proc.process(st, remove_response_flag=True, inventory=inv,
-                          filter_flag=True, pre_filt=pre_filt,
-                          starttime=t1, endtime=t2, resample_flag=True,
-                          sampling_rate=2.0, taper_type="hann",
-                          taper_percentage=0.05, rotate_flag=True,
-                          event_latitude=event_lat,
-                          event_longitude=event_lon,
-                          sanity_check=True)
+    st_new = proc.process_stream(
+        st, remove_response_flag=True, inventory=inv,
+        filter_flag=True, pre_filt=pre_filt,
+        starttime=t1, endtime=t2, resample_flag=True,
+        sampling_rate=2.0, taper_type="hann",
+        taper_percentage=0.05, rotate_flag=True,
+        event_latitude=event_lat,
+        event_longitude=event_lon,
+        sanity_check=True)
     bmfile = os.path.join(DATA_DIR, "proc", "IU.KBL.obs.proc.mseed")
     st_compare = obspy.read(bmfile)
     assert len(st_new) == 1
@@ -190,13 +192,14 @@ def test_process_synt():
     pre_filt = [1/90., 1/60., 1/27.0, 1/22.5]
     t1 = event_time
     t2 = event_time + 6000.0
-    st_new = proc.process(st, remove_response_flag=False, inventory=inv,
-                          filter_flag=True, pre_filt=pre_filt,
-                          starttime=t1, endtime=t2, resample_flag=True,
-                          sampling_rate=2.0, taper_type="hann",
-                          taper_percentage=0.05, rotate_flag=True,
-                          event_latitude=event_lat,
-                          event_longitude=event_lon)
+    st_new = proc.process_stream(
+        st, remove_response_flag=False, inventory=inv,
+        filter_flag=True, pre_filt=pre_filt,
+        starttime=t1, endtime=t2, resample_flag=True,
+        sampling_rate=2.0, taper_type="hann",
+        taper_percentage=0.05, rotate_flag=True,
+        event_latitude=event_lat,
+        event_longitude=event_lon)
     bmfile = os.path.join(DATA_DIR, "proc", "IU.KBL.syn.proc.mseed")
     st_compare = obspy.read(bmfile)
     assert compare_stream_kernel(st_new, st_compare)

@@ -10,4 +10,4 @@
 
 from __future__ import (absolute_import, division, print_function)
 
-from .window import window_on_stream  # NOQA
+from .append_cmtsolution import append_cmt_to_catalog  # NOQA
