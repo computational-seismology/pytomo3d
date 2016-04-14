@@ -18,7 +18,7 @@ class PyTest(test_command):
 
 setup(
     name="pytomo3d",
-    version="0.1.0",
+    version="0.2.0",
     license='GNU Lesser General Public License, version 3 (LGPLv3)',
     description="Python toolkits for seismic tomograpy",
     author="Wenjie Lei",
