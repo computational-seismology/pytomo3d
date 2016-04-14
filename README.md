@@ -6,6 +6,6 @@ Seismic tomography toolkits, includes signal processing, window selection and ad
 For installation, please refer to [**INSTALL.md**](https://github.com/wjlei1990/pytomo3d/blob/master/INSTALL.md)
 
 **Note**
-1. Current version of pytomo3d now fully transfer to **obspy1.**.
+1. Current version of pytomo3d now fully transfer to **`obspy1.*.*`**.
 
 Please make sure you update your obspy to at least 1.0.0 before running the test.
