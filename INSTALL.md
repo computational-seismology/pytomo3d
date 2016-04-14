@@ -23,9 +23,9 @@ Wenjie: If you are new to python, [anaconda](https://www.continuum.io/downloads)
 
 2. install obspy using anaconda.
   ```
-  conda install -c obspy obspy=0.10.2
+  conda install -c obspy obspy
   ```
-  Recently, obspy group has a big upgrade for obspy, which boost the version number from 0.10.x to 1.0.0. A lot of kernel functions has changed its module path. I currently keep the old version. Going to update it very soon.
+  Recently, obspy group has a big upgrade for obspy, which boost the version number from 0.10.x to 1.0.0. A lot of kernel functions has changed its module path. The recent version of pytomo3d also now no longer supports older version of obspy. Please upgrade your obspy version to at least 1.0.0.
 
   Or install from source code:
   ```
