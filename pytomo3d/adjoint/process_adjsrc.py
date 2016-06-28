@@ -12,7 +12,7 @@ Methods that handles adjoint sources
 from __future__ import (print_function, division)
 import numpy as np
 from obspy import Stream, Trace
-from obspy.core.util.geodetics import gps2DistAzimuth
+from obspy.geodetics import gps2dist_azimuth
 from pyadjoint import AdjointSource
 from pytomo3d.signal.process import filter_trace, check_array_order
 from pytomo3d.signal.rotate import rotate_stream
@@ -29,7 +29,7 @@ def calculate_baz(elat, elon, slat, slon):
     :return: back azimuth
     """
 
-    _, _, baz = gps2DistAzimuth(elat, elon, slat, slon)
+    _, _, baz = gps2dist_azimuth(elat, elon, slat, slon)
 
     return baz
 

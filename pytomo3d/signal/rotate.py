@@ -10,7 +10,7 @@ Methods that handles rotation of seismograms
     (http://www.gnu.org/licenses/lgpl-3.0.en.html)
 """
 from __future__ import print_function
-from obspy.core.util.geodetics import gps2DistAzimuth
+from obspy.geodetics import gps2dist_azimuth
 from math import cos, sin
 from obspy import Stream
 import numpy as np
@@ -21,7 +21,7 @@ SMALL_DEGREE = 0.01
 
 
 def calculate_baz(elat, elon, slat, slon):
-    _, _, baz = gps2DistAzimuth(elat, elon, slat, slon)
+    _, _, baz = gps2dist_azimuth(elat, elon, slat, slon)
     return baz
 
 
