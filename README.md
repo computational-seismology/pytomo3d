@@ -1,5 +1,6 @@
 # pytomo3d
 [![Build Status](https://travis-ci.org/wjlei1990/pytomo3d.svg?branch=master)](https://travis-ci.org/wjlei1990/pytomo3d/branches)
+[![DOI](https://zenodo.org/badge/22621/wjlei1990/pypaw.svg)](https://zenodo.org/badge/latestdoi/22621/wjlei1990/pypaw)
 
 Seismic tomography toolkits, includes signal processing, window selection and adjoint sources constructor. The documentation could be found [here](http://wjlei1990.github.io/pytomo3d/).
 
