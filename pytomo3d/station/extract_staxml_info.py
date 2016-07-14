@@ -12,6 +12,7 @@ This script extract channel instrument type from obspy.inventory
 
 from __future__ import print_function, division, absolute_import
 import os
+from collections import defaultdict
 from obspy import Inventory
 from obspy import read_inventory
 
@@ -25,8 +26,9 @@ def safe_load_staxml(staxmlfile):
     return inv
 
 
-def extract_sensor_type(staxml):
-    instruments = {}
+def extract_staxml_info(staxml):
+    """ extract information from staionxml file or obspy.Inventory """
+    instruments = defaultdict(dict)
 
     if isinstance(staxml, Inventory):
         inv = staxml
@@ -44,11 +46,16 @@ def extract_sensor_type(staxml):
                 chan_code = chan.code
                 loc_code = chan.location_code
                 key = "%s.%s.%s.%s" % (nw_code, sta_code, loc_code, chan_code)
+                instruments[key]["latitude"] = chan.latitude
+                instruments[key]["longitude"] = chan.longitude
+                instruments[key]["elevation"] = chan.elevation
+                instruments[key]["depth"] = chan.depth
                 if chan.sensor.description is not None:
-                    instruments[key] = chan.sensor.description
+                    sensor_type = chan.sensor.description
                 elif chan.sensor.type is not None:
-                    instruments[key] = chan.sensor.type
+                    sensor_type = chan.sensor.type
                 else:
-                    instruments[key] = "None"
+                    sensor_type = "None"
+                instruments[key]["sensor"] = sensor_type
 
     return instruments

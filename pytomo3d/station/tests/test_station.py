@@ -1,7 +1,7 @@
 import os
 import inspect
 from copy import deepcopy
-from pytomo3d.station import extract_sensor_type
+from pytomo3d.station import extract_staxml_info
 import obspy
 
 
@@ -24,15 +24,25 @@ teststaxml = obspy.read_inventory(staxmlfile)
 
 def test_process_obsd():
 
-    true_type = \
-        {'IU.KBL..BHE': 'Streckeisen STS-2/VBB Seismometer',
-         'IU.KBL..BHN': 'Streckeisen STS-2/VBB Seismometer',
-         'IU.KBL..BHZ': 'Streckeisen STS-2/VBB Seismometer'}
+    true_type = {
+        u'IU.KBL..BHZ': {
+            'latitude': 34.5408, 'depth': 7.0, 'elevation': 1913.0,
+            'longitude': 69.0432,
+            'sensor': 'Streckeisen STS-2/VBB Seismometer'},
+        u'IU.KBL..BHN': {
+            'latitude': 34.5408, 'depth': 7.0, 'elevation': 1913.0,
+            'longitude': 69.0432,
+            'sensor': 'Streckeisen STS-2/VBB Seismometer'},
+        u'IU.KBL..BHE': {
+            'latitude': 34.5408, 'depth': 7.0, 'elevation': 1913.0,
+            'longitude': 69.0432,
+            'sensor': 'Streckeisen STS-2/VBB Seismometer'}
+    }
 
     inv = deepcopy(teststaxml)
-    sensor_type = extract_sensor_type(inv)
+    sensor_type = extract_staxml_info(inv)
     assert sensor_type == true_type
 
     inv = deepcopy(staxmlfile)
-    sensor_type = extract_sensor_type(inv)
+    sensor_type = extract_staxml_info(inv)
     assert sensor_type == true_type
