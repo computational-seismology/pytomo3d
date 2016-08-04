@@ -11,7 +11,7 @@ Functions that append CMTSOLUTION information into catalog
 from __future__ import print_function, division
 import obspy
 from obspy.core.event.source import ResourceIdentifier
-from obspy.core.event import Catalog
+from obspy.core.event import Catalog, Event
 from obspy.core.event import CreationInfo
 
 
@@ -29,6 +29,7 @@ def _validator(event, cmt_origin, cmt_mag, cmt_focal):
 
 def prepare_cmt_origin(cmt, tag, creation_info):
     cmt_origin = None
+    # locate cmt origin
     for _origin in cmt.origins:
         if str(_origin.resource_id).endswith("origin#cmt"):
             cmt_origin = _origin
@@ -37,7 +38,7 @@ def prepare_cmt_origin(cmt, tag, creation_info):
     if cmt_origin is None:
         raise ValueError("No cmt origin found")
 
-    new_id = str(cmt_origin.resource_id).strip() + "#%s" % tag
+    new_id = str(cmt_origin.resource_id).rstrip() + "#%s" % tag
     # new_id = str(cmt_origin.resource_id).replace("origin#cmt",
     #                                             "origin#%s" % tag)
     cmt_origin.resource_id = ResourceIdentifier(new_id)
@@ -84,7 +85,22 @@ def prepare_cmt_focal(cmt, tag, origin_id, mag_id, creation_info):
     return cmt_focal
 
 
-def append_cmt_to_catalog(event, cmt, tag, change_preferred_id=True):
+def _parse_event(event):
+    if isinstance(event, str):
+        event = obspy.read_events(event)[0]
+    elif isinstance(event, Catalog):
+        event = event[0]
+    elif isinstance(event, Event):
+        event = event
+    else:
+        raise TypeError("Input event info must be earthquake source file,"
+                        "obspy.Catalog or obspy.Event")
+    return event
+
+
+def append_cmt_to_catalog(event_origin, cmt_to_add, tag="new_cmt",
+                          author="Princeton GATG",
+                          change_preferred_id=True):
     """
     Add cmt to event. The cmt.resource_id will be appened tag to avoid
     tag duplication problem in event.
@@ -94,31 +110,35 @@ def append_cmt_to_catalog(event, cmt, tag, change_preferred_id=True):
     :type event: str, obspy.core.event.Event or obspy.core.event.Catalog
     :param change_preferred_id: change all preferred_id to the new added cmt
     :type change_preferred_id: bool
+    :return: obspy.Catalog
     """
-    if isinstance(event, str):
-        event = obspy.read_events(event)[0]
-    elif isinstance(event, Catalog):
-        event = event[0]
-
-    if isinstance(cmt, str):
-        cmt_event = obspy.read_events(cmt)[0]
-    elif isinstance(cmt, Catalog):
-        cmt_event = cmt_event[0]
+    event = _parse_event(event_origin)
+    cmt_event = _parse_event(cmt_to_add)
 
     if not isinstance(tag, str):
         raise TypeError("tag(%s) should be type of str" % type(tag))
 
-    creation_info = CreationInfo(author="GATG", version=tag)
+    if not isinstance(author, str):
+        raise TypeError("author(%s) should be type of str" % type(author))
 
+    # User defined creation information
+    creation_info = CreationInfo(author=author, version=tag)
+
+    # add cmt origin
     cmt_origin = prepare_cmt_origin(cmt_event, tag, creation_info)
+    event.origins.append(cmt_origin)
+
+    # add cmt magnitude
     cmt_mag = prepare_cmt_mag(cmt_event, tag, cmt_origin.resource_id,
                               creation_info)
+    event.magnitudes.append(cmt_mag)
+
+    # add cmt focal mechanism
     cmt_focal = prepare_cmt_focal(cmt_event, tag, cmt_origin.resource_id,
                                   cmt_mag.resource_id, creation_info)
-    event.origins.append(cmt_origin)
-    event.magnitudes.append(cmt_mag)
     event.focal_mechanisms.append(cmt_focal)
 
+    # change preferred id if needed
     if change_preferred_id:
         event.preferred_origin_id = str(cmt_origin.resource_id)
         event.preferred_magnitude_id = str(cmt_mag.resource_id)
