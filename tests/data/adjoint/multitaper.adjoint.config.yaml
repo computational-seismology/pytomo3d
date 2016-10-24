@@ -5,6 +5,7 @@ max_period: 60.0
 # adjoint config parameter
 lnpt: 15
 transfunc_waterlevel: 1.0E-10
+water_threshold: 0.02
 ipower_costaper: 10
 min_cycle_in_window: 3
 taper_percentage: 0.3
@@ -16,5 +17,7 @@ err_fac: 2.5
 dt_max_scale: 3.5
 measure_type: 'dt'
 taper_type: 'hann'
+dt_sigma_min: 1.0
+dlna_sigma_min: 0.5
 use_cc_error: True
 use_mt_error: False

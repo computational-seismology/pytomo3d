@@ -11,81 +11,12 @@ Methods that handles adjoint sources
 """
 from __future__ import (print_function, division)
 import os
-import yaml
-import numpy as np
 from obspy import Stream, Trace
 import pyadjoint
 from .plot_util import plot_adjoint_source
-
-
-def load_adjoint_config_yaml(filename):
-    """
-    load yaml and setup pyadjoint.Config object
-    """
-    with open(filename) as fh:
-        data = yaml.load(fh)
-
-    if data["min_period"] > data["max_period"]:
-        raise ValueError("min_period is larger than max_period in config "
-                         "file: %s" % filename)
-
-    return pyadjoint.Config(**data)
-
-
-def _extract_window_id(windows):
-    """
-    Extract obsd id and synt id associated with the windows.
-    Windows should come from the same channel.
-
-    :param windows: a list of pyflex.Window
-    :return: a two dimension numpy.array of time window, with window
-        starttime and endtime
-    """
-    obs_ids = []
-    syn_ids = []
-    for _win in windows:
-        if isinstance(_win, dict):
-            obs_id = _win["channel_id"]
-            try:
-                syn_id = _win["channel_id_2"]
-            except:
-                syn_id = "UNKNOWN"
-        else:
-            obs_id = _win.channel_id
-            try:
-                syn_id = _win.channel_id_2
-            except:
-                syn_id = "UNKNOWN"
-        obs_ids.append(obs_id)
-        syn_ids.append(syn_id)
-
-    # sanity check for windows in the same channel
-    if len(set(obs_ids)) != 1:
-        raise ValueError("Windows in for the same channel not consistent for"
-                         "obsd id:%s" % obs_ids)
-    if len(set(syn_ids)) != 1:
-        raise ValueError("Windows in for the same channel not consistent for"
-                         "obsd id:%s" % syn_ids)
-
-    obs_id = obs_ids[0]
-    syn_id = syn_ids[0]
-    # read windows for this trace
-    return obs_id, syn_id
-
-
-def _extract_window_time(windows):
-    """
-    Extract window time information from a list of windows.
-    """
-    win_time = []
-    for _win in windows:
-        if isinstance(_win, dict):
-            win_time.append([_win["relative_starttime"],
-                             _win["relative_endtime"]])
-        else:
-            win_time.append([_win.relative_starttime,
-                             _win.relative_endtime])
-    return np.array(win_time)
+from .process_adjsrc import process_adjoint
+from .io import _extract_window_time, _extract_window_id
+from .utils import calculate_chan_weight
 
 
 def calculate_adjsrc_on_trace(obs, syn, windows, config, adj_src_type,
@@ -206,3 +137,71 @@ def calculate_adjsrc_on_stream(observed, synthetic, windows, config,
         adjsrcs_list.append(adjsrc)
 
     return adjsrcs_list
+
+
+def calculate_and_process_adjsrc_on_stream(
+        observed, synthetic, windows, inventory, config, event,
+        adj_src_type, postproc_param, figure_mode=False,
+        figure_dir=None):
+    """
+    (API for pypaw)
+    Calculate based on config, then process adjoint sources
+    based on postproc_param
+    """
+    # check total number of windows. If total number of
+    # window is 0, return None
+    nwin_total = 0
+    for value in windows.itervalues():
+        nwin_total += len(value)
+    if nwin_total == 0:
+        return
+
+    adjsrcs = calculate_adjsrc_on_stream(
+        observed, synthetic, windows, config, adj_src_type,
+        figure_mode=figure_mode, figure_dir=figure_dir,
+        adjoint_src_flag=True)
+
+    if postproc_param["weight_flag"]:
+        chan_weight_dict = calculate_chan_weight(adjsrcs, windows)
+    else:
+        chan_weight_dict = None
+
+    origin = event.preferred_origin() or event.origins[0]
+    focal = event.preferred_focal_mechanism()
+    hdr = focal.moment_tensor.source_time_function.duration / 2.0
+    # according to SPECFEM starttime convention
+    time_offset = -1.5 * hdr
+    starttime = origin.time + time_offset
+
+    new_adjsrcs = process_adjoint(
+        adjsrcs, interp_starttime=starttime,
+        inventory=inventory, event=event,
+        weight_dict=chan_weight_dict,
+        **postproc_param)
+
+    return new_adjsrcs, time_offset
+
+
+def measure_adjoint_on_stream(
+        observed, synthetic, windows, config, adj_src_type,
+        figure_mode=False, figure_dir=None):
+    """
+    (API for pypaw)
+    Calculate the measurement of adjoint sources. Only measurments
+    are returned(adjoint source is not returned).
+    """
+
+    nwin_total = 0
+    for value in windows.itervalues():
+        nwin_total += len(value)
+    if nwin_total == 0:
+        return
+
+    adjsrcs = calculate_adjsrc_on_stream(
+        observed, synthetic, windows, config, adj_src_type,
+        figure_mode=False, figure_dir=None,
+        adjoint_src_flag=True)
+
+    results = {}
+    for adj in adjsrcs:
+        results[adj.id] = adj.measurement

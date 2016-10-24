@@ -10,7 +10,6 @@ Methods that handles Window selection
     (http://www.gnu.org/licenses/lgpl-3.0.en.html)
 """
 import os
-import yaml
 import pyflex
 import obspy
 import copy
@@ -39,23 +38,6 @@ def plot_window_figure(figure_dir, figure_id, ws, _verbose=False,
     if _verbose:
         print "Output window figure:", figfn
     ws.plot(figfn)
-
-
-def load_window_config_yaml(filename):
-    """
-    Load yaml and setup pyflex.Config object
-
-    :param filename:
-    :return:
-    """
-    with open(filename) as fh:
-        data = yaml.load(fh)
-
-    if data["min_period"] > data["max_period"]:
-        raise ValueError("min_period is larger than max_period in config "
-                         "file: %s" % filename)
-
-    return pyflex.Config(**data)
 
 
 def window_on_trace(obs_tr, syn_tr, config, station=None,

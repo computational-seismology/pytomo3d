@@ -11,7 +11,26 @@ Methods that handles writing windows
 """
 import json
 import obspy
+import yaml
+import pyflex
 import numpy as np
+
+
+def load_window_config_yaml(filename):
+    """
+    Load yaml and setup pyflex.Config object
+
+    :param filename:
+    :return:
+    """
+    with open(filename) as fh:
+        data = yaml.load(fh)
+
+    if data["min_period"] > data["max_period"]:
+        raise ValueError("min_period is larger than max_period in config "
+                         "file: %s" % filename)
+
+    return pyflex.Config(**data)
 
 
 def write_txtfile(windows, filename):
@@ -35,7 +54,7 @@ def write_txtfile(windows, filename):
                         win.cc_shift, win.dlnA, win.max_cc_value))
 
 
-def get_json_content(window):
+def get_json_content(window, simple_mode=True):
     """
     Extract information from json to a dict
 
@@ -56,12 +75,14 @@ def get_json_content(window):
         "dlnA":  window.dlnA,
         "dt": window.dt,
         "min_period": window.min_period,
-        "phase_arrivals": window.phase_arrivals,
         "absolute_starttime": window.absolute_starttime,
         "absolute_endtime": window.absolute_endtime,
         "relative_starttime": window.relative_starttime,
         "relative_endtime": window.relative_endtime,
         "window_weight": window.weight}
+
+    if not simple_mode:
+        info["phase_arrivals"] = window.phase_arrivals
 
     if "channel_id_2" in dir(window):
         info["channel_id_2"] = window.channel_id_2

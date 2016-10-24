@@ -3,9 +3,9 @@ import inspect
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from obspy import read, read_inventory, readEvents
-import pyflex
 from pyflex.window import Window
 import pytomo3d.window.window as win
+import pytomo3d.window.io as wio
 import json
 from pyflex import WindowSelector
 
@@ -52,15 +52,6 @@ staxml = os.path.join(DATA_DIR, "stationxml", "IU.KBL.xml")
 quakeml = os.path.join(DATA_DIR, "quakeml", "C201009031635A.xml")
 
 
-def test_load_window_config_yaml():
-    config_file = os.path.join(DATA_DIR, "window", "27_60.BHZ.config.yaml")
-    config = win.load_window_config_yaml(config_file)
-    assert isinstance(config, pyflex.Config)
-    assert config.max_period == 60.0
-    assert config.min_period == 27.0
-    assert config.stalta_waterlevel == 0.10
-
-
 def test_read_window_json():
     winfile_bm = os.path.join(DATA_DIR, "window",
                               "IU.KBL..BHR.window.json")
@@ -75,7 +66,7 @@ def test_window_on_trace():
     syn_tr = read(synfile).select(channel="*R")[0]
 
     config_file = os.path.join(DATA_DIR, "window", "27_60.BHZ.config.yaml")
-    config = win.load_window_config_yaml(config_file)
+    config = wio.load_window_config_yaml(config_file)
 
     cat = readEvents(quakeml)
 
@@ -98,11 +89,11 @@ def test_window_on_stream():
     syn_tr = read(synfile)
 
     config_file = os.path.join(DATA_DIR, "window", "27_60.BHZ.config.yaml")
-    config = win.load_window_config_yaml(config_file)
+    config = wio.load_window_config_yaml(config_file)
     config_dict = {"Z": config, "R": config, "T": config}
 
     config_file = os.path.join(DATA_DIR, "window", "27_60.BHZ.config.yaml")
-    config = win.load_window_config_yaml(config_file)
+    config = wio.load_window_config_yaml(config_file)
 
     cat = readEvents(quakeml)
     inv = read_inventory(staxml)
@@ -120,7 +111,7 @@ def test_plot_window_figure(tmpdir):
     syn_tr = read(synfile).select(channel="*R")[0]
 
     config_file = os.path.join(DATA_DIR, "window", "27_60.BHZ.config.yaml")
-    config = win.load_window_config_yaml(config_file)
+    config = wio.load_window_config_yaml(config_file)
 
     cat = readEvents(quakeml)
     inv = read_inventory(staxml)
