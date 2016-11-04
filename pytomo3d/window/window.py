@@ -14,6 +14,7 @@ import yaml
 import pyflex
 import obspy
 import copy
+import importlib
 
 
 def plot_window_figure(figure_dir, figure_id, ws, _verbose=False,
@@ -58,8 +59,74 @@ def load_window_config_yaml(filename):
     return pyflex.Config(**data)
 
 
+def update_user_levels(user_module, config, station, event, obsd, synt):
+    """Update user levels as an array using user_module
+
+    This function emulates the user_functions feature in FLEXWIN. User
+    has to prepare a python module that has a method called
+    generate_user_levels. This module has to be passed out as a string
+    (It should be formatted as you would in an import statement). And
+    then, user_module is dynamically imported and the
+    generate_user_levels function is called with the following
+    parameters: pyflex config, obspy station data, obspy event data,
+    observed and synthetic obspy traces. It is excepted that user to
+    use given scalar acceptance levels as base values and generate
+    acceptance level arrays as long as trace data to be given to the
+    pyflex. Function should return these values in order: stalta water
+    level, tshift acceptance level, dlna acceptance level,
+    cc_acceptance_level, s2n_limit.
+
+    :param user_module: user module as a string
+    :type user_module: str
+    :param config: window selection config
+    :type config_dict: pyflex.Config
+    :param station: station information which provids station location to
+        calculate the epicenter distance
+    :type station: obspy.Inventory or pyflex.Station
+    :param event: event information, providing the event information
+    :type event: pyflex.Event, obspy.Catalog or obspy.Event
+    :param observed: observed trace
+    :type observed: obspy.Trace
+    :param synthetic: synthetic trace
+    :type synthetic: obspy.Trace
+    :return: window selection config with arrays
+    :rtype: pyflex.Config
+    """
+    # Ridvan Orsvuran, 2016
+    # If user gives a user_module, allow it to create the user
+    # acceptance levels as arrays.
+    try:
+        # Add current working directory to path. This enables user to
+        # use python files in the working directory.
+        import sys
+        sys.path.append(".")
+
+        # Import the user module
+        user = importlib.import_module(user_module)
+        # Assign generate function to a variable. This enables to
+        # catch the AttributeError.
+        generate = user.generate_user_levels
+    except ImportError:
+        raise Exception("Could not import the user_function module:", user_module)
+    except AttributeError:
+        raise Exception("Given user module does not have a generate_user_levels method.")
+
+    config_copy = copy.deepcopy(config) # do not give the original config to the user
+    stalta_waterlevel, tshift, dlna, cc, s2n = generate(config_copy, station, event, obsd, synt)
+
+    # Create a new config using new acceptance levels
+    new_config = copy.deepcopy(config)
+    new_config.stalta_waterlevel = stalta_waterlevel
+    new_config.tshift_acceptance_level = tshift
+    new_config.dlna_acceptance_level = dlna
+    new_config.cc_acceptance_level = cc
+    new_config.s2n_limit = s2n
+
+    return new_config
+
+
 def window_on_trace(obs_tr, syn_tr, config, station=None,
-                    event=None, _verbose=False,
+                    event=None, user_module=None, _verbose=False,
                     figure_mode=False, figure_dir=None,
                     figure_format="pdf"):
     """
@@ -76,6 +143,8 @@ def window_on_trace(obs_tr, syn_tr, config, station=None,
     :type station: obspy.Inventory or pyflex.Station
     :param event: event information, providing the event information
     :type event: pyflex.Event, obspy.Catalog or obspy.Event
+    :param user_module: user module as a string
+    :type user_module: str
     :param figure_mode: output figure flag
     :type figure_mode: bool
     :param figure_dir: output figure directory
@@ -91,6 +160,12 @@ def window_on_trace(obs_tr, syn_tr, config, station=None,
         raise ValueError("Input syn_tr should be obspy.Trace")
     if not isinstance(config, pyflex.Config):
         raise ValueError("Input config should be pyflex.Config")
+
+    # Ridvan Orsvuran, 2016
+    # If user gives a user_module, use it to update acceptance levels
+    # as arrays.
+    if user_module:
+        config = update_user_levels(user_module, config, station, event, obs_tr, syn_tr)
 
     ws = pyflex.WindowSelector(obs_tr, syn_tr, config,
                                event=event, station=station)
@@ -111,7 +186,7 @@ def window_on_trace(obs_tr, syn_tr, config, station=None,
 
 
 def window_on_stream(observed, synthetic, config_dict, station=None,
-                     event=None, figure_mode=False, figure_dir=None,
+                     event=None, user_modules=None, figure_mode=False, figure_dir=None,
                      _verbose=False):
     """
     Window selection on a Stream
@@ -128,6 +203,8 @@ def window_on_stream(observed, synthetic, config_dict, station=None,
     :type station: obspy.Inventory or pyflex.Station
     :param event: event information, providing the event information
     :type event: pyflex.Event, obspy.Catalog or obspy.Event
+    :param user_modules: user_module strings in a dict similar to config_dict.
+    :type user_modules: dict
     :param figure_mode: output figure flag
     :type figure_mode: bool
     :param figure_dir: output figure directory
@@ -145,8 +222,14 @@ def window_on_stream(observed, synthetic, config_dict, station=None,
 
     all_windows = {}
 
+    # Ridvan Orsvuran, 2016
+    # Assign an empty dict to user_modules if it is None to avoid errors.
+    if user_modules is None:
+        user_modules = {}
+
     for category in config_dict:
         config_base = config_dict[category]
+        user_module = user_modules.get(category, None)
         if len(category) == 1:
             # then it is component
             obs = observed.select(component=category)
@@ -172,7 +255,7 @@ def window_on_stream(observed, synthetic, config_dict, station=None,
             config = copy.deepcopy(config_base)
             windows = window_on_trace(
                 obs_tr, syn_tr, config, station=station,
-                event=event, _verbose=_verbose,
+                event=event, user_module=user_module, _verbose=_verbose,
                 figure_mode=figure_mode, figure_dir=figure_dir)
 
             if windows is None:

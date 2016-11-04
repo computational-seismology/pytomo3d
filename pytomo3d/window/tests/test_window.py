@@ -113,6 +113,30 @@ def test_window_on_stream():
     assert len(windows) > 0
 
 
+def test_update_user_levels():
+    from pytomo3d.window import window
+    import numpy as np
+    obs_tr = read(obsfile)
+    syn_tr = read(synfile)
+
+    config_file = os.path.join(DATA_DIR, "window", "27_60.BHZ.config.yaml")
+    config = win.load_window_config_yaml(config_file)
+
+    cat = readEvents(quakeml)
+    inv = read_inventory(staxml)
+
+    user_module = "pytomo3d.window.tests.user_module_example"
+    config = window.update_user_levels(user_module, config, inv, cat,
+                                       obs_tr[0], syn_tr[0])
+
+    assert isinstance(config.stalta_waterlevel, np.ndarray)
+    assert isinstance(config.tshift_acceptance_level, np.ndarray)
+    assert isinstance(config.dlna_acceptance_level, np.ndarray)
+    assert isinstance(config.cc_acceptance_level, np.ndarray)
+    assert isinstance(config.s2n_limit, np.ndarray)
+
+
+
 def test_plot_window_figure(tmpdir):
     reset_matplotlib()
 
