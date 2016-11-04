@@ -136,7 +136,6 @@ def test_update_user_levels():
     assert isinstance(config.s2n_limit, np.ndarray)
 
 
-
 def test_plot_window_figure(tmpdir):
     reset_matplotlib()
 

@@ -107,12 +107,19 @@ def update_user_levels(user_module, config, station, event, obsd, synt):
         # catch the AttributeError.
         generate = user.generate_user_levels
     except ImportError:
-        raise Exception("Could not import the user_function module:", user_module)
+        raise Exception("Could not import the user_function module:",
+                        user_module)
     except AttributeError:
-        raise Exception("Given user module does not have a generate_user_levels method.")
+        raise Exception("Given user module does not have a"
+                        "generate_user_levels method.")
 
-    config_copy = copy.deepcopy(config) # do not give the original config to the user
-    stalta_waterlevel, tshift, dlna, cc, s2n = generate(config_copy, station, event, obsd, synt)
+    # do not give the original config to the user
+    config_copy = copy.deepcopy(config)
+    stalta_waterlevel, tshift, dlna, cc, s2n = generate(config_copy,
+                                                        station,
+                                                        event,
+                                                        obsd,
+                                                        synt)
 
     # Create a new config using new acceptance levels
     new_config = copy.deepcopy(config)
@@ -165,7 +172,8 @@ def window_on_trace(obs_tr, syn_tr, config, station=None,
     # If user gives a user_module, use it to update acceptance levels
     # as arrays.
     if user_module:
-        config = update_user_levels(user_module, config, station, event, obs_tr, syn_tr)
+        config = update_user_levels(user_module, config, station,
+                                    event, obs_tr, syn_tr)
 
     ws = pyflex.WindowSelector(obs_tr, syn_tr, config,
                                event=event, station=station)
@@ -186,7 +194,8 @@ def window_on_trace(obs_tr, syn_tr, config, station=None,
 
 
 def window_on_stream(observed, synthetic, config_dict, station=None,
-                     event=None, user_modules=None, figure_mode=False, figure_dir=None,
+                     event=None, user_modules=None,
+                     figure_mode=False, figure_dir=None,
                      _verbose=False):
     """
     Window selection on a Stream

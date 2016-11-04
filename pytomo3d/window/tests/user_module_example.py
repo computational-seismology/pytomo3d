@@ -2,8 +2,8 @@
 
 import numpy as np
 
-from obspy.geodetics import gps2dist_azimuth
 from obspy.geodetics import calcVincentyInverse
+
 
 def get_dist_in_km(station, event, obsd):
     """
@@ -19,16 +19,17 @@ def get_dist_in_km(station, event, obsd):
     evlon = event.events[0].origins[0].longitude
 
     dist = calcVincentyInverse(station_coor["latitude"],
-                               station_coor["longitude"], evlat, evlon)[0] / 1000
+                               station_coor["longitude"],
+                               evlat, evlon)[0] / 1000
 
     return dist
+
 
 def get_time_array(obsd, event):
     stats = obsd.stats
     dt = stats.delta
     npts = stats.npts
     start = stats.starttime - event.events[0].origins[0].time
-    print(start, start+npts*dt+dt, dt )
     return np.arange(start, start+npts*dt, dt)
 
 
@@ -37,7 +38,6 @@ def generate_user_levels(config, station, event, obsd, synt):
     """Returns a list of acceptance levels
     """
     stats = obsd.stats
-    dt = stats.delta
     npts = stats.npts
 
     base_water_level = config.stalta_waterlevel
@@ -59,8 +59,6 @@ def generate_user_levels(config, station, event, obsd, synt):
     r_time = dist/r_vel
 
     times = get_time_array(obsd, event)
-    print(times)
-    assert len(times) == npts
 
     for i, time in enumerate(times):
         if time > r_time:
