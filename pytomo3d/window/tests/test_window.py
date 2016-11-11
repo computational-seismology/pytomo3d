@@ -1,13 +1,17 @@
 import os
 import inspect
+import pytest
+import json
+
+import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+
 from obspy import read, read_inventory, readEvents
+from pyflex import WindowSelector
 from pyflex.window import Window
 import pytomo3d.window.window as win
 import pytomo3d.window.io as wio
-import json
-from pyflex import WindowSelector
 
 
 def _upper_level(path, nlevel=4):
@@ -52,13 +56,47 @@ staxml = os.path.join(DATA_DIR, "stationxml", "IU.KBL.xml")
 quakeml = os.path.join(DATA_DIR, "quakeml", "C201009031635A.xml")
 
 
-def test_read_window_json():
-    winfile_bm = os.path.join(DATA_DIR, "window",
-                              "IU.KBL..BHR.window.json")
-    with open(winfile_bm) as fh:
-        windows_json = json.load(fh)
-    for _win_json_bm in windows_json:
-        Window._load_from_json_content(_win_json_bm)
+def test_update_user_levels():
+    obs_tr = read(obsfile)[0]
+    syn_tr = read(synfile)[0]
+
+    config_file = os.path.join(DATA_DIR, "window", "27_60.BHZ.config.yaml")
+    config = wio.load_window_config_yaml(config_file)
+
+    cat = readEvents(quakeml)
+    inv = read_inventory(staxml)
+
+    user_module = "pytomo3d.window.tests.user_module_example"
+    config = win.update_user_levels(user_module, config, inv, cat,
+                                    obs_tr, syn_tr)
+
+    npts = obs_tr.stats.npts
+    assert isinstance(config.stalta_waterlevel, np.ndarray)
+    assert len(config.stalta_waterlevel) == npts
+    assert isinstance(config.tshift_acceptance_level, np.ndarray)
+    assert len(config.tshift_acceptance_level) == npts
+    assert isinstance(config.dlna_acceptance_level, np.ndarray)
+    assert len(config.dlna_acceptance_level) == npts
+    assert isinstance(config.cc_acceptance_level, np.ndarray)
+    assert len(config.cc_acceptance_level) == npts
+    assert isinstance(config.s2n_limit, np.ndarray)
+    assert len(config.s2n_limit) == npts
+
+
+def test_update_user_levels_raise():
+    user_module = "pytomo3d.window.tests.which_does_not_make_sense"
+    with pytest.raises(Exception) as errmsg:
+        win.update_user_levels(user_module, None, None, None,
+                               None, None)
+
+    assert "Could not import the user_function module" in str(errmsg)
+
+    user_module = "pytomo3d.window.io"
+    with pytest.raises(Exception) as errmsg:
+        win.update_user_levels(user_module, None, None, None,
+                               None, None)
+    assert "Given user module does not have a generate_user_levels method" \
+        in str(errmsg)
 
 
 def test_window_on_trace():
@@ -69,11 +107,54 @@ def test_window_on_trace():
     config = wio.load_window_config_yaml(config_file)
 
     cat = readEvents(quakeml)
-
     inv = read_inventory(staxml)
+
     windows = win.window_on_trace(obs_tr, syn_tr, config, station=inv,
                                   event=cat, _verbose=False,
                                   figure_mode=False)
+
+    assert len(windows) == 5
+
+    winfile_bm = os.path.join(DATA_DIR, "window",
+                              "IU.KBL..BHR.window.json")
+    with open(winfile_bm) as fh:
+        windows_json = json.load(fh)
+    for _win, _win_json_bm in zip(windows, windows_json):
+        _win_bm = Window._load_from_json_content(_win_json_bm)
+        assert _win == _win_bm
+
+
+def test_window_on_trace_user_levels():
+    obs_tr = read(obsfile)[0]
+    syn_tr = read(synfile)[0]
+
+    config_file = os.path.join(DATA_DIR, "window", "27_60.BHZ.config.yaml")
+    config = wio.load_window_config_yaml(config_file)
+
+    cat = readEvents(quakeml)
+    inv = read_inventory(staxml)
+    user_module = "pytomo3d.window.tests.user_module_example"
+
+    windows = win.window_on_trace(obs_tr, syn_tr, config, station=inv,
+                                  event=cat, user_module=user_module,
+                                  _verbose=False,
+                                  figure_mode=False)
+    assert len(windows) == 4
+
+
+def test_window_on_trace_with_none_user_levels():
+    obs_tr = read(obsfile).select(channel="*R")[0]
+    syn_tr = read(synfile).select(channel="*R")[0]
+
+    config_file = os.path.join(DATA_DIR, "window", "27_60.BHZ.config.yaml")
+    config = wio.load_window_config_yaml(config_file)
+
+    cat = readEvents(quakeml)
+    inv = read_inventory(staxml)
+
+    windows = win.window_on_trace(obs_tr, syn_tr, config, station=inv,
+                                  event=cat, user_module="None",
+                                  _verbose=False, figure_mode=False)
 
     winfile_bm = os.path.join(DATA_DIR, "window",
                               "IU.KBL..BHR.window.json")
@@ -101,7 +182,37 @@ def test_window_on_stream():
     windows = win.window_on_stream(obs_tr, syn_tr, config_dict, station=inv,
                                    event=cat, _verbose=False,
                                    figure_mode=False)
-    assert len(windows) > 0
+
+    assert len(windows) == 3
+    nwins = dict((_w, len(windows[_w])) for _w in windows)
+    assert nwins == {"IU.KBL..BHR": 5, "IU.KBL..BHZ": 2, "IU.KBL..BHT": 4}
+
+
+def test_window_on_stream_user_levels():
+    obs_tr = read(obsfile)
+    syn_tr = read(synfile)
+
+    config_file = os.path.join(DATA_DIR, "window", "27_60.BHZ.config.yaml")
+    config = wio.load_window_config_yaml(config_file)
+    config_dict = {"Z": config, "R": config, "T": config}
+
+    config_file = os.path.join(DATA_DIR, "window", "27_60.BHZ.config.yaml")
+    config = wio.load_window_config_yaml(config_file)
+
+    cat = readEvents(quakeml)
+    inv = read_inventory(staxml)
+
+    _mod = "pytomo3d.window.tests.user_module_example"
+    user_modules = {"BHZ": _mod, "BHR": _mod, "BHT": _mod}
+
+    windows = win.window_on_stream(obs_tr, syn_tr, config_dict, station=inv,
+                                   event=cat, user_modules=user_modules,
+                                   _verbose=False,
+                                   figure_mode=False)
+
+    assert len(windows) == 3
+    nwins = dict((_w, len(windows[_w])) for _w in windows)
+    assert nwins == {"IU.KBL..BHR": 5, "IU.KBL..BHZ": 2, "IU.KBL..BHT": 4}
 
 
 def test_plot_window_figure(tmpdir):
