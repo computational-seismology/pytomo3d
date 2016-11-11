@@ -1,7 +1,6 @@
 """
 # functions mainly for pypaw.
 """
-import os
 import json
 import numpy as np
 
@@ -98,7 +97,7 @@ def merge_station_windows(windows):
 
 def stats_all_windows(windows, obsd_tag, synt_tag,
                       instrument_merge_flag,
-                      outputdir):
+                      output_file):
     """
     Generate window statistic information
     """
@@ -125,6 +124,6 @@ def stats_all_windows(windows, obsd_tag, synt_tag,
         if nwin_sta > 0:
             window_stats["stations_with_windows"] += 1
 
-    filename = os.path.join(outputdir, "windows.stats.json")
-    with open(filename, "w") as fh:
+    print("Windows statistic log file: %s" % output_file)
+    with open(output_file, "w") as fh:
         json.dump(window_stats, fh, indent=2, sort_keys=True)

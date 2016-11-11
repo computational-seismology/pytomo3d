@@ -134,7 +134,7 @@ def check_multiple_instruments(adjsrcs):
     return _flag
 
 
-def reshape_adj(adjsrcs, time_offset, staxml, dtype=np.float32,
+def reshape_adj(adjsrcs, staxml, dtype=np.float32,
                 default_specfem_channel="MX"):
     """
     Reshape adjsrcs to a certain structure required by pyasdf writer
@@ -163,7 +163,8 @@ def reshape_adj(adjsrcs, time_offset, staxml, dtype=np.float32,
 
         station_id = "%s.%s" % (adj.network, adj.station)
 
-        parameters = {"dt": adj.dt, "time_offset": time_offset,
+        starttime = "T".join(str(adj.starttime).split())
+        parameters = {"dt": adj.dt, "starttime": starttime,
                       "misfit": adj.misfit,
                       "adjoint_source_type": adj.adj_src_type,
                       "min_period": adj.min_period,

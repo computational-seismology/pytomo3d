@@ -22,11 +22,21 @@ def load_adjoint_config_yaml(filename):
     with open(filename) as fh:
         data = yaml.load(fh)
 
+    adjsrc_type = data["adj_src_type"]
+    data.pop("adj_src_type")
+
+    if adjsrc_type == "multitaper_misfit":
+        ConfigClass = pyadjoint.ConfigMultiTaper
+    elif adjsrc_type == "cc_traveltime_misfit":
+        ConfigClass = pyadjoint.ConfigCrossCorrelation
+    elif adjsrc_type == "waveform_misfit":
+        ConfigClass = pyadjoint.ConfigWaveForm
+
     if data["min_period"] > data["max_period"]:
         raise ValueError("min_period is larger than max_period in config "
                          "file: %s" % filename)
 
-    return pyadjoint.Config(**data)
+    return ConfigClass(**data)
 
 
 def _extract_window_id(windows):

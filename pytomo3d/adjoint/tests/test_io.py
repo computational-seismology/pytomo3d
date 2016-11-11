@@ -66,7 +66,8 @@ def load_config_multitaper():
 
 
 def test_multitaper_config_keys():
-    default_args = inspect.getargspec(pyadjoint.Config.__init__).args
+    default_args = inspect.getargspec(
+        pyadjoint.ConfigMultiTaper.__init__).args
     default_args.remove("self")
 
     args = set([
@@ -82,7 +83,7 @@ def test_multitaper_config_keys():
 
 def test_load_adjoint_config_yaml_for_multitaper_misfit():
     config = load_config_multitaper()
-    assert isinstance(config, pyadjoint.Config)
+    assert isinstance(config, pyadjoint.ConfigMultiTaper)
     assert config.max_period == 60.0
     assert config.min_period == 27.0
     assert config.lnpt == 15

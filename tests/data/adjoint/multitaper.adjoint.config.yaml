@@ -1,3 +1,5 @@
+adj_src_type: "multitaper_misfit"
+
 # min and max period(unit: second)
 min_period: 27.0
 max_period: 60.0
@@ -16,8 +18,8 @@ dt_fac: 2.0
 err_fac: 2.5
 dt_max_scale: 3.5
 measure_type: 'dt'
-taper_type: 'hann'
 dt_sigma_min: 1.0
 dlna_sigma_min: 0.5
+taper_type: 'hann'
 use_cc_error: True
 use_mt_error: False

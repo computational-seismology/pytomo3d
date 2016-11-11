@@ -51,8 +51,9 @@ def calculate_adjsrc_on_trace(obs, syn, windows, config, adj_src_type,
         raise ValueError("Input obs should be obspy.Trace")
     if not isinstance(syn, Trace):
         raise ValueError("Input syn should be obspy.Trace")
-    if not isinstance(config, pyadjoint.Config):
-        raise ValueError("Input config should be pyadjoint.Config")
+    # if not isinstance(config, pyadjoint.Config):
+    #    raise ValueError("Input config should be pyadjoint.Config")
+
     window_time = _extract_window_time(windows)
     if len(window_time.shape) != 2 or window_time.shape[1] != 2:
         raise ValueError("Input windows dimension incorrect, dimension"
@@ -106,8 +107,8 @@ def calculate_adjsrc_on_stream(observed, synthetic, windows, config,
         raise ValueError("Input synthetic should be obspy.Stream")
     if windows is None or len(windows) == 0:
         return None
-    if not isinstance(config, pyadjoint.Config):
-        raise ValueError("Input config should be pyadjoint.Config")
+    # if not isinstance(config, pyadjoint.Config):
+    #    raise ValueError("Input config should be pyadjoint.Config")
 
     adjsrcs_list = []
 
@@ -179,7 +180,8 @@ def calculate_and_process_adjsrc_on_stream(
         weight_dict=chan_weight_dict,
         **postproc_param)
 
-    return new_adjsrcs, time_offset
+    # return new_adjsrcs, time_offset
+    return new_adjsrcs
 
 
 def measure_adjoint_on_stream(
@@ -205,3 +207,4 @@ def measure_adjoint_on_stream(
     results = {}
     for adj in adjsrcs:
         results[adj.id] = adj.measurement
+    return results
