@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Methods that handles signal data processing
+Methods that handles signal data processing for stream(Obspy.Stream)
 
 :copyright:
     Wenjie Lei (lei@princeton.edu), 2016

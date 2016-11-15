@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Methods that handles rotation of seismograms
+Methods that handles rotation of seismograms as extension to Obspy.
+It can rotate `12`, `EN` and `RT`, forward and backward.
 
 :copyright:
     Wenjie Lei (lei@princeton.edu), 2016

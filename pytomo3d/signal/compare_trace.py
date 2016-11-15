@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Functions that compare two seismograms
+Functions that compare two traces, return the measurements metrics.
 
 :copyright:
     Wenjie Lei (lei@princeton.edu), 2016
@@ -14,7 +14,10 @@ import numpy as np
 from obspy import Trace
 
 
-def calculate_misfit(tr1, tr2, taper_part=0.05):
+def calculate_misfit(tr1, tr2, taper_part=0.05, simple_mode=True):
+    """
+    Calculate the misfit between two traces
+    """
 
     tr1 = tr1.copy()
     tr2 = tr2.copy()
