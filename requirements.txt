@@ -1,2 +1,2 @@
 git+git://github.com/wjlei1990/pyflex.git@devel
-git+git://github.com/wjlei1990/pyadjoint.git@dev
+git+git://github.com/chukren/pyadjoint.git@dev

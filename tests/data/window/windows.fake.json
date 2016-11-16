@@ -1,0 +1,43 @@
+{
+  "II.AAK": {
+    "II.AAK..BHR":[
+      {"left_index": 1, "right_index": 2},
+      {"left_index": 2, "right_index": 3}
+    ],
+    "II.AAK..BHT":[
+      {"left_index": 1, "right_index": 2}
+    ],
+    "II.AAK..BHZ":[
+      {"left_index": 1, "right_index": 2},
+      {"left_index": 2, "right_index": 3},
+      {"left_index": 3, "right_index": 4}
+    ]
+  },
+  "II.ABKT": {
+    "II.ABKT..BHR":[
+      {"left_index": 1, "right_index": 2}
+    ],
+    "II.ABKT..BHT":[],
+    "II.ABKT..BHZ":[
+      {"left_index": 1, "right_index": 2},
+      {"left_index": 2, "right_index": 3}
+    ]
+  },
+  "IU.BCD": {
+    "IU.BCD..BHR":[
+      {"left_index": 1, "right_index": 2},
+      {"left_index": 2, "right_index": 3}
+     ],
+    "IU.BCD..BHT":[
+      {"left_index": 1, "right_index": 2},
+      {"left_index": 2, "right_index": 3}
+    ],
+    "IU.BCD..BHZ":[
+      {"left_index": 1, "right_index": 2},
+      {"left_index": 2, "right_index": 3},
+      {"left_index": 3, "right_index": 4},
+      {"left_index": 4, "right_index": 5},
+      {"left_index": 5, "right_index": 6}
+    ]
+  }
+}

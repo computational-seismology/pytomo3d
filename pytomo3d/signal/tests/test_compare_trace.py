@@ -1,6 +1,7 @@
 import os
 import inspect
 import pytest
+import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy.testing as npt
@@ -40,17 +41,52 @@ def reset_matplotlib():
     plt.switch_backend('agg')
 
 
+def test_least_square_error():
+    d1 = np.array([1, 2, 3])
+    d2 = 2 * d1
+    err = ct.least_squre_error(d1, d2)
+    npt.assert_almost_equal(err, 1/np.sqrt(2))
+
+    d1 = np.random.random(10)
+    d2 = 2 * d1
+    err = ct.least_squre_error(d1, d2)
+    npt.assert_almost_equal(err, 1/np.sqrt(2))
+
+
+def test_cross_correlation():
+    d1 = np.random.random(10)
+    d2 = 2 * d1
+    corr = ct.cross_correlation(d1, d2)
+    npt.assert_almost_equal(corr, 1.0)
+
+    d1 = np.random.random(10)
+    d2 = -2 * d1
+    corr = ct.cross_correlation(d1, d2)
+    npt.assert_almost_equal(corr, -1.0)
+
+    d1 = np.array([1, 2, 3, 4, 3, 2, 1])
+    d2 = np.array([1, 3, 4, -6, 4, 3, 1])
+    corr = ct.cross_correlation(d1, d2)
+    npt.assert_almost_equal(corr, -0.37849937)
+
+
 def test_calculate_misfit():
 
     tr1 = smallobs[0]
     tr2 = smallobs[0]
 
-    tr1_c, tr2_c, corr, err, _, _ = ct.calculate_misfit(tr1, tr2)
+    res = ct.calculate_misfit(tr1, tr2)
 
-    npt.assert_allclose(tr1_c, 0.90220, rtol=1e-3)
-    npt.assert_allclose(tr2_c, 0.90220, rtol=1e-3)
-    npt.assert_allclose(corr, 1.0)
-    npt.assert_allclose(err, 0.0)
+    npt.assert_allclose(res["tr1_coverage"], 1.0, rtol=1e-3)
+    npt.assert_allclose(res["tr2_coverage"], 1.0, rtol=1e-3)
+    npt.assert_allclose(res["correlation"], 1.0)
+    npt.assert_allclose(res["error"], 0.0)
+
+
+def test_trace_length():
+    l1 = ct.trace_length(smallobs[0])
+    l2 = smallobs[0].stats.endtime - smallobs[0].stats.starttime
+    npt.assert_almost_equal(l1, l2)
 
 
 def test_plot_two_trace_raise():

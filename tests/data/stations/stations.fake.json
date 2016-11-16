@@ -1,0 +1,51 @@
+{
+  "II.AAK..BHE": {
+    "depth": 0.0,  
+    "elevation": 2437.8, 
+    "latitude": 0.0, 
+    "longitude": 0.0, 
+    "sensor": "Streckeisen STS-1H/VBB Seismometer"
+  }, 
+  "II.AAK..BHN": {
+    "depth": 0.0,  
+    "elevation": 2437.8, 
+    "latitude": 0.0, 
+    "longitude": 0.0, 
+    "sensor": "Streckeisen STS-1H/VBB Seismometer"
+  }, 
+  "II.AAK..BHZ": {
+    "depth": 0.0,  
+    "elevation": 2437.8, 
+    "latitude": 0.0, 
+    "longitude": 0.0, 
+    "sensor": "Streckeisen STS-1H/VBB Seismometer"
+  },
+  "II.ABKT..BH1": {
+    "depth": 0.0,  
+    "elevation": 2437.8, 
+    "latitude": 0.0, 
+    "longitude": 120.0, 
+    "sensor": "Streckeisen STS1H/VBB Seismometer"
+  },
+  "II.ABKT..BH2": {
+    "depth": 0.0,  
+    "elevation": 2437.8, 
+    "latitude": 0.0, 
+    "longitude": 120.0, 
+    "sensor": "Streckeisen STS1H/VBB Seismometer"
+  },
+  "II.ABKT..BHZ": {
+    "depth": 0.0,  
+    "elevation": 2437.8, 
+    "latitude": 0.0, 
+    "longitude": 120.0, 
+    "sensor": "Streckeisen STS1H/VBB Seismometer"
+  },
+  "IU.BCD..BHZ": {
+    "depth": 0.0,  
+    "elevation": 2437.8, 
+    "latitude": 0.0, 
+    "longitude": -120.0, 
+    "sensor": "Guralp CMG3ESP/Reftek 72A-08 Datalogger w/LOG chan"
+  }
+}
