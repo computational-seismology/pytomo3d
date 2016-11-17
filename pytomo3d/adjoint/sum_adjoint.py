@@ -10,10 +10,8 @@ Utility functions for sum_adjoint in pypaw
     (http://www.gnu.org/licenses/lgpl-3.0.en.html)
 """
 from __future__ import print_function, division, absolute_import
-import os
 import numpy as np
 import copy
-from pprint import pprint
 from obspy import UTCDateTime
 from pytomo3d.signal.rotate import rotate_one_station_stream
 from pytomo3d.adjoint.process_adjsrc import convert_stream_to_adjs
@@ -28,11 +26,10 @@ def check_adj_consistency(adj_base, adj):
     If passed, return, then adj could be added into adj_base
     If not, raise ValueError
     """
-    if len(adj_base.adjoint_source) != len(adj.adjoint_source):
-        raise ValueError("Dimension of current adjoint_source(%d)"
-                         "and new added adj(%d) not the same" %
-                         (len(adj_base.adjoint_source),
-                          len(adj.adjoint_source)))
+    if adj_base.id != adj.id:
+        raise ValueError("Adjoint source id is different: %s, %s"
+                         % (adj_base.id, adj.id))
+
     if not np.isclose(adj_base.dt, adj.dt):
         raise ValueError("DeltaT of current adjoint source(%f)"
                          "and new added adj(%f) not the same"
@@ -42,6 +39,12 @@ def check_adj_consistency(adj_base, adj):
         raise ValueError("Start time of current adjoint source(%s)"
                          "and new added adj(%s) not the same"
                          % (adj_base.dt, adj.dt))
+
+    if len(adj_base.adjoint_source) != len(adj.adjoint_source):
+        raise ValueError("Dimension of current adjoint_source(%d)"
+                         "and new added adj(%d) not the same" %
+                         (len(adj_base.adjoint_source),
+                          len(adj.adjoint_source)))
 
 
 def check_events_consistent(events):
@@ -55,49 +58,10 @@ def check_events_consistent(events):
     for asdf_fn, event in events.iteritems():
         if event_base != event:
             diffs.append(asdf_fn)
-    return diffs
 
-
-def _rotate_one_station(sta_adjs, slat, slon, elat, elon):
-    adj_stream, meta_info = convert_adjs_to_stream(sta_adjs)
-    add_missing_components(adj_stream)
-    rotate_one_station_stream(adj_stream, elat, elon,
-                              station_latitude=slat,
-                              station_longitude=slon,
-                              mode="RT->NE")
-    new_adjs = convert_stream_to_adjs(adj_stream, meta_info)
-    adj_dict = {}
-    for _adj in new_adjs:
-        adj_id = "%s_%s_%s" % (_adj.network, _adj.station, _adj.component)
-        adj_dict[adj_id] = _adj
-    return adj_dict
-
-
-def validate_path(path):
-    print("="*20 + " Path information " + "="*20)
-    pprint(path)
-
-    err = 0
-    keys = ["input_file", "output_file", "rotate_flag"]
-    for _key in keys:
-        if _key not in path:
-            print("Missing key(%s) in path" % _key)
-            err = 1
-
-    if len(path["input_file"]) == 0:
-        print("No input information provided in path")
-    for finfo in path["input_file"].itervalues():
-        asdf_file = finfo["asdf_file"]
-        weight_file = finfo["weight_file"]
-        if not os.path.exists(asdf_file):
-            print("No asdf file: %s" % asdf_file)
-            err = 1
-        if not os.path.exists(weight_file):
-            print("No weight file: %s" % weight_file)
-            err = 1
-
-    if err != 0:
-        raise ValueError("Error in path file")
+    if len(diffs) != 0:
+        raise ValueError("Event information in %s not the same as others: %s"
+                         % (diffs, fn_base))
 
 
 def load_to_adjsrc(adj):
@@ -154,19 +118,6 @@ def dump_adjsrc(adj, station_info):
     return adj_array, adj_path, parameters
 
 
-def _get_station_adjsrcs(adjsrcs, sta_tag):
-    """
-    Extract three components for a specific sta_tag
-    """
-    comp_list = ["MXZ", "MXR", "MXT"]
-    adj_list = []
-    for comp in comp_list:
-        adj_name = "%s_%s" % (sta_tag, comp)
-        if adj_name in adjsrcs:
-            adj_list.append(adjsrcs[adj_name])
-    return adj_list
-
-
 def create_weighted_adj(adj, weight):
     new_adj = copy.deepcopy(adj)
     new_adj.adjoint_source *= weight
@@ -196,6 +147,35 @@ def check_station_consistent(sta1, sta2):
     return True
 
 
+def get_station_adjsrcs(adjsrcs, sta_tag):
+    """
+    Extract three components for a specific sta_tag
+    """
+    comp_list = ["MXR", "MXT", "MXZ"]
+    adj_list = []
+    for comp in comp_list:
+        adj_name = "%s_%s" % (sta_tag, comp)
+        if adj_name in adjsrcs:
+            adj_list.append(adjsrcs[adj_name])
+    return adj_list
+
+
+def rotate_one_station_adjsrcs(sta_adjs, slat, slon, elat, elon):
+    adj_stream, meta_info = convert_adjs_to_stream(sta_adjs)
+    add_missing_components(adj_stream)
+
+    rotate_one_station_stream(
+        adj_stream, elat, elon, station_latitude=slat, station_longitude=slon,
+        mode="RT->NE")
+
+    new_adjs = convert_stream_to_adjs(adj_stream, meta_info)
+    adj_dict = {}
+    for _adj in new_adjs:
+        adj_id = "%s_%s_%s" % (_adj.network, _adj.station, _adj.component)
+        adj_dict[adj_id] = _adj
+    return adj_dict
+
+
 def rotate_adjoint_sources(old_adjs, stations, event_latitude,
                            event_longitude):
     print("="*15 + "\nRotate adjoint sources from RT to EN")
@@ -211,10 +191,10 @@ def rotate_adjoint_sources(old_adjs, stations, event_latitude,
             slat = stations[sta_tag]["latitude"]
             slon = stations[sta_tag]["longitude"]
 
-            sta_adjs = _get_station_adjsrcs(old_adjs, sta_tag)
-            adj_dict = _rotate_one_station(sta_adjs, slat, slon,
-                                           event_latitude,
-                                           event_longitude)
+            sta_adjs = get_station_adjsrcs(old_adjs, sta_tag)
+            adj_dict = rotate_one_station_adjsrcs(
+                sta_adjs, slat, slon, event_latitude,
+                event_longitude)
             new_adjs.update(adj_dict)
 
     return new_adjs
