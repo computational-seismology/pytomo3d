@@ -29,12 +29,20 @@ def is_right_sensor(sensor, sensor_types):
 
 
 def count_windows(windows):
+    """
+    Count the number of channels and windows
+    :param windows:
+    :return:
+    """
     nchans = 0
     nwins = 0
     for stainfo in windows.itervalues():
         for chaninfo in stainfo.itervalues():
+            _nw = len(chaninfo)
+            if _nw == 0:
+                continue
             nchans += 1
-            nwins += len(chaninfo)
+            nwins += _nw
     return nchans, nwins
 
 
@@ -55,7 +63,7 @@ def print_window_filter_summary(old_windows, new_windows):
 
 def filter_windows_on_sensors(windows, stations, sensor_types, verbose=False):
     """
-    Filter the windows based on sensort types and station information.
+    Filter the windows based on sensor types and station information.
     Only sensor types in 'sensor_types' will be kept.
     """
     new_wins = {}
@@ -144,7 +152,7 @@ def filter_measurements_on_bounds(windows, measurements, bounds):
                              "measurements")
         for win, meas in zip(chan_wins, chan_meas):
             # print("%.2f, %.2f, %.2f" % (meas["dt"], bounds[0], bounds[1]))
-            if (meas["dt"] > bounds[0]) and (meas["dt"] < bounds[1]):
+            if (meas["dt"] >= bounds[0]) and (meas["dt"] <= bounds[1]):
                 new_wins.append(win)
         return new_wins
 
@@ -152,14 +160,18 @@ def filter_measurements_on_bounds(windows, measurements, bounds):
     for sta, sta_info in windows.iteritems():
         new_sta_wins = {}
         for chan, chan_info in sta_info.iteritems():
-            if(len(chan_info) == 0):
+            if len(chan_info) == 0:
                 continue
             comp = chan.split(".")[-1][-1]
             m = measurements[sta][chan]
             w = _filter_(chan_info, m, bounds[comp])
             # print(chan, ":", len(chan_info), ", ", len(w))
+            if len(w) == 0:
+                continue
             new_sta_wins[chan] = w
-        new_wins[sta] = new_sta_wins
+
+        if len(new_sta_wins) > 0:
+            new_wins[sta] = new_sta_wins
 
     return new_wins
 
@@ -179,7 +191,7 @@ def filter_windows_on_measurements(windows, measurements, measure_config):
         print("-" * 20 + "\nComponent: %s" % comp)
         user_bound = get_user_bound(measure_config[comp])
         std_bound = get_std_bound(means[comp], stds[comp],
-                                  measure_config["std_ratio"])
+                                  measure_config[comp]["std_ratio"])
 
         bound = [max(std_bound[0], user_bound[0]),
                  min(std_bound[1], user_bound[1])]
@@ -200,7 +212,11 @@ def check_consistency(windows, measurements):
             nwins_chan = len(chan_info)
             if nwins_chan == 0:
                 continue
-            nwins_meas = len(measurements[sta][chan])
+            try:
+                nwins_meas = len(measurements[sta][chan])
+            except KeyError as errmsg:
+                raise KeyError("Missing %s(%s) in measurements: %s"
+                               % (chan, sta, errmsg))
             if nwins_chan != nwins_meas:
                 raise ValueError(
                     "Inconsistent between windows(%d) and measurements(%d)"
@@ -232,7 +248,8 @@ def filter_windows(windows, stations, measurements, config, verbose=False):
             windows_sensor, measurements, measure_config)
     else:
         windows_measure = windows_sensor
+
     log["measurement"] = print_window_filter_summary(windows_sensor,
                                                      windows_measure)
 
-    return windows, log
+    return windows_measure, log

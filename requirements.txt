@@ -1,2 +1,3 @@
 git+git://github.com/wjlei1990/pyflex.git@devel
+git+git://github.com/wjlei1990/spaceweight.git@master
 git+git://github.com/chukren/pyadjoint.git@dev
