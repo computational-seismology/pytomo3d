@@ -158,8 +158,8 @@ def window_on_trace(obs_tr, syn_tr, config, station=None,
                                event=event, station=station)
     try:
         windows = ws.select_windows()
-    except:
-        print("Error on %s" % obs_tr.id)
+    except Exception as err:
+        print("Error(%s): %s" % (obs_tr.id, err))
         windows = []
 
     if figure_mode:
