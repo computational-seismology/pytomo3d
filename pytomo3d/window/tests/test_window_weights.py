@@ -164,8 +164,9 @@ def test_determin_category_weighting():
     category_ratio = {"17_40":  {"BHR": 1, "BHT": 2, "BHZ": 1},
                       "40_100": {"BHR": 2, "BHT": 4, "BHZ": 2},
                       "90_250": {"BHR": 8, "BHT": 8, "BHZ": 4}}
+    category_param = {"flag": True, "ratio": category_ratio}
 
-    weights = ww.determine_category_weighting(category_ratio, cat_wcounts)
+    weights = ww.determine_category_weighting(category_param, cat_wcounts)
 
     _true = {'17_40': {'BHR': 0.525, 'BHT': 1.05, 'BHZ': 0.525},
              '40_100': {'BHR': 1.05, 'BHT': 2.1, 'BHZ': 1.05},
@@ -183,8 +184,9 @@ def test_category_validator():
     category_ratio = {"17_40":  {"BHR": 1, "BHT": 2, "BHZ": 1},
                       "40_100": {"BHR": 2, "BHT": 4, "BHZ": 2},
                       "90_250": {"BHR": 8, "BHT": 8, "BHZ": 4}}
+    category_param = {"flag": True, "ratio": category_ratio}
 
-    weights = ww.determine_category_weighting(category_ratio, cat_wcounts)
+    weights = ww.determine_category_weighting(category_param, cat_wcounts)
 
     weights["17_40"]["BHR"] *= 2
     with pytest.raises(ValueError):

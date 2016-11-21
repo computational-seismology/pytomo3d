@@ -223,6 +223,8 @@ def _category_validator(weights, wcounts):
 
 
 def normalize_category_weights(category_ratio, cat_wcounts):
+    print("category ratio:", category_ratio)
+    print("category wcoutns:", cat_wcounts)
     sumv = 0
     nwins_total = 0
     for p, pinfo in cat_wcounts.iteritems():
@@ -240,7 +242,7 @@ def normalize_category_weights(category_ratio, cat_wcounts):
     return weights
 
 
-def determine_category_weighting(category_ratio, cat_wcounts):
+def determine_category_weighting(category_param, cat_wcounts):
     """
     determine the category weighting based on window counts
     in each category. The weighting ratios for different categoies
@@ -250,7 +252,8 @@ def determine_category_weighting(category_ratio, cat_wcounts):
     :param weight_param: weight parameter
     :param cat_wcounts: category window counts
     """
-    weights = normalize_category_weights(category_ratio, cat_wcounts)
+    weights = normalize_category_weights(category_param["ratio"],
+                                         cat_wcounts)
 
     _category_validator(weights, cat_wcounts)
 

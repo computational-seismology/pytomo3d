@@ -10,10 +10,8 @@ Utility functions for sum_adjoint in pypaw
     (http://www.gnu.org/licenses/lgpl-3.0.en.html)
 """
 from __future__ import print_function, division, absolute_import
-import os
 import numpy as np
 import copy
-from pprint import pprint
 from obspy import UTCDateTime
 from pytomo3d.signal.rotate import rotate_one_station_stream
 from pytomo3d.adjoint.process_adjsrc import convert_stream_to_adjs
@@ -71,33 +69,6 @@ def _rotate_one_station(sta_adjs, slat, slon, elat, elon):
         adj_id = "%s_%s_%s" % (_adj.network, _adj.station, _adj.component)
         adj_dict[adj_id] = _adj
     return adj_dict
-
-
-def validate_path(path):
-    print("="*20 + " Path information " + "="*20)
-    pprint(path)
-
-    err = 0
-    keys = ["input_file", "output_file", "rotate_flag"]
-    for _key in keys:
-        if _key not in path:
-            print("Missing key(%s) in path" % _key)
-            err = 1
-
-    if len(path["input_file"]) == 0:
-        print("No input information provided in path")
-    for finfo in path["input_file"].itervalues():
-        asdf_file = finfo["asdf_file"]
-        weight_file = finfo["weight_file"]
-        if not os.path.exists(asdf_file):
-            print("No asdf file: %s" % asdf_file)
-            err = 1
-        if not os.path.exists(weight_file):
-            print("No weight file: %s" % weight_file)
-            err = 1
-
-    if err != 0:
-        raise ValueError("Error in path file")
 
 
 def load_to_adjsrc(adj):
