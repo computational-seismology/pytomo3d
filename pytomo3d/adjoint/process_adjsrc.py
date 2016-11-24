@@ -28,7 +28,6 @@ def calculate_baz(elat, elon, slat, slon):
     :param slon: station longitude
     :return: back azimuth
     """
-
     _, _, baz = gps2dist_azimuth(elat, elon, slat, slon)
 
     return baz
@@ -57,22 +56,7 @@ def time_reverse_array(stream):
         tr.data = tr.data[::-1]
 
 
-def convert_adjs_to_stream(adjsrcs):
-    """
-    Convert adjoint sources into stream. So all obspy
-    tools will be available for processing. Return values
-    for adjoint stream and other information
-    """
-    meta_info = {}
-    adj_stream = Stream()
-    for adj in adjsrcs:
-        _tr, _meta = _convert_adj_to_trace(adj)
-        adj_stream.append(_tr)
-        meta_info[_tr.id] = _meta
-    return adj_stream, meta_info
-
-
-def _convert_adj_to_trace(adj):
+def convert_adj_to_trace(adj):
     """
     Convert AdjointSource to Trace,for internal use only
     """
@@ -96,29 +80,22 @@ def _convert_adj_to_trace(adj):
     return tr, meta
 
 
-def convert_stream_to_adjs(stream, meta_info):
+def convert_adjs_to_stream(adjsrcs):
     """
-    Convert stream to adjoint sources. Be careful about
-    the meta information here. If the adjoint source
-    has been rotated, from EN to RT, then the misfit
-    in meta information would be wrong.
+    Convert adjoint sources into stream. So all obspy
+    tools will be available for processing. Return values
+    for adjoint stream and other information
     """
-    adjsrcs = []
-
-    _key = meta_info.keys()[0]
-    _default_meta = meta_info[_key].copy()
-    _default_meta["misfit"] = 0.0
-    for _tr in stream:
-        try:
-            _meta = meta_info[_tr.id]
-        except KeyError:
-            _meta = _default_meta
-        adj = _convert_trace_to_adj(_tr, _meta)
-        adjsrcs.append(adj)
-    return adjsrcs
+    meta_info = {}
+    adj_stream = Stream()
+    for adj in adjsrcs:
+        _tr, _meta = convert_adj_to_trace(adj)
+        adj_stream.append(_tr)
+        meta_info[_tr.id] = _meta
+    return adj_stream, meta_info
 
 
-def _convert_trace_to_adj(tr, meta):
+def convert_trace_to_adj(tr, meta):
     """
     Convert Trace to AdjointSource, for internal use only, with
     meta data information
@@ -141,13 +118,36 @@ def _convert_trace_to_adj(tr, meta):
     return adj
 
 
+def convert_stream_to_adjs(stream, meta_info):
+    """
+    Convert stream to adjoint sources. Be careful about
+    the meta information here. If the adjoint source
+    has been rotated, from EN to RT, then the misfit
+    in meta information would be wrong.
+    """
+    adjsrcs = []
+
+    _key = meta_info.keys()[0]
+    _default_meta = meta_info[_key].copy()
+    _default_meta["misfit"] = 0.0
+    for _tr in stream:
+        try:
+            _meta = meta_info[_tr.id]
+        except KeyError:
+            _meta = _default_meta
+        adj = convert_trace_to_adj(_tr, _meta)
+        adjsrcs.append(adj)
+    return adjsrcs
+
+
 def zero_padding_stream(stream, starttime, endtime):
     """
     Zero padding the stream to time [starttime, endtime]. The time
     might not be precise due to the sampling rate. We usually cut
     one more point to make sure contains the time range. If you
-    want to get precise starttim and endtime, you need to interpolate
-    the stream
+    want to get precise starttim and endtime, you need to zero
+    padding first and then interpolate the stream to the exact
+    time.
     """
     if starttime > endtime:
         raise ValueError("Starttime is larger than endtime: [%f, %f]"
@@ -164,6 +164,7 @@ def zero_padding_stream(stream, starttime, endtime):
         npts_after = int((endtime - tr_endtime) / dt) + 1
         npts_after = max(npts_after, 0)
 
+        print(npts_before, npts_after)
         # recalculate the time for padding trace
         padding_starttime = tr_starttime - npts_before * dt
         padding_array = np.zeros(npts_before + npts + npts_after)
@@ -247,6 +248,7 @@ def add_missing_components(stream, component_list=["Z", "R", "T"]):
     """
     done_list = []
 
+    nadds = 0
     for tr in stream:
         nw = tr.stats.network
         sta = tr.stats.station
@@ -264,11 +266,14 @@ def add_missing_components(stream, component_list=["Z", "R", "T"]):
 
         tr_template = stream_sta[0]
         for component in missinglist:
+            nadds += 1
             zero_trace = tr_template.copy()
             zero_trace.data.fill(0.0)
             zero_trace.stats.channel = \
                 "%s%s" % (tr_template.stats.channel[0:2], component)
             stream.append(zero_trace)
+
+    return nadds
 
 
 def rotate_adj_stream(adj_stream, event, inventory):

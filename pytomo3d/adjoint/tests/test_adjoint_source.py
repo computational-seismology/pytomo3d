@@ -203,3 +203,7 @@ def test_calculate_adjsrc_on_stream_raises_if_windows_is_empty():
 #        obs, syn, windows, config, adj_src_type="cc_traveltime_misfit",
 #        adjoint_src_flag=True, figure_mode=False)
 #    assert adjsrc
+
+
+def test_measure_adjoint_on_stream():
+    pass

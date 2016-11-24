@@ -95,6 +95,19 @@ def merge_station_windows(windows):
     return w
 
 
+def merge_windows(windows):
+    """
+        Merge the windows(from one event) based on insturments
+    """
+    new_windows = {}
+    for sta, sta_info in windows.iteritems():
+        if sta_info is None:
+            continue
+        # merge the windows for each station
+        new_windows[sta] = merge_station_windows(sta_info)
+    return new_windows
+
+
 def stats_all_windows(windows, obsd_tag, synt_tag,
                       instrument_merge_flag,
                       output_file):
