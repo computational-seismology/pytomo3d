@@ -8,6 +8,9 @@ from obspy import UTCDateTime, read
 from pyadjoint import AdjointSource
 import pytomo3d.adjoint.process_adjsrc as pa
 
+# use the obspy default stream in read function
+SAMPLE_STREAM = read()
+
 
 def _upper_level(path, nlevel=4):
     """
@@ -36,7 +39,7 @@ def test_calculate_baz():
 
 
 def test_change_channel_name():
-    st = read()
+    st = SAMPLE_STREAM.copy()
     for tr in st:
         assert tr.stats.channel[0:2] == "EH"
     pa.change_channel_name(st, "MX")
@@ -51,7 +54,7 @@ def check_array_reverse(arr1, arr2):
 
 
 def test_time_reverse_array():
-    st = read()
+    st = SAMPLE_STREAM.copy()
     _st = st.copy()
     pa.time_reverse_array(_st)
     for tr, _tr in zip(st, _st):
@@ -115,7 +118,7 @@ def test_convert_adjs_to_stream():
 
 
 def test_convert_trace_to_adj():
-    tr = read()[0]
+    tr = SAMPLE_STREAM.copy()[0]
     meta = {"adj_src_type": "cc_traveltime_misfit", "misfit": 1.0,
             "min_period": 17.0, "max_period": 40.0}
     adj = pa.convert_trace_to_adj(tr, meta)
@@ -185,8 +188,81 @@ def test_zero_padding_stream():
     npt.assert_array_almost_equal(tr_new.data[14:20], np.zeros(6))
 
 
-def test_sum_adj_on_component():
-    pass
+def assert_trace_equal(tr1, tr2):
+    assert tr1.id == tr2.id
+    assert tr1.stats.starttime == tr2.stats.starttime
+    assert tr1.stats.endtime == tr2.stats.endtime
+    assert tr1.stats.npts == tr2.stats.npts
+    npt.assert_almost_equal(tr1.stats.delta, tr2.stats.delta)
+    npt.assert_array_almost_equal(tr1.data, tr2.data)
+
+
+def test_sum_adjoint_no_weighting():
+    st = SAMPLE_STREAM.copy()
+    trz = deepcopy(st.select(component="Z")[0])
+    trz.stats.location = "00"
+    st.append(trz)
+    meta_info = {"BW.RJOB..EHZ": {"misfit": 1.0, "type": "test1"},
+                 "BW.RJOB..EHN": {"misfit": 2.0, "type": "test2"},
+                 "BW.RJOB..EHE": {"misfit": 3.0, "type": "test3"},
+                 "BW.RJOB.00.EHZ": {"misfit": 4.0, "type": "test4"}}
+    new_st, new_meta = pa.sum_adjoint_no_weighting(st, meta_info)
+
+    assert len(new_st) == 3
+    assert len(new_meta) == 3
+
+    _true_z = st.select(component="Z")[0]
+    _true_z.data *= 2
+    _true_z.stats.channel = "MXZ"
+    assert_trace_equal(_true_z, new_st.select(component="Z")[0])
+    assert new_meta["BW.RJOB..MXZ"] == {"misfit": 5.0, "type": "test1"}
+
+    _true_n = st.select(component="N")[0]
+    _true_n.stats.channel = "MXN"
+    assert_trace_equal(_true_n, new_st.select(component="N")[0])
+    assert new_meta["BW.RJOB..MXN"] == {"misfit": 2.0, "type": "test2"}
+
+    _true_e = st.select(component="E")[0]
+    _true_e.stats.channel = "MXE"
+    assert_trace_equal(_true_e, new_st.select(component="E")[0])
+    assert new_meta["BW.RJOB..MXE"] == {"misfit": 3.0, "type": "test3"}
+
+
+def test_sum_adjoint_with_weighting():
+    st = SAMPLE_STREAM.copy()
+    trz = deepcopy(st.select(component="Z")[0])
+    trz.stats.location = "00"
+    st.append(trz)
+    meta_info = {"BW.RJOB..EHZ": {"misfit": 1.0, "type": "test1"},
+                 "BW.RJOB..EHN": {"misfit": 2.0, "type": "test2"},
+                 "BW.RJOB..EHE": {"misfit": 3.0, "type": "test3"},
+                 "BW.RJOB.00.EHZ": {"misfit": 4.0, "type": "test4"}}
+    weight_dict = {"MXZ": {"BW.RJOB..EHZ": 2.0, "BW.RJOB.00.EHZ": 1.0},
+                   "MXN": {"BW.RJOB..EHN": 2.0},
+                   "MXE": {"BW.RJOB..EHE": 3.0}}
+    new_st, new_meta = pa.sum_adjoint_with_weighting(
+        st, meta_info, weight_dict)
+
+    assert len(new_st) == 3
+    assert len(new_meta) == 3
+
+    _true_z = st.select(component="Z")[0]
+    _true_z.data *= 3
+    _true_z.stats.channel = "MXZ"
+    assert_trace_equal(_true_z, new_st.select(component="Z")[0])
+    assert new_meta["BW.RJOB..MXZ"] == {"misfit": 6.0, "type": "test1"}
+
+    _true_n = st.select(component="N")[0]
+    _true_n.stats.channel = "MXN"
+    _true_n.data *= 2
+    assert_trace_equal(_true_n, new_st.select(component="N")[0])
+    assert new_meta["BW.RJOB..MXN"] == {"misfit": 4.0, "type": "test2"}
+
+    _true_e = st.select(component="E")[0]
+    _true_e.stats.channel = "MXE"
+    _true_e.data *= 3
+    assert_trace_equal(_true_e, new_st.select(component="E")[0])
+    assert new_meta["BW.RJOB..MXE"] == {"misfit": 9.0, "type": "test3"}
 
 
 def test_add_missing_components():

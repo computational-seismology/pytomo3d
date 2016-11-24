@@ -11,6 +11,7 @@ Methods that handles adjoint sources
 """
 from __future__ import (print_function, division)
 import numpy as np
+from copy import deepcopy
 from obspy import Stream, Trace
 from obspy.geodetics import gps2dist_azimuth
 from pyadjoint import AdjointSource
@@ -175,6 +176,63 @@ def zero_padding_stream(stream, starttime, endtime):
         tr.stats.starttime = padding_starttime
 
 
+def sum_adjoint_no_weighting(adj_stream, meta_info):
+    """
+    Add same components in adjoint source together without
+    extra weight, i.e., equal weight.
+
+    :param adj_stream:
+    :param meta_info:
+    :return:
+    """
+    new_stream = Stream()
+    new_meta = {}
+    done_comps = []
+    for tr in adj_stream:
+        comp = tr.stats.channel[-1]
+        print(comp, done_comps)
+        if comp not in done_comps:
+            done_comps.append(comp)
+            comp_tr = tr.copy()
+            comp_tr.stats.location = ""
+            comp_tr.stats.channel = "MX" + comp
+            new_stream.append(comp_tr)
+            new_meta[comp_tr.id] = deepcopy(meta_info[tr.id])
+        else:
+            comp_tr = new_stream.select(component=comp)[0]
+            comp_tr.data += tr.data
+            new_meta[comp_tr.id]["misfit"] += meta_info[tr.id]["misfit"]
+
+    return new_stream, new_meta
+
+
+def sum_adjoint_with_weighting(adj_stream, meta_info, weight_dict):
+    new_stream = Stream()
+    new_meta = {}
+    done_comps = []
+    # sum using components weight
+    for comp, comp_weights in weight_dict.iteritems():
+        for chan_id, chan_weight in comp_weights.iteritems():
+            if comp not in done_comps:
+                done_comps.append(comp)
+                adj_tr = adj_stream.select(id=chan_id)[0]
+                comp_tr = adj_tr.copy()
+                comp_tr.data *= chan_weight
+                comp_tr.stats.location = ""
+                comp_tr.stats.channel = comp
+                new_stream.append(comp_tr)
+                new_meta[comp_tr.id] = meta_info[adj_tr.id].copy()
+                new_meta[comp_tr.id]["misfit"] = \
+                    chan_weight * meta_info[adj_tr.id]["misfit"]
+            else:
+                adj_tr = adj_stream.select(id=chan_id)[0]
+                comp_tr = new_stream.select(channel="*%s" % comp)[0]
+                comp_tr.data += chan_weight * adj_tr.data
+                new_meta[comp_tr.id]["misfit"] += \
+                    chan_weight * meta_info[adj_tr.id]["misfit"]
+    return new_stream, new_meta
+
+
 def sum_adj_on_component(adj_stream, meta_info, weight_flag=False,
                          weight_dict=None):
     """
@@ -193,49 +251,12 @@ def sum_adj_on_component(adj_stream, meta_info, weight_flag=False,
     :return: summed adjoint source stream
     """
     if weight_flag and weight_dict is None:
-        raise ValueError("weight_dict should be assigned if you want")
-
-    new_stream = Stream()
-    new_meta = {}
-    done_comps = []
-
-    if not weight_flag:
-        # just add same components together without weight
-        for tr in adj_stream:
-            comp = tr.stats.channel[-1]
-            if comp not in done_comps:
-                comp_tr = tr.copy()
-                comp_tr.stats.location = ""
-                comp_tr.stats.channel = "MX" + comp
-                new_stream.append(comp_tr)
-                new_meta[comp_tr.id] = meta_info[tr.id].copy()
-            else:
-                comp_tr = new_stream.select("*%s" % comp)
-                comp_tr.data += tr.data
-                new_meta[comp_tr.id]["misfit"] += meta_info[tr.id]["misfit"]
+        raise ValueError("weight_dict should be assigned if you want use"
+                         "weighting")
+    if weight_flag:
+        return sum_adjoint_with_weighting(adj_stream, meta_info, weight_dict)
     else:
-        # sum using components weight
-        for comp, comp_weights in weight_dict.iteritems():
-            for chan_id, chan_weight in comp_weights.iteritems():
-                if comp not in done_comps:
-                    done_comps.append(comp)
-                    adj_tr = adj_stream.select(id=chan_id)[0]
-                    comp_tr = adj_tr.copy()
-                    comp_tr.data *= chan_weight
-                    comp_tr.stats.location = ""
-                    comp_tr.stats.channel = comp
-                    new_stream.append(comp_tr)
-                    new_meta[comp_tr.id] = meta_info[adj_tr.id].copy()
-                    new_meta[comp_tr.id]["misfit"] = \
-                        chan_weight * meta_info[adj_tr.id]["misfit"]
-                else:
-                    adj_tr = adj_stream.select(id=chan_id)[0]
-                    comp_tr = new_stream.select(channel="*%s" % comp)[0]
-                    comp_tr.data += chan_weight * adj_tr.data
-                    new_meta[comp_tr.id]["misfit"] += \
-                        chan_weight * meta_info[adj_tr.id]["misfit"]
-
-    return new_stream, new_meta
+        return sum_adjoint_no_weighting(adj_stream, meta_info)
 
 
 def add_missing_components(stream, component_list=["Z", "R", "T"]):
