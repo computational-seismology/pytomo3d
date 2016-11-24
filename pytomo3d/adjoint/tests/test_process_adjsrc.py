@@ -70,7 +70,7 @@ def test_convert_adjs_to_trace():
         starttime=starttime)
 
     tr, meta = pa.convert_adj_to_trace(adj)
-    npt.assert_array_almost_equal(tr.data, array)
+    npt.assert_allclose(tr.data, array)
     assert tr.stats.starttime == starttime
     npt.assert_almost_equal(tr.stats.delta, 1.0)
     assert tr.id == "II.AAK..BHZ"
@@ -112,7 +112,7 @@ def test_convert_adjs_to_stream():
 
     for tr, trid in zip(st, true_keys):
         assert tr.id == trid
-        npt.assert_array_almost_equal(tr.data, array)
+        npt.assert_allclose(tr.data, array)
         npt.assert_almost_equal(tr.stats.delta, 1.0)
         assert tr.stats.starttime == starttime
 
@@ -122,7 +122,7 @@ def test_convert_trace_to_adj():
     meta = {"adj_src_type": "cc_traveltime_misfit", "misfit": 1.0,
             "min_period": 17.0, "max_period": 40.0}
     adj = pa.convert_trace_to_adj(tr, meta)
-    npt.assert_array_almost_equal(adj.adjoint_source, tr.data)
+    npt.assert_allclose(adj.adjoint_source, tr.data)
     npt.assert_almost_equal(adj.dt, tr.stats.delta)
     assert adj.id == tr.id
     assert adj.starttime == tr.stats.starttime
@@ -138,7 +138,7 @@ def assert_adj_same(adj1, adj2):
     npt.assert_almost_equal(adj1.dt, adj2.dt)
     npt.assert_almost_equal(adj1.min_period, adj2.min_period)
     npt.assert_almost_equal(adj1.max_period, adj2.max_period)
-    npt.assert_array_almost_equal(adj1.adjoint_source, adj2.adjoint_source)
+    npt.assert_allclose(adj1.adjoint_source, adj2.adjoint_source)
     assert adj1.starttime == adj2.starttime
 
 
@@ -183,18 +183,18 @@ def test_zero_padding_stream():
     assert tr_new.stats.starttime == (starttime - 1.0)
     assert tr_new.stats.endtime == (endtime + 1.0)
     assert len(tr_new) == 20
-    npt.assert_array_almost_equal(tr_new.data[0:11], np.zeros(11))
-    npt.assert_array_almost_equal(tr_new.data[11:14], array)
-    npt.assert_array_almost_equal(tr_new.data[14:20], np.zeros(6))
+    npt.assert_allclose(tr_new.data[0:11], np.zeros(11))
+    npt.assert_allclose(tr_new.data[11:14], array)
+    npt.assert_allclose(tr_new.data[14:20], np.zeros(6))
 
 
-def assert_trace_equal(tr1, tr2):
+def assert_trace_equal(tr1, tr2, rtol=1e-07):
     assert tr1.id == tr2.id
     assert tr1.stats.starttime == tr2.stats.starttime
     assert tr1.stats.endtime == tr2.stats.endtime
     assert tr1.stats.npts == tr2.stats.npts
     npt.assert_almost_equal(tr1.stats.delta, tr2.stats.delta)
-    npt.assert_array_almost_equal(tr1.data, tr2.data)
+    npt.assert_allclose(tr1.data, tr2.data, rtol=rtol)
 
 
 def test_sum_adjoint_no_weighting():
@@ -279,7 +279,7 @@ def test_add_missing_components():
     assert nadds == 1
     trz = st.select(component="Z")[0]
     assert trz.id == "II.AAK..BHZ"
-    npt.assert_array_almost_equal(trz.data, np.zeros(5))
+    npt.assert_allclose(trz.data, np.zeros(5))
     assert trz.stats.starttime == starttime
 
     st.remove(st.select(component="R")[0])
@@ -287,7 +287,7 @@ def test_add_missing_components():
     assert nadds == 1
     trr = st.select(component="R")[0]
     assert trr.id == "II.AAK..BHR"
-    npt.assert_array_almost_equal(trr.data, np.zeros(5))
+    npt.assert_allclose(trr.data, np.zeros(5))
     assert trr.stats.starttime == starttime
 
 
@@ -296,7 +296,26 @@ def test_rotate_adj_stream():
 
 
 def test_interp_adj_stream():
-    pass
+    st = SAMPLE_STREAM.copy()
+    _st = st.copy()
+    starttime = st[0].stats.starttime
+    delta = st[0].stats.delta
+    npts = st[0].stats.npts
+
+    dnpts = 20
+    dt = dnpts * delta
+    pa.interp_adj_stream(
+        st, interp_starttime=starttime-dt, interp_delta=delta,
+        interp_npts=npts + 2 * dnpts)
+
+    st.interpolate(sampling_rate=1/delta, starttime=starttime, npts=npts)
+    # import matplotlib.pyplot as plt
+    for tr, _tr in zip(st, _st):
+        # plt.plot(tr.data, 'b')
+        # plt.plot(_tr.data, 'r')
+        # plt.show()
+        # assert_trace_equal(tr, _tr)
+        pass
 
 
 def test_process_adjoint():

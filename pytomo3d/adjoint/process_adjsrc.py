@@ -165,7 +165,6 @@ def zero_padding_stream(stream, starttime, endtime):
         npts_after = int((endtime - tr_endtime) / dt) + 1
         npts_after = max(npts_after, 0)
 
-        print(npts_before, npts_after)
         # recalculate the time for padding trace
         padding_starttime = tr_starttime - npts_before * dt
         padding_array = np.zeros(npts_before + npts + npts_after)
@@ -304,6 +303,7 @@ def rotate_adj_stream(adj_stream, event, inventory):
     if event is None or inventory is None:
         raise ValueError("Event and Station must be provied to rotate the"
                          "adjoint source")
+
     # extract event information
     origin = event.preferred_origin() or event.origins[0]
     elat = origin.latitude
