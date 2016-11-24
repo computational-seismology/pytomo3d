@@ -188,13 +188,13 @@ def test_zero_padding_stream():
     npt.assert_allclose(tr_new.data[14:20], np.zeros(6))
 
 
-def assert_trace_equal(tr1, tr2, rtol=1e-07):
+def assert_trace_equal(tr1, tr2, rtol=1e-07, atol=0):
     assert tr1.id == tr2.id
     assert tr1.stats.starttime == tr2.stats.starttime
     assert tr1.stats.endtime == tr2.stats.endtime
     assert tr1.stats.npts == tr2.stats.npts
     npt.assert_almost_equal(tr1.stats.delta, tr2.stats.delta)
-    npt.assert_allclose(tr1.data, tr2.data, rtol=rtol)
+    npt.assert_allclose(tr1.data, tr2.data, rtol=rtol, atol=atol)
 
 
 def test_sum_adjoint_no_weighting():
@@ -309,13 +309,8 @@ def test_interp_adj_stream():
         interp_npts=npts + 2 * dnpts)
 
     st.interpolate(sampling_rate=1/delta, starttime=starttime, npts=npts)
-    # import matplotlib.pyplot as plt
     for tr, _tr in zip(st, _st):
-        # plt.plot(tr.data, 'b')
-        # plt.plot(_tr.data, 'r')
-        # plt.show()
-        # assert_trace_equal(tr, _tr)
-        pass
+        assert_trace_equal(tr, _tr, rtol=1e-3, atol=0.005)
 
 
 def test_process_adjoint():
