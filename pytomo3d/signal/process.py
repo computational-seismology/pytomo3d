@@ -112,8 +112,9 @@ def filter_trace(tr, pre_filt):
     """
     if not isinstance(tr, Trace):
         raise TypeError("First Argument should be trace: %s" % type(tr))
-
-    if not check_array_order(pre_filt):
+    if len(pre_filt) != 4:
+        raise ValueError("Length of filter must be 4(corner frequencies)")
+    if not check_array_order(pre_filt, order="ascending"):
         raise ValueError("Frequency band should be in ascending order: %s"
                          % pre_filt)
 

@@ -7,6 +7,7 @@ import obspy
 from obspy import UTCDateTime, read
 from pyadjoint import AdjointSource
 import pytomo3d.adjoint.process_adjsrc as pa
+from pytomo3d.signal.rotate import rotate_stream
 
 # use the obspy default stream in read function
 SAMPLE_STREAM = read()
@@ -292,7 +293,15 @@ def test_add_missing_components():
 
 
 def test_rotate_adj_stream():
-    pass
+    # rotate from NEZ to RTZ and rotate back
+    st = SAMPLE_STREAM.copy()
+    inv = obspy.read_inventory()
+    st_rtz = st.copy()
+    rotate_stream(st_rtz, 0, 0, inv, mode="NE->RT", sanity_check=True)
+    st_nez = st_rtz.copy()
+    pa.rotate_adj_stream(st_nez, 0, 0, inv)
+    for tr1, tr2 in zip(st, st_nez):
+        assert_trace_equal(tr1, tr2)
 
 
 def test_interp_adj_stream():
@@ -314,4 +323,80 @@ def test_interp_adj_stream():
 
 
 def test_process_adjoint():
-    pass
+    array = np.array([1, 2, 3, 4, 5])
+    starttime = UTCDateTime(1990, 1, 1)
+    adjsrcs = get_sample_adjsrcs(array, starttime)
+    final_adjsrcs = pa.process_adjoint(
+        adjsrcs, interp_flag=False, sum_over_comp_flag=False,
+        filter_flag=False, add_missing_comp_flag=False,
+        rotate_flag=False)
+
+    assert len(final_adjsrcs) == 3
+    for adj1, adj2 in zip(adjsrcs, final_adjsrcs):
+        npt.assert_allclose(adj1.adjoint_source, adj2.adjoint_source[::-1])
+        assert adj1.id == adj2.id
+
+    adjsrcs = [adjsrcs[0], adjsrcs[1]]
+    final_adjsrcs = pa.process_adjoint(
+        adjsrcs, interp_flag=False, sum_over_comp_flag=False,
+        filter_flag=False, add_missing_comp_flag=True,
+        rotate_flag=False)
+    assert len(final_adjsrcs) == 3
+    assert adjsrcs[0].id == final_adjsrcs[0].id
+    npt.assert_allclose(adjsrcs[0].adjoint_source,
+                        final_adjsrcs[0].adjoint_source[::-1])
+    assert final_adjsrcs[1].id == "II.AAK..BHR"
+    npt.assert_allclose(final_adjsrcs[1].adjoint_source,
+                        adjsrcs[1].adjoint_source[::-1])
+    assert final_adjsrcs[2].id == "II.AAK..BHT"
+    npt.assert_allclose(final_adjsrcs[2].adjoint_source,
+                        np.zeros(len(array)))
+
+
+def prepare_real_adj_data():
+    st = SAMPLE_STREAM.copy()
+    inv = obspy.read_inventory()
+    event = obspy.read_events()[0]
+    elat = event.preferred_origin().latitude
+    elon = event.preferred_origin().longitude
+
+    rotate_stream(st, elat, elon, inv)
+    new_z = st.select(component="Z")[0].copy()
+    new_z.stats.location = "00"
+    st.append(new_z)
+
+    meta = {
+        "BW.RJOB..EHZ": {
+            "adj_src_type": "waveform_misfit", "misfit": 1.0,
+            "min_period": 17.0, "max_period": 40.0},
+        "BW.RJOB..EHR": {
+            "adj_src_type": "waveform_misfit", "misfit": 2.0,
+            "min_period": 17.0, "max_period": 40.0},
+        "BW.RJOB..EHT": {
+            "adj_src_type": "waveform_misfit", "misfit": 3.0,
+            "min_period": 17.0, "max_period": 40.0},
+        "BW.RJOB.00.EHZ": {
+            "adj_src_type": "waveform_misfit", "misfit": 4.0,
+            "min_period": 17.0, "max_period": 40.0}}
+    return st, meta
+
+
+def test_process_adjoint_2():
+    st, meta = prepare_real_adj_data()
+    inv = obspy.read_inventory()
+    event = obspy.read_events()[0]
+
+    adjs = pa.convert_stream_to_adjs(st, meta)
+    starttime = adjs[0].starttime - 20
+    delta = adjs[0].dt / 2.0
+    npts = 40 + 2 * len(adjs[0].adjoint_source)
+    new_adj = pa.process_adjoint(
+        adjs, interp_flag=True, interp_starttime=starttime,
+        interp_delta=delta, interp_npts=npts, sum_over_comp_flag=True,
+        weight_flag=False, filter_flag=True,
+        pre_filt=[0.02, 0.025, 0.059, 0.073],
+        taper_percentage=0.05, taper_type="hann",
+        add_missing_comp_flag=True, rotate_flag=True,
+        inventory=inv, event=event
+    )
+    assert len(new_adj) == 3

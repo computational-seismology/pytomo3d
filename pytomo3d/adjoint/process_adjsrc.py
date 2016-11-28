@@ -15,7 +15,7 @@ from copy import deepcopy
 from obspy import Stream, Trace
 from obspy.geodetics import gps2dist_azimuth
 from pyadjoint import AdjointSource
-from pytomo3d.signal.process import filter_trace, check_array_order
+from pytomo3d.signal.process import filter_trace
 from pytomo3d.signal.rotate import rotate_stream
 
 
@@ -64,7 +64,7 @@ def convert_adj_to_trace(adj):
     meta = {}
 
     tr = Trace()
-    tr.data = adj.adjoint_source
+    tr.data = deepcopy(adj.adjoint_source)
     tr.stats.starttime = adj.starttime
     tr.stats.delta = adj.dt
 
@@ -110,7 +110,7 @@ def convert_trace_to_adj(tr, meta):
     component = tr.stats.channel
     adj = AdjointSource(adj_src_type, misfit, dt, minp, maxp, component)
 
-    adj.adjoint_source = tr.data
+    adj.adjoint_source = deepcopy(tr.data)
     adj.station = tr.stats.station
     adj.network = tr.stats.network
     adj.location = tr.stats.location
@@ -189,7 +189,7 @@ def sum_adjoint_no_weighting(adj_stream, meta_info):
     done_comps = []
     for tr in adj_stream:
         comp = tr.stats.channel[-1]
-        print(comp, done_comps)
+        # print(comp, done_comps)
         if comp not in done_comps:
             done_comps.append(comp)
             comp_tr = tr.copy()
@@ -296,20 +296,15 @@ def add_missing_components(stream, component_list=["Z", "R", "T"]):
     return nadds
 
 
-def rotate_adj_stream(adj_stream, event, inventory):
+def rotate_adj_stream(adj_stream, elatitude, elongitude, inventory):
     """
     Rotate adjoint stream from "RT" to "EN"
     """
-    if event is None or inventory is None:
-        raise ValueError("Event and Station must be provied to rotate the"
+    if inventory is None:
+        raise ValueError("Station must be provied to rotate the"
                          "adjoint source")
-
-    # extract event information
-    origin = event.preferred_origin() or event.origins[0]
-    elat = origin.latitude
-    elon = origin.longitude
-
-    rotate_stream(adj_stream, elat, elon, inventory, mode="RT->NE")
+    rotate_stream(adj_stream, elatitude, elongitude, inventory,
+                  mode="RT->NE")
 
 
 def interp_adj_stream(adj_stream, interp_starttime=None, interp_delta=None,
@@ -380,18 +375,9 @@ def process_adjoint(adjsrcs, interp_flag=False, interp_starttime=None,
         # after filtering, taper should be applied to ensure the adjoint
         # source would be zero at two ends
         adj_stream.taper(max_percentage=taper_percentage, type=taper_type)
-
-        # filter the adjoint source
-        if pre_filt is None or len(pre_filt) != 4:
-            raise ValueError("Input pre_filt should be a list or tuple with "
-                             "length of 4")
-        if not check_array_order(pre_filt, order="ascending"):
-            raise ValueError("Input pre_filt must a in ascending order. The "
-                             "unit is Hz")
-
+        # filter each trace
         for tr in adj_stream:
             filter_trace(tr, pre_filt)
-
         # after filtering, taper should be applied to ensure the adjoint
         # source would be zero at two ends
         adj_stream.taper(max_percentage=taper_percentage, type=taper_type)
@@ -400,7 +386,9 @@ def process_adjoint(adjsrcs, interp_flag=False, interp_starttime=None,
         add_missing_components(adj_stream, component_list=["Z", "R", "T"])
 
     if rotate_flag:
-        rotate_adj_stream(adj_stream, event, inventory)
+        origin = event.preferred_origin() or event.origins[0]
+        rotate_adj_stream(adj_stream, origin.latitude, origin.longitude,
+                          inventory)
 
     # convert the stream back to pyadjoint.AdjointSource
     final_adjsrcs = convert_stream_to_adjs(adj_stream, adj_meta)
