@@ -12,11 +12,13 @@ distribution.
 """
 from __future__ import print_function, division, absolute_import
 
+import os
 from collections import defaultdict
 import numpy as np
 
 from spaceweight import SpherePoint
 from spaceweight import SphereDistRel
+from pytomo3d.utils.io import check_dict_keys, load_json
 
 
 def _receiver_validator(weights, rec_wcounts, cat_wcounts):
@@ -130,7 +132,7 @@ def get_receiver_weights(component, center, points, max_ratio, plot=False,
         figname=scan_figname)
 
     if plot:
-        map_figname = figname_prefix + ".%s.weight.png" % component
+        map_figname = figname_prefix + ".%s.weight.pdf" % component
         weightobj.plot_global_map(figname=map_figname, lon0=180.0)
 
     return ref_distance, cond_number
@@ -182,7 +184,9 @@ def determine_receiver_weighting(
     ref_dists = {}
     cond_nums = {}
     for comp, comp_info in rec_wcounts.iteritems():
+        print("-" * 10 + "\nComponent: %s" % comp)
         points = assign_receiver_to_points(comp_info, stations)
+        print("Number of receivers: %d" % len(points))
 
         if weight_flag:
             ref_dists[comp], cond_nums[comp] = \
@@ -200,6 +204,50 @@ def determine_receiver_weighting(
     return {"rec_weights": weights, "rec_wcounts": rec_wcounts,
             "cat_wcounts": cat_wcounts, "rec_ref_dists": ref_dists,
             "rec_cond_nums": cond_nums}
+
+
+def calculate_receiver_weights_interface(
+        src_info, path_info, weighting_param, _verbose=True):
+    """
+    The user interface(API) for calculation the receiver weighting
+    in pypaw
+
+    :param src_info: keys contains ["latitude", "longitude"]
+    :type src_info: dict
+    :param path_info: keys contains ["station_file", "window_file",
+        "output_file"]
+    :type path_info: dict
+    :param weighting_param: keys contains ["flag", "plot", "search_ratio"]
+    :type weighting_param: dict
+    """
+    check_dict_keys(src_info, ["latitude", "longitude", "depth_in_m"])
+    check_dict_keys(path_info, ["station_file", "window_file", "output_file"])
+    check_dict_keys(weighting_param, ["flag", "plot", "search_ratio"])
+
+    search_ratio = weighting_param["search_ratio"]
+    plot_flag = weighting_param["plot"]
+    weight_flag = weighting_param["flag"]
+    # each file still contains 3-component
+    if _verbose:
+        print("src_info: %s" % src_info)
+        print("path_info: %s" % path_info)
+        print("weighting param: %s" % weighting_param)
+
+    station_info = load_json(path_info["station_file"])
+    window_info = load_json(path_info["window_file"])
+
+    outputdir = os.path.dirname(path_info["output_file"])
+    if not os.path.exists(outputdir):
+        os.makedirs(outputdir)
+    figname_prefix = os.path.join(outputdir, "weights")
+
+    _results = determine_receiver_weighting(
+        src_info, station_info, window_info,
+        search_ratio=search_ratio,
+        weight_flag=weight_flag,
+        plot_flag=plot_flag, figname_prefix=figname_prefix)
+
+    return _results
 
 
 def _category_validator(weights, wcounts):
@@ -223,6 +271,8 @@ def _category_validator(weights, wcounts):
 
 
 def normalize_category_weights(category_ratio, cat_wcounts):
+    """
+    """
     print("category ratio:", category_ratio)
     print("category wcoutns:", cat_wcounts)
     sumv = 0
@@ -242,19 +292,51 @@ def normalize_category_weights(category_ratio, cat_wcounts):
     return weights
 
 
-def determine_category_weighting(category_param, cat_wcounts):
+def calculate_category_weights_interface(category_param, cat_wcounts):
     """
-    determine the category weighting based on window counts
+    User interface(API) for calculating category weights
+
+    Calculate the category weighting based on window counts
     in each category. The weighting ratios for different categoies
     are input parameters. So this function only normlizes
     the weights without change the ratio.
+    !!! WARNING !!!
+    It is the ratio between different categories, not the window
+    counts. For example, the value will be mostly likely to be
+    set to 1/N_w(for windows, less weights to balance categories)
 
-    :param weight_param: weight parameter
-    :param cat_wcounts: category window counts
+    :param weight_param: user parameter, which contains the weighting
+        ratio for each category.
+    :type weight_param: dict
+    :param cat_wcounts: category window counts, which should contains
+        the same period band as category_param['ratio']
+    :type cat_wcounts: dict
     """
+    check_dict_keys(category_param, ["flag", "ratio"])
+    check_dict_keys(cat_wcounts, category_param["ratio"].keys())
+
     weights = normalize_category_weights(category_param["ratio"],
                                          cat_wcounts)
-
     _category_validator(weights, cat_wcounts)
 
+    return weights
+
+
+def combine_receiver_and_category_weights(rec_weights, cat_weights):
+    """
+    Combine weights for receiver weighting and category weighting
+    """
+    # combine weights
+    weights = {}
+    for period, period_info in rec_weights.iteritems():
+        weights[period] = {}
+        for comp, comp_info in period_info.iteritems():
+            for chan_id in comp_info:
+                rec_weight = comp_info[chan_id]
+                cat_weight = cat_weights[period][comp]
+                _weight = {"receiver": rec_weight,
+                           "category": cat_weight}
+                _weight["weight"] = \
+                    rec_weight * cat_weight
+                weights[period][chan_id] = _weight
     return weights

@@ -156,6 +156,10 @@ def test_normalize_category_weights():
     assert weights == _true
 
 
+def test_calculate_receiver_weights_interface():
+    pass
+
+
 def test_determin_category_weighting():
     cat_wcounts = {"17_40":  {"BHR": 8, "BHT": 4, "BHZ": 16},
                    "40_100": {"BHR": 4, "BHT": 2, "BHZ": 4},
@@ -166,7 +170,8 @@ def test_determin_category_weighting():
                       "90_250": {"BHR": 8, "BHT": 8, "BHZ": 4}}
     category_param = {"flag": True, "ratio": category_ratio}
 
-    weights = ww.determine_category_weighting(category_param, cat_wcounts)
+    weights = ww.calculate_category_weights_interface(
+        category_param, cat_wcounts)
 
     _true = {'17_40': {'BHR': 0.525, 'BHT': 1.05, 'BHZ': 0.525},
              '40_100': {'BHR': 1.05, 'BHT': 2.1, 'BHZ': 1.05},
@@ -186,8 +191,13 @@ def test_category_validator():
                       "90_250": {"BHR": 8, "BHT": 8, "BHZ": 4}}
     category_param = {"flag": True, "ratio": category_ratio}
 
-    weights = ww.determine_category_weighting(category_param, cat_wcounts)
+    weights = ww.calculate_category_weights_interface(
+        category_param, cat_wcounts)
 
     weights["17_40"]["BHR"] *= 2
     with pytest.raises(ValueError):
         ww._category_validator(weights, cat_wcounts)
+
+
+def test_combine_receiver_and_category_weights():
+    pass
