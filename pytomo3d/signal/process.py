@@ -159,7 +159,7 @@ def interpolate_stream(stream, sampling_rate, starttime=None, npts=None):
 
 
 def process_stream(st, inventory=None, remove_response_flag=False,
-                   filter_flag=False, pre_filt=None,
+                   water_level=60, filter_flag=False, pre_filt=None,
                    starttime=None, endtime=None,
                    resample_flag=False, sampling_rate=1.0,
                    taper_type="hann", taper_percentage=0.05,
@@ -181,6 +181,9 @@ def process_stream(st, inventory=None, remove_response_flag=False,
     :type remove_response_flag: bool
     :param inventory: station inventory information
     :type inventory: obspy.Inventory
+    :param water_level: water level used in remove instrument response. The
+        default value in obspy is 60.
+    :type water_level: float
     :param filter_flag:flag for filter the seismogram
     :type filter_flag: bool
     :param pre_filt: list of tuple of 4 corner frequency for filter,
@@ -246,7 +249,8 @@ def process_stream(st, inventory=None, remove_response_flag=False,
         st.attach_response(inventory)
         if filter_flag:
             st.remove_response(output="DISP", pre_filt=pre_filt,
-                               zero_mean=False, taper=False)
+                               zero_mean=False, taper=False,
+                               water_level=water_level)
         else:
             st.remove_response(output="DISP", zero_mean=False, taper=False)
     elif filter_flag:

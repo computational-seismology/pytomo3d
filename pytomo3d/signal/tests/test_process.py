@@ -138,7 +138,7 @@ def test_process_obsd():
     t1 = event_time
     t2 = event_time + 6000.0
     st_new = proc.process_stream(
-        st, remove_response_flag=True, inventory=inv,
+        st, remove_response_flag=True, water_level=60, inventory=inv,
         filter_flag=True, pre_filt=pre_filt,
         starttime=t1, endtime=t2, resample_flag=True,
         sampling_rate=2.0, taper_type="hann",
@@ -163,7 +163,7 @@ def test_process_obsd_2():
     t1 = event_time
     t2 = event_time + 6000.0
     st_new = proc.process_stream(
-        st, remove_response_flag=True, inventory=inv,
+        st, remove_response_flag=True, water_level=60, inventory=inv,
         filter_flag=True, pre_filt=pre_filt,
         starttime=t1, endtime=t2, resample_flag=True,
         sampling_rate=2.0, taper_type="hann",
