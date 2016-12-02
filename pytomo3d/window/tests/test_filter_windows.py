@@ -124,12 +124,13 @@ def test_filter_measurements_on_bounds():
 
 def test_filter_windows_on_measurements():
     measure_config = \
-        {"R": {"tshift_reference": 0, "tshift_acceptance_level": 10,
-               "std_ratio": 4.0},
-         "T": {"tshift_reference": 0, "tshift_acceptance_level": 10,
-               "std_ratio": 4.0},
-         "Z": {"tshift_reference": 0, "tshift_acceptance_level": 10,
-               "std_ratio": 4.0}}
+        {"component": {
+            "R": {"tshift_reference": 0, "tshift_acceptance_level": 10,
+                  "std_ratio": 4.0},
+            "T": {"tshift_reference": 0, "tshift_acceptance_level": 10,
+                  "std_ratio": 4.0},
+            "Z": {"tshift_reference": 0, "tshift_acceptance_level": 10,
+                  "std_ratio": 4.0}}}
 
     _wins = fw.filter_windows_on_measurements(
         windows, measures, measure_config)
@@ -142,12 +143,13 @@ def test_filter_windows_on_measurements():
     assert "II.ABKT..BHT" not in _wins["II.ABKT"]
 
     measure_config = \
-        {"R": {"tshift_reference": 0, "tshift_acceptance_level": 10.0,
-               "std_ratio": 1.0},
-         "T": {"tshift_reference": 0, "tshift_acceptance_level": 10.0,
-               "std_ratio": 1.0},
-         "Z": {"tshift_reference": 0, "tshift_acceptance_level": 10.0,
-               "std_ratio": 1.0}}
+        {"component": {
+            "R": {"tshift_reference": 0, "tshift_acceptance_level": 10.0,
+                  "std_ratio": 1.0},
+            "T": {"tshift_reference": 0, "tshift_acceptance_level": 10.0,
+                  "std_ratio": 1.0},
+            "Z": {"tshift_reference": 0, "tshift_acceptance_level": 10.0,
+                  "std_ratio": 1.0}}}
 
     _wins = fw.filter_windows_on_measurements(
         windows, measures, measure_config)
@@ -162,12 +164,14 @@ def test_filter_windows_on_measurements():
 def test_filter_windows_on_measurements_2():
 
     measure_config = \
-        {"R": {"tshift_reference": 0, "tshift_acceptance_level": 0.1,
-               "std_ratio": 1.0},
-         "T": {"tshift_reference": 0, "tshift_acceptance_level": 0.1,
-               "std_ratio": 1.0},
-         "Z": {"tshift_reference": 0, "tshift_acceptance_level": 0.1,
-               "std_ratio": 1.0}}
+        {"component": {
+            "R": {"tshift_reference": 0, "tshift_acceptance_level": 0.1,
+                  "std_ratio": 1.0},
+            "T": {"tshift_reference": 0, "tshift_acceptance_level": 0.1,
+                  "std_ratio": 1.0},
+            "Z": {"tshift_reference": 0, "tshift_acceptance_level": 0.1,
+                  "std_ratio": 1.0}}
+         }
 
     _wins = fw.filter_windows_on_measurements(
         windows, measures, measure_config)
@@ -189,12 +193,13 @@ def test_check_consistency():
 def test_filter_windows():
     sensor_config = {"flag": True, "sensor_types": ["STS-1", "STS1"]}
     measure_config = \
-        {"R": {"tshift_reference": 0, "tshift_acceptance_level": 6.0,
-               "std_ratio": 3.0},
-         "T": {"tshift_reference": 0, "tshift_acceptance_level": 6.0,
-               "std_ratio": 3.0},
-         "Z": {"tshift_reference": 0, "tshift_acceptance_level": 6.0,
-               "std_ratio": 3.0},
+        {"component": {
+            "R": {"tshift_reference": 0, "tshift_acceptance_level": 6.0,
+                  "std_ratio": 3.0},
+            "T": {"tshift_reference": 0, "tshift_acceptance_level": 6.0,
+                  "std_ratio": 3.0},
+            "Z": {"tshift_reference": 0, "tshift_acceptance_level": 6.0,
+                  "std_ratio": 3.0}},
          "flag": True}
 
     config = {"sensor": sensor_config, "measurement": measure_config}
@@ -225,12 +230,13 @@ def test_filter_windows():
 def test_filter_windows_2():
     sensor_config = {"flag": True, "sensor_types": ["STS-1", "STS1"]}
     measure_config = \
-        {"R": {"tshift_reference": 0, "tshift_acceptance_level": 0.1,
-               "std_ratio": 3.0},
-         "T": {"tshift_reference": 0, "tshift_acceptance_level": 0.1,
-               "std_ratio": 3.0},
-         "Z": {"tshift_reference": 0, "tshift_acceptance_level": 0.1,
-               "std_ratio": 3.0},
+        {"component": {
+            "R": {"tshift_reference": 0, "tshift_acceptance_level": 0.1,
+                  "std_ratio": 3.0},
+            "T": {"tshift_reference": 0, "tshift_acceptance_level": 0.1,
+                  "std_ratio": 3.0},
+            "Z": {"tshift_reference": 0, "tshift_acceptance_level": 0.1,
+                  "std_ratio": 3.0}},
          "flag": True}
 
     config = {"sensor": sensor_config, "measurement": measure_config}
@@ -240,12 +246,13 @@ def test_filter_windows_2():
     assert len(_wins) == 0
 
     measure_config = \
-        {"R": {"tshift_reference": 0, "tshift_acceptance_level": 10.0,
-               "std_ratio": 0.01},
-         "T": {"tshift_reference": 0, "tshift_acceptance_level": 10.0,
-               "std_ratio": 0.01},
-         "Z": {"tshift_reference": 0, "tshift_acceptance_level": 10.0,
-               "std_ratio": 0.01},
+        {"component": {
+            "R": {"tshift_reference": 0, "tshift_acceptance_level": 10.0,
+                  "std_ratio": 0.01},
+            "T": {"tshift_reference": 0, "tshift_acceptance_level": 10.0,
+                  "std_ratio": 0.01},
+            "Z": {"tshift_reference": 0, "tshift_acceptance_level": 10.0,
+                  "std_ratio": 0.01}},
          "flag": True}
     config = {"sensor": sensor_config, "measurement": measure_config}
     _wins, log = fw.filter_windows(

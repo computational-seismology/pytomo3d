@@ -184,14 +184,16 @@ def filter_windows_on_measurements(windows, measurements, measure_config):
     # calculate standard deviation for each component
     pprint("Config:")
     pprint(measure_config)
+    comp_config = measure_config['component']
+
     means, stds = get_measurements_std(measurements)
 
     final_bounds = {}
     for comp in means:
         print("-" * 20 + "\nComponent: %s" % comp)
-        user_bound = get_user_bound(measure_config[comp])
+        user_bound = get_user_bound(comp_config[comp])
         std_bound = get_std_bound(means[comp], stds[comp],
-                                  measure_config[comp]["std_ratio"])
+                                  comp_config[comp]["std_ratio"])
 
         bound = [max(std_bound[0], user_bound[0]),
                  min(std_bound[1], user_bound[1])]
