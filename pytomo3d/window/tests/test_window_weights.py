@@ -5,7 +5,6 @@ import numpy.testing as npt
 import pytest
 
 from spaceweight import SpherePoint
-
 import pytomo3d.window.window_weights as ww
 
 
@@ -135,7 +134,8 @@ def test_receiver_validator():
     weights["BHZ"]["II.AAK..BHZ"] *= 2
     rec_counts, cat_wcounts = ww.calculate_receiver_window_counts(windows)
     with pytest.raises(ValueError):
-        ww._receiver_validator(weights, rec_counts, cat_wcounts)
+        ww._receiver_validator(weights["BHZ"], rec_counts["BHZ"],
+                               cat_wcounts["BHZ"])
 
 
 def test_normalize_category_weights():
@@ -158,6 +158,24 @@ def test_normalize_category_weights():
 
 def test_calculate_receiver_weights_interface():
     pass
+
+
+def test_check_category_ratio_consistency():
+    ratio = {
+        "17_40": {"BHR": 1.0, "BHT": 1.0, "BHZ": 1.0},
+        "40_100": {"BHR": 1.0, "BHT": 1.0, "BHZ": 1.0},
+        "90_250": {"BHR": 1.0, "BHT": 1.0, "BHZ": 1.0}
+    }
+    wcounts = {
+        "17_40": {"BHR": 100, "BHT": 100, "BHZ": 100},
+        "40_100": {"BHR": 100, "BHT": 100, "BHZ": 100},
+        "90_250": {"BHR": 100, "BHT": 100, "BHZ": 100}
+    }
+    ww.check_category_ratio_consistency(ratio, wcounts)
+
+    wcounts["90_250"].pop("BHZ", None)
+    with pytest.raises(ValueError):
+        ww.check_category_ratio_consistency(ratio, wcounts)
 
 
 def test_determin_category_weighting():

@@ -95,6 +95,10 @@ def load_to_adjsrc(adj):
 
 
 def dump_adjsrc(adj, station_info):
+    """
+    Combine the adj(pyadjoint.AdjointSource) and station information
+    to form the adjoint content for ASDF file
+    """
     adj_array = np.asarray(adj.adjoint_source, dtype=np.float32)
     station_id = "%s.%s" % (adj.network, adj.station)
 

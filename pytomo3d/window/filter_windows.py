@@ -51,6 +51,7 @@ def print_window_filter_summary(old_windows, new_windows):
     nchans_new, nwins_new = count_windows(new_windows)
     nchans_rej = (nchans_old - nchans_new) / nchans_old
     nwins_rej = (nwins_old - nwins_new) / nwins_old
+    print("-" * 10)
     print("Number of channels old and new: %d --> %d(rej: %.2f %%)"
           % (nchans_old, nchans_new, nchans_rej * 100))
     print("Number of windows old and new:  %d --> %d(rej: %.2f %%)"
@@ -70,14 +71,17 @@ def filter_windows_on_sensors(windows, stations, sensor_types, verbose=False):
     print("sensor_types: %s" % sensor_types)
 
     if verbose:
-        print("channel name             |" + " " * 30 +
-              "sensor type |   pick flag |   windows | total windows |")
+        print("channel name" + " " * 13 + "|" + " " * 30 +
+              "sensor type | pick flag | wins | sum(chans, wins) |")
 
+    total_chans = 0
+    total_wins = 0
     for sta, sta_info in windows.iteritems():
         sta_wins = {}
         for chan, chan_info in sta_info.iteritems():
             pick_flag = False
             if len(chan_info) == 0:
+                # if number of windows is 0
                 continue
             try:
                 # since windows are on RTZ component and
@@ -90,9 +94,12 @@ def filter_windows_on_sensors(windows, stations, sensor_types, verbose=False):
             if is_right_sensor(_st, sensor_types):
                 sta_wins[chan] = chan_info
                 pick_flag = True
+                total_chans += 1
+                total_wins += len(chan_info)
             if verbose:
-                print("channel(%15s) | %40s | %9s | %12d |"
-                      % (chan, _st[:40], pick_flag, len(chan_info)))
+                print("channel(%15s) | %40s |%11s|%9d| (%d, %d)"
+                      % (chan, _st[:40], pick_flag, len(chan_info),
+                         total_chans, total_wins))
 
         if len(sta_wins) > 0:
             new_wins[sta] = sta_wins

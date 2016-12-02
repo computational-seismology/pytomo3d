@@ -15,6 +15,7 @@ from __future__ import print_function, division, absolute_import
 import os
 from collections import defaultdict
 import numpy as np
+from pprint import pprint
 
 from spaceweight import SpherePoint
 from spaceweight import SphereDistRel
@@ -31,15 +32,15 @@ def _receiver_validator(weights, rec_wcounts, cat_wcounts):
     :param cat_wcounts:
     :return:
     """
-    for comp, comp_weights in weights.iteritems():
-        wsum = 0
-        for chan, chan_weight in comp_weights.iteritems():
-            nwin = rec_wcounts[comp][chan]
-            wsum += chan_weight * nwin
+    wsum = 0
+    for chan, chan_weight in weights.iteritems():
+        nwin = rec_wcounts[chan]
+        wsum += chan_weight * nwin
 
-        if not np.isclose(wsum, cat_wcounts[comp]):
-            raise ValueError("receiver validator fails: %f, %f" %
-                             (wsum, cat_wcounts[comp]))
+    print("Summation of (rec_weights * rec_nwins): %.2f" % wsum)
+    if not np.isclose(wsum, cat_wcounts):
+        raise ValueError("receiver validator fails: %f, %f" %
+                         (wsum, cat_wcounts))
 
 
 def calculate_receiver_window_counts(windows):
@@ -187,6 +188,7 @@ def determine_receiver_weighting(
         print("-" * 10 + "\nComponent: %s" % comp)
         points = assign_receiver_to_points(comp_info, stations)
         print("Number of receivers: %d" % len(points))
+        print("Number of windows: %d" % cat_wcounts[comp])
 
         if weight_flag:
             ref_dists[comp], cond_nums[comp] = \
@@ -199,7 +201,8 @@ def determine_receiver_weighting(
 
         weights[comp] = normalize_receiver_weights(points, rec_wcounts[comp])
 
-    _receiver_validator(weights, rec_wcounts, cat_wcounts)
+        _receiver_validator(weights[comp], rec_wcounts[comp],
+                            cat_wcounts[comp])
 
     return {"rec_weights": weights, "rec_wcounts": rec_wcounts,
             "cat_wcounts": cat_wcounts, "rec_ref_dists": ref_dists,
@@ -230,8 +233,10 @@ def calculate_receiver_weights_interface(
     # each file still contains 3-component
     if _verbose:
         print("src_info: %s" % src_info)
-        print("path_info: %s" % path_info)
-        print("weighting param: %s" % weighting_param)
+        print("path_info:")
+        pprint(path_info)
+        print("weighting param:")
+        pprint(weighting_param)
 
     station_info = load_json(path_info["station_file"])
     window_info = load_json(path_info["window_file"])
@@ -265,6 +270,7 @@ def _category_validator(weights, wcounts):
             wsum += weights[p][c] * wcounts[p][c]
             nwins_total += wcounts[p][c]
 
+    print("Summation of (cat_weight * cat_nwins): %.2f" % wsum)
     if not np.isclose(wsum, nwins_total):
         raise ValueError("Category validator fails: %f, %f" %
                          (wsum, nwins_total))
@@ -273,8 +279,10 @@ def _category_validator(weights, wcounts):
 def normalize_category_weights(category_ratio, cat_wcounts):
     """
     """
-    print("category ratio:", category_ratio)
-    print("category wcoutns:", cat_wcounts)
+    print("category ratio:")
+    pprint(category_ratio)
+    print("category window counts:")
+    pprint(cat_wcounts)
     sumv = 0
     nwins_total = 0
     for p, pinfo in cat_wcounts.iteritems():
@@ -290,6 +298,26 @@ def normalize_category_weights(category_ratio, cat_wcounts):
             weights[p][c] = normc * category_ratio[p][c]
 
     return weights
+
+
+def check_category_ratio_consistency(cat_weight_ratio, cat_wcounts):
+    """
+    check the category weighting ratio(provide by user) has
+    the same period band and component as in read seismic
+    data.
+    """
+    err = 0
+    # check consistency
+    for p, pinfo in cat_weight_ratio.iteritems():
+        for c in pinfo:
+            try:
+                cat_wcounts[p][c]
+            except KeyError:
+                err = 1
+                print("Missing %s.%s" % (p, c))
+    if err:
+        raise ValueError("category weighting ratio information is not "
+                         "consistent with window information")
 
 
 def calculate_category_weights_interface(category_param, cat_wcounts):
@@ -313,12 +341,14 @@ def calculate_category_weights_interface(category_param, cat_wcounts):
     :type cat_wcounts: dict
     """
     check_dict_keys(category_param, ["flag", "ratio"])
-    check_dict_keys(cat_wcounts, category_param["ratio"].keys())
+    check_category_ratio_consistency(category_param["ratio"], cat_wcounts)
 
-    weights = normalize_category_weights(category_param["ratio"],
-                                         cat_wcounts)
+    weights = normalize_category_weights(
+        category_param["ratio"], cat_wcounts)
     _category_validator(weights, cat_wcounts)
 
+    print("Final category weights:")
+    pprint(weights)
     return weights
 
 
