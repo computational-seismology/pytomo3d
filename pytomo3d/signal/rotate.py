@@ -29,6 +29,21 @@ def extract_channel_orientation(tr, inv):
         sta = tr.stats.station
         loc = tr.stats.location
         chan = tr.stats.channel
+
+        # If channel is synthetic, return default value for dip and
+        # azimuth.
+        if loc == "S3":
+            orientation = {"Z": (90, 0),
+                           "N": (0, 0),
+                           "E": (0, 90)}
+            try:
+                dip, azi = orientation[chan[-1]]
+                return dip, azi
+            except KeyError:
+                raise Exception("Orientation is not defined"
+                                " for synthetics for component:",
+                                chan[-1])
+
         chan_inv = inv.select(network=nw, station=sta, location=loc,
                               channel=chan)[0][0][0]
         dip = chan_inv.dip
