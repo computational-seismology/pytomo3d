@@ -52,6 +52,24 @@ def test_calculate_baz():
                         90.0)
 
 
+def test_ensemble_synthetic_channel_orientation():
+    dip, azi = rotate.ensemble_synthetic_channel_orientation("MXZ")
+    assert np.isclose(dip, 90.0)
+    assert np.isclose(azi, 0.0)
+
+    dip, azi = rotate.ensemble_synthetic_channel_orientation("MXN")
+    assert np.isclose(dip, 0.0)
+    assert np.isclose(azi, 0.0)
+
+    dip, azi = rotate.ensemble_synthetic_channel_orientation("MXE")
+    assert np.isclose(dip, 0.0)
+    assert np.isclose(azi, 90.0)
+
+    with pytest.raises(Exception) as err:
+        rotate.ensemble_synthetic_channel_orientation("MXR")
+    assert ": MXR" in str(err)
+
+
 def test_extract_channel_orientation():
     st = testobs.copy()
     inv = deepcopy(teststaxml)

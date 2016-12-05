@@ -22,6 +22,18 @@ def calculate_baz(elat, elon, slat, slon):
     return baz
 
 
+def ensemble_synthetic_channel_orientation(chan):
+    orientation = {"Z": (90, 0),
+                   "N": (0, 0),
+                   "E": (0, 90)}
+    try:
+        dip, azi = orientation[chan[-1]]
+    except KeyError:
+        raise Exception("Orientation is not defined for synthetics"
+                        " of component: %s" % chan)
+    return dip, azi
+
+
 def extract_channel_orientation(tr, inv):
     """ Extract the dip and azimuth from inventory, given the trace """
     try:
@@ -30,27 +42,20 @@ def extract_channel_orientation(tr, inv):
         loc = tr.stats.location
         chan = tr.stats.channel
 
-        # If channel is synthetic, return default value for dip and
-        # azimuth.
         if loc == "S3":
-            orientation = {"Z": (90, 0),
-                           "N": (0, 0),
-                           "E": (0, 90)}
-            try:
-                dip, azi = orientation[chan[-1]]
-                return dip, azi
-            except KeyError:
-                raise Exception("Orientation is not defined"
-                                " for synthetics for component:",
-                                chan[-1])
+            # If channel is synthetic(from specfem), return default value
+            # for dip and azimuth.
+            dip, azi = ensemble_synthetic_channel_orientation(chan)
+        else:
+            chan_inv = inv.select(network=nw, station=sta, location=loc,
+                                  channel=chan)[0][0][0]
+            dip, azi = chan_inv.dip, chan_inv.azimuth
+    except Exception as errmsg:
+        print("Unable to extract channel orientation information [%s]"
+              " due to: %s" % (tr.id, errmsg))
+        dip, azi = None, None
 
-        chan_inv = inv.select(network=nw, station=sta, location=loc,
-                              channel=chan)[0][0][0]
-        dip = chan_inv.dip
-        azi = chan_inv.azimuth
-        return dip, azi
-    except:
-        return None, None
+    return dip, azi
 
 
 def extract_station_location(st, inventory):
@@ -176,6 +181,8 @@ def rotate_12_rt_func(st, inv, back_azimuth, method="12->RT",
                 continue
             inc1, azi1 = extract_channel_orientation(i_1, inv)
             inc2, azi2 = extract_channel_orientation(i_2, inv)
+            if azi1 is None or azi2 is None:
+                continue
             output_1, output_2 = rotate_12_rt(i_1.data, i_2.data, back_azimuth,
                                               azi1, azi2)
             if output_1 is None or output_2 is None:
