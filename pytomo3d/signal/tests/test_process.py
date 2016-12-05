@@ -173,16 +173,16 @@ def test_process_obsd_2():
         sanity_check=True)
     bmfile = os.path.join(DATA_DIR, "proc", "IU.KBL.obs.proc.mseed")
     st_compare = obspy.read(bmfile)
-    assert len(st_new) == 1
-    assert st_new[0].stats.channel == "BHZ"
-    assert compare_trace_kernel(st_new[0],
+    assert len(st_new) == 3
+    assert compare_trace_kernel(st_new.select(channel="BHZ")[0],
                                 st_compare.select(channel="BHZ")[0])
 
 
 def test_process_synt():
+    staxmlfile = os.path.join(DATA_DIR, "stationxml", "IU.KBL.syn.xml")
+    inv = obspy.read_inventory(staxmlfile)
 
     st = testsyn.copy()
-    inv = deepcopy(teststaxml)
     event = obspy.readEvents(testquakeml)[0]
     origin = event.preferred_origin() or event.origins[0]
     event_lat = origin.latitude

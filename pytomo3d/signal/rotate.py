@@ -11,14 +11,10 @@ It can rotate `12`, `EN` and `RT`, forward and backward.
     (http://www.gnu.org/licenses/lgpl-3.0.en.html)
 """
 from __future__ import print_function
-from obspy.geodetics import gps2dist_azimuth
-from math import cos, sin
-from obspy import Stream
 import numpy as np
-from numpy import deg2rad
-
-
-SMALL_DEGREE = 0.01
+from obspy.geodetics import gps2dist_azimuth
+from obspy import Stream
+from .rotate_utils import check_orthogonality, rotate_12_rt
 
 
 def calculate_baz(elat, elon, slat, slon):
@@ -26,215 +22,8 @@ def calculate_baz(elat, elon, slat, slon):
     return baz
 
 
-def check_orthogonality(azim1, azim2):
-    """
-    Check if two azimuth are orthogonal, check whether
-    (azim1, azim2, vertical) forms a left-hand or right-hand
-    coordinate system.
-    Remember the defination of azimuth is angle between north
-    direction.
-    Unit is degree, not radian.
-    """
-    azim1 = azim1 % 360
-    azim2 = azim2 % 360
-
-    if abs(abs(azim1 - azim2) - 90.0) < SMALL_DEGREE:
-        if abs(azim1 - azim2 - 90.0) < SMALL_DEGREE:
-            return "right-hand"
-        elif abs(azim1 - azim2 + 90.0) < SMALL_DEGREE:
-            # should be orthogonal; otherwise return
-            return "left-hand"
-        else:
-            return False
-    else:
-        # cross 360 degree
-        if abs(azim1 - azim2 + 270.0) < SMALL_DEGREE:
-            return "right-hand"
-        elif abs(azim1 - azim2 - 270.0) < SMALL_DEGREE:
-            return "left-hand"
-        else:
-            return False
-
-
-def rotate_certain_angle(d1, d2, angle, unit="degree"):
-    """
-    Basic rotating function.
-
-    (d1, d2, Vertical) should form a left-handed coordinate system, i.e.,
-                    Azimuth_{d2} = Azimuth_{d1} + 90.0
-    For example, (North, East, Vertical) & (Radial, Transverse, Vertical)
-    are both left-handed coordinate systems. The return value (dnew1,
-    dnew2, vertic) should also form a left-handed coordinate system.
-    The angle is azimuth differnce between d1 and dnew1, i.e.,
-                    angle = Azimuth_{dnew1} - Azimuth_{d1}
-
-    :type d1: :class:`~numpy.ndarray`
-    :param d1: Data of one of the two horizontal components
-    :type d2: :class:`~numpy.ndarray`
-    :param d2: Data of one of the two horizontal components
-    :type angle: float
-    :param angle: component azimuth of data2
-    :return: two new components after rotation
-    """
-    if unit == "degree":
-        angle = deg2rad(angle)
-    elif unit == "radian":
-        angle = angle
-    else:
-        raise ValueError("Unregonized unit(%s): 1) degree; 2) radian"
-                         % unit)
-
-    dnew1 = d1 * cos(angle) + d2 * sin(angle)
-    dnew2 = -d1 * sin(angle) + d2 * cos(angle)
-    return dnew1, dnew2
-
-
-def rotate_12_rt(d1, d2, baz, azim1, azim2):
-    """
-    Rotate from any two orthogonal horizontal components to RT components
-
-    :type d1: :class:`~numpy.ndarray`
-    :param d1: Data of one of the two horizontal components
-    :type d2: :class:`~numpy.ndarray`
-    :param d2: Data of the other horizontal components
-    :type baz: float
-    :param baz: the back azimuth from station to source in degrees
-    :type azim1: float
-    :param azim1: component azimuth of data1
-    :type azim2: float
-    :param azim2: component azimuth of data2
-    :return: Radial and Transeversal component of seismogram. (None, None)
-        returned if input two components are not orthogonal
-    """
-    status = check_orthogonality(azim1, azim2)
-    if not status:
-        # raise ValueError("azim1 and azim2 not orthogonal")
-        return None, None
-    if "right" in status:
-        # flip to left-hand
-        d1, d2 = d2, d1
-        azim1, azim2 = azim2, azim1
-
-    if len(d1) != len(d2):
-        # raise ValueError("Component 1 and 2 have different length")
-        return None, None
-    if baz < 0 or baz > 360:
-        raise ValueError("Back Azimuth should be between 0 and 360 degree")
-
-    # caculate the angle of rotation
-    angle = baz + 180.0 - azim1
-    r, t = rotate_certain_angle(d1, d2, angle)
-
-    return r, t
-
-
-def rotate_rt_12(r, t, baz, azim1, azim2):
-    """
-    Rotate from any two orthogonal horizontal components to RT components
-
-    :type data1: :class:`~numpy.ndarray`
-    :param data1: Data of one of the two horizontal components
-    :type data2: :class:`~numpy.ndarray`
-    :param data2: Data of the other horizontal components
-    :type baz: float
-    :param baz: the back azimuth from station to source in degrees
-    :type azim1: float
-    :param azim1: component azimuth of data1
-    :type azim2: float
-    :param azim2: component azimuth of data2
-    :return: Radial and Transeversal component of seismogram.
-    """
-    status = check_orthogonality(azim1, azim2)
-    if not status:
-        raise ValueError("azim1 and azim2 not orthogonal")
-    if "left" in status:
-        azim = azim1
-    elif "right" in status:
-        azim = azim2
-
-    if len(r) != len(t):
-        raise TypeError("Component R and T have different length")
-    if baz < 0 or baz > 360:
-        raise ValueError("Back Azimuth should be between 0 and 360 degree")
-
-    # caculate the angle of rotation
-    angle = - (baz + 180.0 - azim)
-    d1, d2 = rotate_certain_angle(r, t, angle)
-
-    if "right" in status:
-        return d2, d1
-    elif "left" in status:
-        return d1, d2
-
-
-def rotate_12_ne(d1, d2, azim1, azim2):
-    """
-    Rotate from any two orthogonal horizontal components to EN components
-
-    :type d1: :class:`~numpy.ndarray`
-    :param d1: Data of one of the two horizontal components
-    :type d2: :class:`~numpy.ndarray`
-    :param d2: Data of the other horizontal components
-    :type azim1: float
-    :param azim1: component azimuth of data1
-    :type azim2: float
-    :param azim2: component azimuth of data2
-    :return: East and North component of seismogram.
-    """
-    status = check_orthogonality(azim1, azim2)
-    if not status:
-        raise ValueError("azim1 and azim2 not orthogonal")
-    if "right" in status:
-        # flip to left-hand
-        d1, d2 = d2, d1
-        azim1, azim2 = azim2, azim1
-
-    if len(d1) != len(d2):
-        raise TypeError("Component 1 and 2 have different length")
-
-    # caculate the angle of rotation
-    n, e = rotate_certain_angle(d1, d2, -azim1)
-
-    return n, e
-
-
-def rotate_ne_12(n, e, azim1, azim2):
-    """
-    Rotate from East and North components to give two orghogonal horizontal
-    components. Returned values are (d1, d2) and (d1, d2, Vertical) will
-    form a left-handed coordinate system.
-
-    :type data1: :class:`~numpy.ndarray`
-    :param data1: Data of one of the two horizontal components
-    :type data2: :class:`~numpy.ndarray`
-    :param data2: Data of the other horizontal components
-    :type azim1: float
-    :param azim1: component azimuth of data1
-    :type azim2: float
-    :param azim2: component azimuth of data2
-    :return: two horizontal orthogonal seismogram after rotation.
-    """
-    status = check_orthogonality(azim1, azim2)
-    if not status:
-        raise ValueError("azim1 and azim2 not orthogonal")
-    if "left" in status:
-        azim = azim1
-    elif "right" in status:
-        azim = azim2
-
-    if len(n) != len(e):
-        raise TypeError("Component North and East have different length")
-
-    # caculate the angle of rotation
-    d1, d2 = rotate_certain_angle(n, e, azim)
-
-    if "right" in status:
-        return d2, d1
-    elif "left" in status:
-        return d1, d2
-
-
-def extract_channel_orientation_info(tr, inv):
+def extract_channel_orientation(tr, inv):
+    """ Extract the dip and azimuth from inventory, given the trace """
     try:
         nw = tr.stats.network
         sta = tr.stats.station
@@ -249,9 +38,102 @@ def extract_channel_orientation_info(tr, inv):
         return None, None
 
 
-def rotate_12_rt_func(st, inv, method="12->RT", back_azimuth=None):
+def extract_station_location(st, inventory):
     """
-    Rotate 12 component to RT
+    Extract the station latitude and longitude from inventory, given
+    stream.
+    """
+    nw = st[0].stats.network
+    station = st[0].stats.station
+    _inv = inventory.select(network=nw, station=station)
+    sta_lat = float(_inv[0][0].latitude)
+    sta_lon = float(_inv[0][0].longitude)
+    return sta_lat, sta_lon
+
+
+def check_vertical_inventory_sanity(tr, inventory):
+    """
+    Check the inventory of vertical(Z) component, check
+    if the abs(dip) is 90 and azimuth is 0.
+    """
+    if tr.stats.channel[-1] != "Z":
+        raise ValueError("Function only checks vertical(Z) component(%s)"
+                         % tr.stats.channel)
+    dip, azi = extract_channel_orientation(tr, inventory)
+
+    if dip is None or azi is None:
+        return False
+
+    if np.isclose(abs(dip), 90.0) and np.isclose(abs(azi), 0.0):
+        return True
+    else:
+        return False
+
+
+def check_horizontal_inventory_sanity(tr1, tr2, inventory):
+    """
+    Check two horizontal components and see if their dip is 0
+    and azimuth is orthogonal to each other.
+
+    :param tr1:
+    :param tr2:
+    :param inventory:
+    :return:
+    """
+    if tr1.id[:-1] != tr2.id[:-1]:
+        raise ValueError("Two horizontal ids should share the same network,"
+                         "station, location and channel[0:2]: %s, %s"
+                         % (tr1.id, tr2.id))
+
+    if tr1.stats.channel[-1] == "Z" or tr2.stats.channel[-1] == "Z":
+        raise ValueError("Functions should check two horizontal component:"
+                         "%s, %s" % (tr1.id, tr2.id))
+    dip1, azi1 = extract_channel_orientation(tr1, inventory)
+    dip2, azi2 = extract_channel_orientation(tr2, inventory)
+
+    if dip1 is None or azi1 is None or dip2 is None or azi2 is None:
+        return False
+
+    # check dip
+    if not np.isclose(dip1, 0.0) or not np.isclose(dip2, 0.0):
+        return False
+
+    # check azimuth
+    if not check_orthogonality(azi1, azi2):
+        return False
+
+    return True
+
+
+def check_information_before_rotation(i_1, i_2, inv, sanity_check=False):
+    # check starttime, sampling rate
+    dt = 0.5 * i_1.stats.delta
+    if (len(i_1) != len(i_2)) or \
+            (abs(i_1.stats.starttime - i_2.stats.starttime) > dt) \
+            or (i_1.stats.sampling_rate != i_2.stats.sampling_rate):
+        msg = "All components need to have the same time span."
+        raise ValueError(msg)
+
+    # check inventory sanity if required by user
+    if sanity_check:
+        if not check_horizontal_inventory_sanity(i_1, i_2, inv):
+            msg = "Horizontal component are not orthogonal to " \
+                  "each other: %s, %s" % (i_1.id, i_2.id)
+            raise ValueError(msg)
+
+
+def rotate_12_rt_func(st, inv, back_azimuth, method="12->RT",
+                      sanity_check=False):
+    """
+    Rotate horizontal component to RT. This function works generally
+    for two horizontal and orthogonal components. This function
+    supports two method:
+        1) "12->RT": which rotates "12" component to "RT", for example,
+            "BH1" and "BH2" to "BHR" and "BHT"
+        2) "NE->RT": which rotates "NE" component to "RT", for example,
+            "BHN" and "BHE" to "BHR" and "BHT"
+    The reason why we use our own rotation function is because in obspy
+    the inventory information is not checked.
 
     :param st: input stream
     :param inv: station inventory information
@@ -259,124 +141,93 @@ def rotate_12_rt_func(st, inv, method="12->RT", back_azimuth=None):
     :param back_azimuth: back azimuth(station to event azimuth)
     :return: rotated stream
     """
-    if method != "12->RT":
-        raise ValueError("rotate_12_RT only supports method = 12->RT now")
+    if method not in ["12->RT", "NE->RT"]:
+        raise ValueError("rotate_12_rt_func only supports method:"
+                         "['12->RT', 'NE->RT']")
+
+    bad_ids = []
     input_components, output_components = method.split("->")
     if len(input_components) == 2:
         input_1 = st.select(component=input_components[0])
         input_2 = st.select(component=input_components[1])
         for i_1, i_2 in zip(input_1, input_2):
-            # check
-            dt = 0.5 * i_1.stats.delta
-            if (len(i_1) != len(i_2)) or \
-                    (abs(i_1.stats.starttime - i_2.stats.starttime) > dt) \
-                    or (i_1.stats.sampling_rate != i_2.stats.sampling_rate):
-                msg = "All components need to have the same time span."
-                raise ValueError(msg)
+            try:
+                check_information_before_rotation(
+                    i_1, i_2, inv, sanity_check=sanity_check)
+            except Exception as err:
+                bad_ids.extend([i_1.id, i_2.id])
+                print("Unable to rotate [%s, %s] due to: %s"
+                      % (i_1.id, i_2.id, err))
                 continue
-            inc1, azi1 = extract_channel_orientation_info(i_1, inv)
-            inc2, azi2 = extract_channel_orientation_info(i_2, inv)
-            if inc1 is None or inc2 is None \
-                    or inc1 != 0.0 or inc2 != 0.0:
-                continue
-
+            inc1, azi1 = extract_channel_orientation(i_1, inv)
+            inc2, azi2 = extract_channel_orientation(i_2, inv)
             output_1, output_2 = rotate_12_rt(i_1.data, i_2.data, back_azimuth,
                                               azi1, azi2)
             if output_1 is None or output_2 is None:
                 continue
-
             i_1.data = output_1
             i_2.data = output_2
             # Rename the components
             i_1.stats.channel = i_1.stats.channel[:-1] + output_components[0]
             i_2.stats.channel = i_2.stats.channel[:-1] + output_components[1]
-            # Add the azimuth backj to stats object
+            # Add the azimuth back to stats object
             for comp in (i_1, i_2):
                 comp.stats.back_azimuth = back_azimuth
+    else:
+        raise ValueError("Wrong method: %s" % method)
+
+    # remove trace in bad_ids
+    # for bid in bad_ids:
+    #    st.remove(st.select(id=bid)[0])
+
     return st
 
 
-def _check_inventory_orientation(inv):
+def rotate_rt_to_ne(st, baz):
+    """ Use obspy rotate function to rotate from RT to NE """
+    st.rotate(method="RT->NE", back_azimuth=baz)
+
+
+def remove_bad_z_component(st, inventory):
+    """ remove Z component if its inventory does not meet requirements """
+    for tr in st:
+        if tr.stats.channel[-1] == "Z":
+            if not check_vertical_inventory_sanity(tr, inventory):
+                st.remove(tr)
+
+
+def rotate_to_rt(st, baz, inventory, mode, sanity_check=False):
     """
-    Check the sanity of inventory from one group of instrument, like
-    "II.AAK.00.BH*"
-    Error code based on binary calculation
-    ZNE = Z * 8 + N * 4 + E * 2 + Ortho * 1
-    The first three digits stands for three components, the last digits
-    is for checking whether two horizontal components are vertical to
-    each other. For example,
-    "8(1000)"  -> Z component error
-    "6(0110)"  -> N,E component error, but still orthogonal to each other
-    "15(1110)" -> Z,N,E component error, but "NE" are still orthogonal
-                  to each other
+    Rotate horizontal components(12 or NE) to RT directions.
+
+    :param st:
+    :param baz:
+    :param inventory:
+    :param mode:
+    :param sanity_check:
+    :return:
     """
-    def __is_subset(dict1, dict2):
-        # check if dict1 is subset of dict2
-        for key in dict1:
-            if key not in dict2:
-                return False
-            if isinstance(dict1[key], float):
-                if not np.isclose(dict1[key], dict2[key]):
-                    return False
-            else:
-                if dict1[key] != dict2[key]:
-                    return False
-        return True
+    components = [tr.stats.channel[-1] for tr in st]
 
-    error = 0
-    # right information of components
-    right_info = {"Z": {"dip": 90., "azi": 0.0},
-                  "N": {"dip": 0., "azi": 0.0},
-                  "E": {"dip": 0., "azi": 90.0}}
-    error_code = {"Z": 8, "N": 4, "E": 2}
-    # extract real value out from inventory
-    real_info = {}
-    for comp in right_info.keys():
-        try:
-            comp_inv = inv.select(channel="*%s" % comp)[0][0][0]
-        except IndexError:
-            continue
-        real_info[comp] = {"dip": abs(comp_inv.dip), "azi": comp_inv.azimuth}
+    if sanity_check:
+        # remove bad Z component
+        remove_bad_z_component(st, inventory)
 
-    # compare real_info with error_info
-    for comp in real_info:
-        if not __is_subset(real_info[comp], right_info[comp]):
-            error += error_code[comp]
+    if mode in ["12->RT", "ALL->RT"]:
+        if "1" in components and "2" in components:
+            try:
+                rotate_12_rt_func(st, inventory, method="12->RT",
+                                  back_azimuth=baz)
+            except Exception as errmsg:
+                print("Error rotating 12->RT:%s" % errmsg)
 
-    # check NE orthogonality
-    if "N" in real_info and "E" in real_info:
-        if not check_orthogonality(real_info["N"]["azi"],
-                                   real_info["E"]["azi"]):
-            error += 1
-
-    return error
-
-
-def _check_inventory_sanity(stream, inventory):
-    """
-    Checks the inventory sanity based on the stream. The stream should
-    contains only one station. If one component doesn't pass the sanity
-    check, it will be removed from the stream.
-    """
-    nw = stream[0].stats.network
-    sta = stream[0].stats.station
-    loc = stream[0].stats.location
-    chan = stream[0].stats.channel[0:2]
-    sta_inv = inventory.select(network=nw, station=sta, location=loc,
-                               channel="%s*" % chan)
-    err_code = _check_inventory_orientation(inventory)
-
-    _format_bin = bin(err_code)[2:].zfill(4)
-    if _format_bin[0] == "1":
-        for tr in stream.select(component="Z"):
-            stream.remove(tr)
-    if _format_bin[1] == "1":
-        for tr in stream.select(component="N"):
-            stream.remove(tr)
-    if _format_bin[2] == "1":
-        for tr in stream.select(component="E"):
-            stream.remove(tr)
-    return stream, sta_inv
+    if mode in ["NE->RT", "ALL->RT"]:
+        if "N" in components and "E" in components:
+            try:
+                rotate_12_rt_func(st, inventory, baz, method="NE->RT",
+                                  sanity_check=sanity_check)
+            except Exception as e:
+                print("Error rotating NE->RT:%s" % e)
 
 
 def rotate_one_station_stream(st, event_latitude, event_longitude,
@@ -411,42 +262,25 @@ def rotate_one_station_stream(st, event_latitude, event_longitude,
         raise ValueError("This method only accepts stream that contains "
                          "one station")
 
-    if sanity_check:
-        st, inventory = _check_inventory_sanity(st, inventory)
-
     if station_latitude is None or station_longitude is None:
-        nw = st[0].stats.network
-        station = st[0].stats.station
-        _inv = inventory.select(network=nw, station=station)
         try:
-            station_latitude = float(_inv[0][0].latitude)
-            station_longitude = float(_inv[0][0].longitude)
-        except Exception as err:
-            print("Error extracting station('%s.%s') info:%s"
-                  % (nw, station, err))
+            station_latitude, station_longitude = \
+                extract_station_location(st, inventory)
+        except Exception as errmsg:
+            # station_latitude and station_longitude is unknown
+            # so the stream should be skipped
+            print("Error extracting staiton latitude and longitude from "
+                  "staiton inventory: %s" % errmsg)
             return
 
     baz = calculate_baz(event_latitude, event_longitude,
                         station_latitude, station_longitude)
 
-    components = [tr.stats.channel[-1] for tr in st]
-
-    if mode in ["12->RT", "ALL->RT"]:
-        if "1" in components and "2" in components:
-            try:
-                rotate_12_rt_func(st, inventory, back_azimuth=baz)
-            except Exception as e:
-                print("Error rotating 12->RT:%s" % e)
-
-    if mode in ["NE->RT", "ALL->RT"]:
-        if "N" in components and "E" in components:
-            try:
-                st.rotate(method="NE->RT", back_azimuth=baz)
-            except Exception as e:
-                print("Error rotating NE->RT:%s" % e)
+    if mode in ["NE->RT", "12->RT", "ALL->RT"]:
+        rotate_to_rt(st, baz, inventory, mode, sanity_check=sanity_check)
 
     if mode in ["RT->NE"]:
-        st.rotate(method="RT->NE", back_azimuth=baz)
+        rotate_rt_to_ne(st, baz)
 
     return st
 
@@ -489,10 +323,10 @@ def rotate_stream(st, event_latitude, event_longitude,
     :type event_latitude: float
     :param event_longitude: event longitude
     :type event_longitude: float
-    :param inv: station inventory information. If you want to rotate
+    :param inventory: station inventory information. If you want to rotate
     "12" components, you need to provide inventory since only station
     and station_longitude is not enough.
-    :type inv: obspy.Inventory
+    :type inventory: obspy.Inventory
     :param mode: rotation mode, could be one of:
         1) "NE->RT": rotate only North and East channel to RT
         2) "12->RT": rotate only 1 and 2 channel, like "BH1" and "BH2" to RT
@@ -503,9 +337,12 @@ def rotate_stream(st, event_latitude, event_longitude,
         1) If rotating observed data from NE(12)to RT, it is recommended
             to set to True; if rotating from RT to NE, then you could set
             it to False;
+            ATTENTION: please turn it to True when processing observed
+            data since the instrument alignment of observed data might
+            be messy.
         2) If rotating synthetic data, you could set it to False since
             I assume for synthetic data, there should not be problem
-            associated with orientation
+            associated with orientation.
     :return: rotated stream(obspy.Stream)
     """
 
@@ -525,7 +362,9 @@ def rotate_stream(st, event_latitude, event_longitude,
                          "information provided(to rotate '12')" % mode)
 
     # the stream might contains multiple stations so each station should
-    # be rotated indepandantly
+    # be rotated independently, or stations with different channel,
+    # (for example, BH and EH), and different locations(such as
+    # "00" and "10").
     sorted_st_dict = sort_stream_by_station(st)
 
     for sta_stream in sorted_st_dict.itervalues():
@@ -536,7 +375,7 @@ def rotate_stream(st, event_latitude, event_longitude,
         chan = sta_stream[0].stats.channel
 
         if loc == "S3" or chan[0:2] == "MX":
-            # SPECFEM TUNE: if the synthetic is generated by SPECFEM
+            # SPECFEM HACK: if the synthetic is generated by SPECFEM
             # and the stationxml is from read data, then the location
             # won't match between synt and staxml
             station_inv = inventory.select(network=nw, station=station)
