@@ -24,7 +24,7 @@
         <Longitude unit="DEGREES">69.0432</Longitude>
         <Elevation>1913.0</Elevation>
         <Depth>7.0</Depth>
-        <Azimuth unit="DEGREES">100.0</Azimuth>
+        <Azimuth unit="DEGREES">90.0</Azimuth>
         <Dip unit="DEGREES">0.0</Dip>
         <Type>CONTINUOUS</Type>
         <Type>GEOPHYSICAL</Type>
@@ -187,7 +187,7 @@
         <Longitude unit="DEGREES">69.0432</Longitude>
         <Elevation>1913.0</Elevation>
         <Depth>7.0</Depth>
-        <Azimuth unit="DEGREES">10.0</Azimuth>
+        <Azimuth unit="DEGREES">0.0</Azimuth>
         <Dip unit="DEGREES">0.0</Dip>
         <Type>CONTINUOUS</Type>
         <Type>GEOPHYSICAL</Type>

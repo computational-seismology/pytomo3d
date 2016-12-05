@@ -64,12 +64,12 @@ def test_extract_channel_orientation():
     tr_e = st.select(channel="*E")[0]
     dip, azi = rotate.extract_channel_orientation(tr_e, inv)
     assert dip == 0.0
-    assert azi == 100.0
+    assert azi == 90.0
 
     tr_n = st.select(channel="*N")[0]
     dip, azi = rotate.extract_channel_orientation(tr_n, inv)
     assert dip == 0.0
-    assert azi == 10.0
+    assert azi == 0.0
 
     tr_fake = deepcopy(tr_n)
     tr_fake.stats.station = "FAKE_SOMETHING"
