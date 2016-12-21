@@ -39,10 +39,9 @@ def test_check_adj_consistency():
     sa.check_adj_consistency(adj1, adj2)
 
     adj2 = deepcopy(adj1)
-    adj2.location = "00"
+    adj2.component = "HHZ"
     with pytest.raises(ValueError) as errmsg:
         sa.check_adj_consistency(adj1, adj2)
-    assert "Adjoint source id is different" in str(errmsg)
 
     adj2 = deepcopy(adj1)
     adj2.dt *= 2
@@ -167,6 +166,8 @@ def test_sum_adj_to_base():
         "cc_traveltime_misfit", 2.0, 1.0, 40, 100, "BHZ",
         adjoint_source=array, network="II", station="AAK",
         location="00", starttime=UTCDateTime(1990, 1, 1))
+    sa.sum_adj_to_base(adj1, adj2, 1.0)
+    adj2.component = "BHR"
     with pytest.raises(ValueError):
         sa.sum_adj_to_base(adj1, adj2, 1.0)
 

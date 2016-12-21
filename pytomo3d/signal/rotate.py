@@ -23,6 +23,10 @@ def calculate_baz(elat, elon, slat, slon):
 
 
 def ensemble_synthetic_channel_orientation(chan):
+    """
+    For synthetic data from SPECFEM, just ensemble the orientation
+    information.
+    """
     orientation = {"Z": (90, 0),
                    "N": (0, 0),
                    "E": (0, 90)}

@@ -26,9 +26,11 @@ def check_adj_consistency(adj_base, adj):
     If passed, return, then adj could be added into adj_base
     If not, raise ValueError
     """
-    if adj_base.id != adj.id:
-        raise ValueError("Adjoint source id is different: %s, %s"
-                         % (adj_base.id, adj.id))
+    if adj_base.network != adj.network or \
+            adj_base.station != adj.station or \
+            adj_base.component != adj.component:
+        raise ValueError("Adjoint source network or station is different:"
+                         "%s, %s" % (adj_base.id, adj.id))
 
     if not np.isclose(adj_base.dt, adj.dt):
         raise ValueError("DeltaT of current adjoint source(%f)"
@@ -140,6 +142,9 @@ def sum_adj_to_base(adj_base, adj, weight):
 
 def check_station_consistent(sta1, sta2):
     for key in sta1:
+        if key == "location":
+            # don't check location
+            continue
         if key not in sta2:
             return False
         if isinstance(sta1[key], float):
