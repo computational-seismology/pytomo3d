@@ -111,15 +111,38 @@ def test_get_user_bound():
 
 def test_filter_measurements_on_bounds():
     bounds = {"R": [-1.1, 1.1], "T": [-1.1, 1.1], "Z": [-1.1, 1.1]}
-    v = fw.filter_measurements_on_bounds(windows, measures, bounds)
-    assert v["II.AAK"]["II.AAK..BHR"] == v["II.AAK"]["II.AAK..BHR"]
+
+    v, m = fw.filter_measurements_on_bounds(windows, measures, bounds)
+    assert v["II.AAK"]["II.AAK..BHR"] == windows["II.AAK"]["II.AAK..BHR"]
     assert "II.AAK..BHT" not in v["II.AAK"]
     assert len(v["II.AAK"]["II.AAK..BHZ"]) == 1
     assert v["II.AAK"]["II.AAK..BHZ"] == [{"left_index": 1, "right_index": 2}]
 
+    assert m["II.AAK"] == {
+        "II.AAK..BHR": [{"dt": 1.0, "misfit_dt": 1.0},
+                        {"dt": -1.0, "misfit_dt": 1.0}],
+        "II.AAK..BHZ": [{"dt": 1.0, "misfit_dt": 1.0}]}
+    assert m["II.ABKT"] == {
+       "II.ABKT..BHR": [{"dt": 1.0, "misfit_dt": 1.5}]}
+    assert m["IU.BCD"] == {
+           "IU.BCD..BHR": [{"dt": 1.0, "misfit_dt": 2.0}],
+           "IU.BCD..BHT": [{"dt": 1.0, "misfit_dt": 2.0}],
+           "IU.BCD..BHZ": [{"dt": -0.2, "misfit_dt": 2.0},
+                           {"dt": 0.8, "misfit_dt": 3.0},
+                           {"dt": 0.9, "misfit_dt": 0.4}]}
+
     bounds = {"R": [-0.1, 0.1], "T": [-0.1, 0.1], "Z": [-0.1, 0.1]}
-    v = fw.filter_measurements_on_bounds(windows, measures, bounds)
+    v, m = fw.filter_measurements_on_bounds(windows, measures, bounds)
     assert len(v) == 0
+    assert len(m) == 0
+
+
+def assert_wins_and_meas_same_length(wins, meas):
+    assert len(wins) == len(meas)
+    for sta in wins:
+        assert len(wins[sta]) == len(meas[sta])
+        for chan in wins[sta]:
+            assert len(wins[sta][chan]) == len(meas[sta][chan])
 
 
 def test_filter_windows_on_measurements():
@@ -132,7 +155,7 @@ def test_filter_windows_on_measurements():
             "Z": {"tshift_reference": 0, "tshift_acceptance_level": 10,
                   "std_ratio": 4.0}}}
 
-    _wins = fw.filter_windows_on_measurements(
+    _wins, _meas = fw.filter_windows_on_measurements(
         windows, measures, measure_config)
     assert _wins["II.AAK"] == windows["II.AAK"]
     assert _wins["IU.BCD"] == windows["IU.BCD"]
@@ -141,6 +164,7 @@ def test_filter_windows_on_measurements():
     assert _wins["II.ABKT"]["II.ABKT..BHZ"] == \
         windows["II.ABKT"]["II.ABKT..BHZ"]
     assert "II.ABKT..BHT" not in _wins["II.ABKT"]
+    assert_wins_and_meas_same_length(_wins, _meas)
 
     measure_config = \
         {"component": {
@@ -151,7 +175,7 @@ def test_filter_windows_on_measurements():
             "Z": {"tshift_reference": 0, "tshift_acceptance_level": 10.0,
                   "std_ratio": 1.0}}}
 
-    _wins = fw.filter_windows_on_measurements(
+    _wins, _meas = fw.filter_windows_on_measurements(
         windows, measures, measure_config)
     assert _wins["II.ABKT"]["II.ABKT..BHZ"] == \
         [{"left_index": 1, "right_index": 2}]
@@ -159,6 +183,7 @@ def test_filter_windows_on_measurements():
         [{"left_index": 1, "right_index": 2}]
     assert _wins["IU.BCD"]["IU.BCD..BHT"] == \
         [{"left_index": 1, "right_index": 2}]
+    assert_wins_and_meas_same_length(_wins, _meas)
 
 
 def test_filter_windows_on_measurements_2():
@@ -173,10 +198,11 @@ def test_filter_windows_on_measurements_2():
                   "std_ratio": 1.0}}
          }
 
-    _wins = fw.filter_windows_on_measurements(
+    _wins, _meas = fw.filter_windows_on_measurements(
         windows, measures, measure_config)
 
     assert len(_wins) == 0
+    assert len(_meas) == 0
 
 
 def test_check_consistency():
@@ -203,7 +229,7 @@ def test_filter_windows():
          "flag": True}
 
     config = {"sensor": sensor_config, "measurement": measure_config}
-    _wins, log = fw.filter_windows(
+    _wins, _meas, log = fw.filter_windows(
         windows, stations, measures, config, verbose=False)
 
     assert _wins["II.AAK"] == windows["II.AAK"]
@@ -213,6 +239,20 @@ def test_filter_windows():
         windows["II.ABKT"]["II.ABKT..BHZ"]
     assert "II.ABKT..BHT" not in _wins["II.ABKT"]
     assert "IU.BCD" not in _wins["II.ABKT"]
+
+    assert _meas["II.AAK"] == {
+        "II.AAK..BHR": [{"dt": 1.0, "misfit_dt": 1.0},
+                        {"dt": -1.0, "misfit_dt": 1.0}],
+        "II.AAK..BHT": [{"dt": 1.5, "misfit_dt": 2.5}],
+        "II.AAK..BHZ": [{"dt": 1.0, "misfit_dt": 1.0},
+                        {"dt": 2.0, "misfit_dt": 4.0},
+                        {"dt": -1.5, "misfit_dt": 3.00}]}
+
+    assert _meas["II.ABKT"] == {
+        "II.ABKT..BHR": [{"dt": 1.0, "misfit_dt": 1.5}],
+        "II.ABKT..BHZ": [{"dt": 2.0, "misfit_dt": 4.0},
+                         {"dt": -5.0, "misfit_dt": 16.0}]}
+    assert_wins_and_meas_same_length(_wins, _meas)
 
     _true_log = \
         {'sensor': {
@@ -240,10 +280,12 @@ def test_filter_windows_2():
          "flag": True}
 
     config = {"sensor": sensor_config, "measurement": measure_config}
-    _wins, log = fw.filter_windows(
+    _wins, _meas, log = fw.filter_windows(
         windows, stations, measures, config, verbose=False)
 
     assert len(_wins) == 0
+
+    assert len(_meas) == 0
 
     measure_config = \
         {"component": {
@@ -255,7 +297,8 @@ def test_filter_windows_2():
                   "std_ratio": 0.01}},
          "flag": True}
     config = {"sensor": sensor_config, "measurement": measure_config}
-    _wins, log = fw.filter_windows(
+    _wins, _meas, log = fw.filter_windows(
         windows, stations, measures, config, verbose=False)
 
     assert len(_wins) == 0
+    assert len(_meas) == 0

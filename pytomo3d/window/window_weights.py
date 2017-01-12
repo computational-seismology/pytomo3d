@@ -77,6 +77,9 @@ def assign_receiver_to_points(channels, stations):
     for chan in channels:
         component = chan.split(".")[-1][-1]
         if component == "Z":
+            # it is important to set the default weight value to
+            # 1.0 here. Becuase if there is no receiver weightings,
+            # then this default weights will be used
             point = SpherePoint(stations[chan]["latitude"],
                                 stations[chan]["longitude"],
                                 tag=chan, weight=1.0)
@@ -196,9 +199,16 @@ def determine_receiver_weighting(
                                      plot=plot_flag,
                                      figname_prefix=figname_prefix)
         else:
+            # if not weight the receiver, then just leave the weight
+            # values all to the default values(1.0). Leave the ref_dists
+            # and cond_nums to None since there is no weighting
+            # procedures. However, normalization still needs to be
+            # applied later.
             ref_dists[comp] = None
             cond_nums[comp] = None
 
+        # normlalize the receiver weights according to the reciever
+        # window counts(normalization requirements)
         weights[comp] = normalize_receiver_weights(points, rec_wcounts[comp])
 
         _receiver_validator(weights[comp], rec_wcounts[comp],
