@@ -5,6 +5,7 @@ Pytomo3d has dependancies on the following packages:
 1. [obspy](https://github.com/obspy/obspy)
 2. [pyflex *devel* branch](https://github.com/wjlei1990/pyflex)
 3. [pyadjoint *dev* branch](https://github.com/chukren/pyadjoint)
+4. [spaceweight](https://github.com/wjlei1990/spaceweight)
 
 ---
 
@@ -53,6 +54,15 @@ Wenjie: If you are new to python, [anaconda](https://www.continuum.io/downloads)
   cd ..
   ```
   pyadjoint is used for calculating adjoint sources.
+  
+  
+5. Install spaceweight
+  ```
+  git clone https://github.com/wjlei1990/spaceweight
+  cd spaceweight
+  pip install -v -e . (--user)
+  cd ..
+  ```
 
 5. Install pytomo3d.
   ```
