@@ -117,24 +117,40 @@ def get_measurements_std(measurements):
     """
     Calculate the mean and standard deviation values from the measurements
     """
-    comp_meas = {}
+    comp_dt_meas = {}
+    comp_dlna_meas = {}
 
     for sta_info in measurements.itervalues():
         for chan, chan_info in sta_info.iteritems():
             comp = chan.split(".")[-1][-1]
+
             dts = [v["dt"] for v in chan_info]
-            if comp not in comp_meas:
-                comp_meas[comp] = []
-            comp_meas[comp].extend(dts)
+            dlnas = [v["dlna"] for v in chan_info]
 
-    means = dict((k, np.mean(v)) for (k, v) in comp_meas.iteritems())
-    stds = dict((k, np.std(v)) for (k, v) in comp_meas.iteritems())
+            if comp not in comp_dt_meas:
+                comp_dt_meas[comp] = []
+            comp_dt_meas[comp].extend(dts)
 
-    print("means of measurements:")
-    pprint(means)
-    print("std of measurements:")
-    pprint(stds)
-    return means, stds
+            if comp not in comp_dlna_meas:
+                comp_dlna_meas[comp] = []
+            comp_dlna_meas[comp].extend(dlnas)
+
+    dt_means = dict((k, np.mean(v)) for (k, v) in comp_dt_meas.iteritems())
+    dt_stds = dict((k, np.std(v)) for (k, v) in comp_dt_meas.iteritems())
+
+    dlna_means = dict((k, np.mean(v)) for (k, v) in comp_dlna_meas.iteritems())
+    dlna_stds = dict((k, np.std(v)) for (k, v) in comp_dlna_meas.iteritems())
+
+    print("means of dt measurements:")
+    pprint(dt_means)
+    print("std of dt measurements:")
+    pprint(dt_stds)
+    print("means of dlna measurements:")
+    pprint(dlna_means)
+    print("std of dlna measurements:")
+    pprint(dlna_stds)
+
+    return dt_means, dt_stds, dlna_means, dlna_stds
 
 
 def get_user_bound(info):
@@ -213,7 +229,8 @@ def filter_windows_on_measurements(windows, measurements, measure_config):
     if len(windows) == 0:
         return {}, {}
 
-    means, stds = get_measurements_std(measurements)
+    dt_means, dt_stds, dlna_means, dlna_stds = \
+        get_measurements_std(measurements)
 
     # get the measurement bounds
     final_bounds = {}
