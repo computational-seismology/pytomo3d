@@ -80,23 +80,41 @@ def test_filter_windows_on_sensor():
 
 
 def test_get_measurements_std():
-    means, stds = fw.get_measurements_std({})
-    assert len(means) == 0
-    assert len(stds) == 0
+    dt_means, dt_stds, dlna_means, dlna_stds = \
+        fw.get_measurements_std({})
+    assert len(dt_means) == 0
+    assert len(dt_stds) == 0
+    assert len(dlna_means) == 0
+    assert len(dlna_stds) == 0
 
-    means, stds = fw.get_measurements_std(measures)
-    _true_mean = \
+    dt_means, dt_stds, dlna_means, dlna_stds = \
+        fw.get_measurements_std(measures)
+
+   # from tests/data/window/measurements.fake.json
+    _true_dt_mean = \
         {"R": np.mean([1, -1, 1, 1, -2]),
          "T": np.mean([1, 1.5, -2.5]),
          "Z": np.mean([1, 2, -1.5, 2, -5, -0.2, 0.8, -1.6, 1.6, 0.9])}
-    _true_stds = \
+    _true_dt_stds = \
         {"R": np.std([1, -1, 1, 1, -2]),
          "T": np.std([1, 1.5, -2.5]),
          "Z": np.std([1, 2, -1.5, 2, -5, -0.2, 0.8, -1.6, 1.6, 0.9])}
 
+    _true_dlna_mean = \
+        {"R": np.mean([1.0, -1.0, 1.0, 1.0, -0.8]),
+         "T": np.mean([0.3, 0.3, -0.7]),
+         "Z": np.mean([0.6, 0.4, -0.5, 1.2, -1.5, -0.2, 0.8, -0.6, 1.1, 0.9])}
+    _true_dlna_stds = \
+        {"R": np.mean([1.0, -1.0, 1.0, 1.0, -0.8]),
+         "T": np.mean([0.3, 0.3, -0.7]),
+         "Z": np.mean([0.6, 0.4, -0.5, 1.2, -1.5, -0.2, 0.8, -0.6, 1.1, 0.9])}
+
     for comp in means:
-        npt.assert_array_almost_equal(means[comp], _true_mean[comp])
-        npt.assert_array_almost_equal(stds[comp], _true_stds[comp])
+        npt.assert_array_almost_equal(dt_means[comp], _true_dt_mean[comp])
+        npt.assert_array_almost_equal(dt_stds[comp], _true_dt_stds[comp])
+        npt.assert_array_almost_equal(dlna_means[comp], _true_dlna_mean[comp])
+        npt.assert_array_almost_equal(dlna_stds[comp], _true_dlna_stds[comp])
+
 
 
 def test_get_user_bound():
