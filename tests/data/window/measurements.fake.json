@@ -1,11 +1,11 @@
 {
   "II.AAK": {
     "II.AAK..BHR":[
-      {"dt": 1.0, "misfit_dt": 1.0, "dlna": 1.0, "misfit_dlna": 1.0},
-      {"dt": -1.0, "misfit_dt": 1.0, "dlna": -1.0, "misfit_dlna": 1.0}
+      {"dt": 1.0, "misfit_dt": 1.0, "dlna": 0.7, "misfit_dlna": 1.0},
+      {"dt": -1.0, "misfit_dt": 1.0, "dlna": -0.7, "misfit_dlna": 1.0}
     ],
     "II.AAK..BHT":[
-      {"dt": 1.5, "misfit_dt": 2.5, "dlna": 0.3, "misfit_dlna": 0.5}
+      {"dt": 1.5, "misfit_dt": 2.5, "dlna": 0.9, "misfit_dlna": 0.5}
     ],
     "II.AAK..BHZ":[
       {"dt": 1.0, "misfit_dt": 1.0, "dlna": 0.6, "misfit_dlna": 1.0},
@@ -15,7 +15,7 @@
   },
   "II.ABKT": {
     "II.ABKT..BHR":[
-      {"dt": 1.0, "misfit_dt": 1.5, "dlna": 1.0, "misfit_dlna": 0.5}
+      {"dt": 1.0, "misfit_dt": 1.5, "dlna": 0.6, "misfit_dlna": 0.5}
     ],
     "II.ABKT..BHT":[],
     "II.ABKT..BHZ":[
