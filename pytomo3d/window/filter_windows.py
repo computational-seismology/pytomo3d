@@ -185,8 +185,10 @@ def filter_measurements_on_bounds(windows, measurements, bounds):
                              "measurements")
         for win, meas in zip(chan_wins, chan_meas):
             # print("%.2f, %.2f, %.2f" % (meas["dt"], bounds[0], bounds[1]))
-            if (meas["dt"] >= bounds[0]) and (meas["dt"] <= bounds[1]) \
-                and (meas["dlna"] >= bounds[2]) and (meas["dlna"] <= bounds[3] ):
+            if (meas["dt"] >= bounds[0]) \
+                    and (meas["dt"] <= bounds[1]) \
+                    and (meas["dlna"] >= bounds[2]) \
+                    and (meas["dlna"] <= bounds[3]):
                 new_wins.append(win)
                 new_meas.append(meas)
 
@@ -241,9 +243,9 @@ def filter_windows_on_measurements(windows, measurements, measure_config):
         print("-" * 20 + "\nComponent: %s" % comp)
         user_bound = get_user_bound(comp_config[comp])
         dt_std_bound = get_std_bound(dt_means[comp], dt_stds[comp],
-                                  comp_config[comp]["std_ratio"])
+                                     comp_config[comp]["std_ratio"])
         dlna_std_bound = get_std_bound(dlna_means[comp], dlna_stds[comp],
-                                  comp_config[comp]["std_ratio"])
+                                       comp_config[comp]["std_ratio"])
 
         bound = [max(dt_std_bound[0], user_bound[0]),
                  min(dt_std_bound[1], user_bound[1]),

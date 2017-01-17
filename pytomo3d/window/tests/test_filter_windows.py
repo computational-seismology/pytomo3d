@@ -90,7 +90,7 @@ def test_get_measurements_std():
     dt_means, dt_stds, dlna_means, dlna_stds = \
         fw.get_measurements_std(measures)
 
-   # from tests/data/window/measurements.fake.json
+    # from tests/data/window/measurements.fake.json
     _true_dt_mean = \
         {"R": np.mean([1, -1, 1, 1, -2]),
          "T": np.mean([1, 1.5, -2.5]),
@@ -114,7 +114,6 @@ def test_get_measurements_std():
         npt.assert_array_almost_equal(dt_stds[comp], _true_dt_stds[comp])
         npt.assert_array_almost_equal(dlna_means[comp], _true_dlna_mean[comp])
         npt.assert_array_almost_equal(dlna_stds[comp], _true_dlna_stds[comp])
-
 
 
 def test_get_user_bound():
