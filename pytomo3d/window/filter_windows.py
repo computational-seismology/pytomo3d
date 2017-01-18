@@ -64,8 +64,8 @@ def print_window_filter_summary(old_windows, new_windows):
           % (nwins_old, nwins_new, nwins_rej * 100))
     return {"nchannels_old": nchans_old, "nwindows_old": nwins_old,
             "nchannels_new": nchans_new, "nwindows_new": nwins_new,
-            "channel_rejection_percentage": nchans_rej * 100,
-            "window_rejection_percentage": nwins_rej * 100}
+            "channel_rejection_percentage": '%.2f' % (nchans_rej * 100),
+            "window_rejection_percentage": '%.2f' % (nwins_rej * 100)}
 
 
 def filter_windows_on_sensors(windows, stations, sensor_types, verbose=False):
@@ -117,31 +117,49 @@ def get_measurements_std(measurements):
     """
     Calculate the mean and standard deviation values from the measurements
     """
-    comp_meas = {}
+    comp_dt_meas = {}
+    comp_dlna_meas = {}
 
     for sta_info in measurements.itervalues():
         for chan, chan_info in sta_info.iteritems():
             comp = chan.split(".")[-1][-1]
+
             dts = [v["dt"] for v in chan_info]
-            if comp not in comp_meas:
-                comp_meas[comp] = []
-            comp_meas[comp].extend(dts)
+            dlnas = [v["dlna"] for v in chan_info]
 
-    means = dict((k, np.mean(v)) for (k, v) in comp_meas.iteritems())
-    stds = dict((k, np.std(v)) for (k, v) in comp_meas.iteritems())
+            if comp not in comp_dt_meas:
+                comp_dt_meas[comp] = []
+            comp_dt_meas[comp].extend(dts)
 
-    print("means of measurements:")
-    pprint(means)
-    print("std of measurements:")
-    pprint(stds)
-    return means, stds
+            if comp not in comp_dlna_meas:
+                comp_dlna_meas[comp] = []
+            comp_dlna_meas[comp].extend(dlnas)
+
+    dt_means = dict((k, np.mean(v)) for (k, v) in comp_dt_meas.iteritems())
+    dt_stds = dict((k, np.std(v)) for (k, v) in comp_dt_meas.iteritems())
+
+    dlna_means = dict((k, np.mean(v)) for (k, v) in comp_dlna_meas.iteritems())
+    dlna_stds = dict((k, np.std(v)) for (k, v) in comp_dlna_meas.iteritems())
+
+    print("means of dt measurements:")
+    pprint(dt_means)
+    print("std of dt measurements:")
+    pprint(dt_stds)
+    print("means of dlna measurements:")
+    pprint(dlna_means)
+    print("std of dlna measurements:")
+    pprint(dlna_stds)
+
+    return dt_means, dt_stds, dlna_means, dlna_stds
 
 
 def get_user_bound(info):
     """ user specified bound for measurements filter """
-    v = [-info["tshift_acceptance_level"] + info["tshift_reference"],
-         info["tshift_acceptance_level"] + info["tshift_reference"]]
-    if v[0] > v[1]:
+    v = [info["tshift_reference"] - info["tshift_acceptance_level"],
+         info["tshift_reference"] + info["tshift_acceptance_level"],
+         info["dlna_reference"] - info["dlna_acceptance_level"],
+         info["dlna_reference"] + info["dlna_acceptance_level"]]
+    if v[0] > v[1] or v[2] > v[3]:
         raise ValueError("error on user bound: %s" % v)
     return v
 
@@ -167,7 +185,10 @@ def filter_measurements_on_bounds(windows, measurements, bounds):
                              "measurements")
         for win, meas in zip(chan_wins, chan_meas):
             # print("%.2f, %.2f, %.2f" % (meas["dt"], bounds[0], bounds[1]))
-            if (meas["dt"] >= bounds[0]) and (meas["dt"] <= bounds[1]):
+            if (meas["dt"] >= bounds[0]) \
+                    and (meas["dt"] <= bounds[1]) \
+                    and (meas["dlna"] >= bounds[2]) \
+                    and (meas["dlna"] <= bounds[3]):
                 new_wins.append(win)
                 new_meas.append(meas)
 
@@ -213,21 +234,27 @@ def filter_windows_on_measurements(windows, measurements, measure_config):
     if len(windows) == 0:
         return {}, {}
 
-    means, stds = get_measurements_std(measurements)
+    dt_means, dt_stds, dlna_means, dlna_stds = \
+        get_measurements_std(measurements)
 
     # get the measurement bounds
     final_bounds = {}
-    for comp in means:
+    for comp in dt_means:
         print("-" * 20 + "\nComponent: %s" % comp)
         user_bound = get_user_bound(comp_config[comp])
-        std_bound = get_std_bound(means[comp], stds[comp],
-                                  comp_config[comp]["std_ratio"])
+        dt_std_bound = get_std_bound(dt_means[comp], dt_stds[comp],
+                                     comp_config[comp]["std_ratio"])
+        dlna_std_bound = get_std_bound(dlna_means[comp], dlna_stds[comp],
+                                       comp_config[comp]["std_ratio"])
 
-        bound = [max(std_bound[0], user_bound[0]),
-                 min(std_bound[1], user_bound[1])]
+        bound = [max(dt_std_bound[0], user_bound[0]),
+                 min(dt_std_bound[1], user_bound[1]),
+                 max(dlna_std_bound[0], user_bound[2]),
+                 min(dlna_std_bound[1], user_bound[3])]
         final_bounds[comp] = bound
-        print("user specified bound: %s" % user_bound)
-        print("std bound: %s" % std_bound)
+        print("user specified bound [dt_min, dt_max, dlna_min, dlna_max]: %s"
+              % user_bound)
+        print("std bound dt dlna: %s %s" % (dt_std_bound, dlna_std_bound))
         print("final bound: %s" % bound)
 
     new_wins, new_meas = filter_measurements_on_bounds(
