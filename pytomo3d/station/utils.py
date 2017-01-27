@@ -10,8 +10,45 @@ Methods that contains utils for adjoint sources
     (http://www.gnu.org/licenses/lgpl-3.0.en.html)
 """
 from __future__ import (absolute_import, division, print_function)
+import collections
 from obspy import UTCDateTime
 from obspy.core.inventory import Channel, Station, Network, Inventory, Site
+
+
+def check_in_range(value, vranges):
+    if vranges[0] > vranges[1]:
+        vmin = vranges[1]
+        vmax = vranges[0]
+    else:
+        vmin = vranges[0]
+        vmax = vranges[1]
+
+    if value < vmin or value > vmax:
+        raise ValueError("Value(%f) not in range: %s" % (value, vranges))
+
+
+def write_stations_file(sta_dict, filename="STATIONS"):
+    """
+    Write station information out to a txt file(in SPECFEM FORMAT)
+
+    :param sta_dict: the dict contains station locations information.
+        The key should be "network.station", like "II.AAK".
+        The value are the list of
+        [latitude, longitude, elevation_in_m, depth_in_m].
+    :type sta_dict: dict
+    :param filename: the output filename for STATIONS file.
+    :type filename: str
+    """
+    with open(filename, 'w') as fh:
+        od = collections.OrderedDict(sorted(sta_dict.items()))
+        for _sta_id, _sta in od.iteritems():
+            network, station = _sta_id.split(".")
+            _lat = _sta[0]
+            _lon = _sta[1]
+            check_in_range(_lat, [-90.1, 90.1])
+            check_in_range(_lon, [-180.1, 180.1])
+            fh.write("%-9s %5s %15.4f %12.4f %10.1f %6.1f\n"
+                     % (station, network, _lat, _lon, _sta[2], _sta[3]))
 
 
 def create_simple_inventory(network, station, latitude=None, longitude=None,
