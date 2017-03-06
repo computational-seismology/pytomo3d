@@ -300,7 +300,11 @@ def normalize_category_weights(category_ratio, cat_wcounts):
             sumv += cat_wcounts[p][c] * category_ratio[p][c]
             nwins_total += cat_wcounts[p][c]
 
-    normc = nwins_total / sumv
+    if nwins_total == 0 or sumv == 0.0:
+        normc = 1.0
+    else:
+        normc = nwins_total / sumv
+
     weights = {}
     for p, pinfo in cat_wcounts.iteritems():
         weights[p] = {}
