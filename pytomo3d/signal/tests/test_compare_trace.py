@@ -17,6 +17,7 @@ def _upper_level(path, nlevel=4):
         path = os.path.dirname(path)
     return path
 
+
 # Most generic way to get the data folder path.
 TESTBASE_DIR = _upper_level(os.path.abspath(
     inspect.getfile(inspect.currentframe())), 4)

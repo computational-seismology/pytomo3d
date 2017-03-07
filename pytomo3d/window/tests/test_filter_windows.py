@@ -18,6 +18,7 @@ def _upper_level(path, nlevel=4):
         path = os.path.dirname(path)
     return path
 
+
 # Most generic way to get the data folder path.
 TESTBASE_DIR = _upper_level(
     os.path.abspath(inspect.getfile(inspect.currentframe())), 4)
@@ -150,15 +151,15 @@ def test_filter_measurements_on_bounds():
         "II.AAK..BHZ": [{"dt": 1.0, "misfit_dt": 1.0,
                          "dlna": 0.6, "misfit_dlna": 1.0}]}
     assert m["II.ABKT"] == {
-       "II.ABKT..BHR": [{"dt": 1.0, "misfit_dt": 1.5,
-                         "dlna": 0.6, "misfit_dlna": 0.5}]}
+        "II.ABKT..BHR": [{"dt": 1.0, "misfit_dt": 1.5,
+                          "dlna": 0.6, "misfit_dlna": 0.5}]}
     assert m["IU.BCD"] == {
-           "IU.BCD..BHT": [{"dt": 1.0, "misfit_dt": 2.0,
-                            "dlna": 0.3, "misfit_dlna": 0.2}],
-           "IU.BCD..BHZ": [{"dt": -0.2, "misfit_dt": 2.0,
-                            "dlna": -0.2, "misfit_dlna": 2.0},
-                           {"dt": 0.8, "misfit_dt": 3.0,
-                            "dlna": 0.8, "misfit_dlna": 0.6}]}
+        "IU.BCD..BHT": [{"dt": 1.0, "misfit_dt": 2.0,
+                         "dlna": 0.3, "misfit_dlna": 0.2}],
+        "IU.BCD..BHZ": [{"dt": -0.2, "misfit_dt": 2.0,
+                         "dlna": -0.2, "misfit_dlna": 2.0},
+                        {"dt": 0.8, "misfit_dt": 3.0,
+                         "dlna": 0.8, "misfit_dlna": 0.6}]}
 
     bounds = {"R": [-0.1, 0.1], "T": [-0.1, 0.1], "Z": [-0.1, 0.1]}
     v, m = fw.filter_measurements_on_bounds(windows, measures, bounds)

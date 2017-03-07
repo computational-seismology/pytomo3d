@@ -16,6 +16,7 @@ def _upper_level(path, nlevel=4):
         path = os.path.dirname(path)
     return path
 
+
 # Most generic way to get the data folder path.
 TESTBASE_DIR = _upper_level(
     os.path.abspath(inspect.getfile(inspect.currentframe())), 4)
@@ -25,6 +26,7 @@ DATA_DIR = os.path.join(TESTBASE_DIR, "tests", "data")
 def load_json(filename):
     with open(filename) as fh:
         return json.load(fh)
+
 
 window_file = os.path.join(DATA_DIR, "window", "windows.fake.json")
 windows = load_json(window_file)
