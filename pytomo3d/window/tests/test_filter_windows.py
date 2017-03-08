@@ -41,12 +41,19 @@ def test_is_right_sensor():
 
 
 def test_count_windows():
-    assert fw.count_windows({}) == (0, 0)
+    assert fw.count_windows({}) == (0, 0, {})
+
     wins = {"A": {"R": [], "T": {}, "Z": []}}
-    assert fw.count_windows(wins) == (0, 0)
+    assert fw.count_windows(wins) == (0, 0, {})
+
     wins = {"A": {"R": [1, 2, 3], "T": [1], "Z": [1, 2]}}
-    assert fw.count_windows(wins) == (3, 6)
-    assert fw.count_windows(windows) == (8, 18)
+    nchans, nwins, nwins_comp = fw.count_windows(wins)
+    assert (nchans, nwins) == (3, 6)
+    assert nwins_comp == {"R": 3, "T": 1, "Z": 2}
+
+    nchans, nwins, nwins_comp = fw.count_windows(windows)
+    assert (nchans, nwins) == (8, 18)
+    assert nwins_comp == {"R": 5, "T": 3, "Z": 10}
 
 
 def test_filter_windows_on_sensor():

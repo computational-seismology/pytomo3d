@@ -37,19 +37,25 @@ def count_windows(windows):
     """
     nchans = 0
     nwins = 0
+    nwins_comp = {}
     for stainfo in windows.itervalues():
-        for chaninfo in stainfo.itervalues():
+        for chan, chaninfo in stainfo.iteritems():
+            comp = chan.split(".")[-1][-1]
             _nw = len(chaninfo)
             if _nw == 0:
                 continue
             nchans += 1
             nwins += _nw
-    return nchans, nwins
+            if comp not in nwins_comp:
+                nwins_comp[comp] = 0
+            nwins_comp[comp] += _nw
+
+    return nchans, nwins, nwins_comp
 
 
 def print_window_filter_summary(old_windows, new_windows):
-    nchans_old, nwins_old = count_windows(old_windows)
-    nchans_new, nwins_new = count_windows(new_windows)
+    nchans_old, nwins_old, nwins_comp_old = count_windows(old_windows)
+    nchans_new, nwins_new, nwins_comp_new = count_windows(new_windows)
     if nchans_old:
         nchans_rej = (nchans_old - nchans_new) / nchans_old
     else:
@@ -63,6 +69,8 @@ def print_window_filter_summary(old_windows, new_windows):
           % (nchans_old, nchans_new, nchans_rej * 100))
     print("Number of windows old and new:  %d --> %d(rej: %.2f %%)"
           % (nwins_old, nwins_new, nwins_rej * 100))
+    print("Old Component window counts: %s" % (nwins_comp_old))
+    print("New Component window counts: %s" % (nwins_comp_new))
     return {"nchannels_old": nchans_old, "nwindows_old": nwins_old,
             "nchannels_new": nchans_new, "nwindows_new": nwins_new,
             "channel_rejection_percentage": '%.2f' % (nchans_rej * 100),
@@ -180,7 +188,6 @@ def filter_measurements_on_bounds(windows, measurements, bounds,
     """
     def _filter_(chan_wins, chan_meas, _bounds):
         """ filter one channel window and measurements """
-        print("_bounds: %s" % _bounds)
         new_wins = []
         new_meas = []
         if len(chan_wins) != len(chan_meas):
@@ -199,7 +206,6 @@ def filter_measurements_on_bounds(windows, measurements, bounds,
                              "the same!" % (len(new_wins), len(new_meas)))
         return new_wins, new_meas
 
-    print("bounds: %s" % bounds)
     new_wins = {}
     new_meas = {}
     for sta, sta_info in windows.iteritems():
@@ -258,6 +264,7 @@ def get_component_keep_flag(dt_means, dt_stds, dlna_means, dlna_stds,
     for comp in dt_means:
         flags[comp] = True
 
+    print("-" * 20)
     for comp in dt_means:
         if "tshift_mean_range" not in comp_config[comp]:
             # skip if user does not provide the parameter
@@ -292,6 +299,8 @@ def get_component_keep_flag(dt_means, dt_stds, dlna_means, dlna_stds,
             flags[comp] = False
             continue
 
+    pprint("component keep flag:")
+    pprint(flags)
     return flags
 
 
