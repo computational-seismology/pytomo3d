@@ -130,9 +130,9 @@ def test_get_user_bound():
 
 
 def test_filter_measurements_on_bounds():
-    bounds = {"R": [-1.1, 1.1, -0.8, 0.8],
-              "T": [-1.1, 1.1, -0.8, 0.8],
-              "Z": [-1.1, 1.1, -0.8, 0.8]}
+    bounds = {"R": {"dt": [-1.1, 1.1], "dlna": [-0.8, 0.8]},
+              "T": {"dt": [-1.1, 1.1], "dlna": [-0.8, 0.8]},
+              "Z": {"dt": [-1.1, 1.1], "dlna": [-0.8, 0.8]}}
 
     v, m = fw.filter_measurements_on_bounds(windows, measures, bounds)
     assert v["II.AAK"]["II.AAK..BHR"] == windows["II.AAK"]["II.AAK..BHR"]
@@ -161,10 +161,214 @@ def test_filter_measurements_on_bounds():
                         {"dt": 0.8, "misfit_dt": 3.0,
                          "dlna": 0.8, "misfit_dlna": 0.6}]}
 
-    bounds = {"R": [-0.1, 0.1], "T": [-0.1, 0.1], "Z": [-0.1, 0.1]}
+    bounds = {"R": {"dt": [-0.1, 0.1], "dlna": [-0.8, 0.8]},
+              "T": {"dt": [-0.1, 0.1], "dlna": [-0.8, 0.8]},
+              "Z": {"dt": [-0.1, 0.1], "dlna": [-0.8, 0.8]}}
     v, m = fw.filter_measurements_on_bounds(windows, measures, bounds)
     assert len(v) == 0
     assert len(m) == 0
+
+
+def test_filter_measurements_on_bounds_2():
+    bounds = {"R": {"dt": [-1.1, 1.1], "dlna": [-0.8, 0.8]},
+              "T": {"dt": [-1.1, 1.1], "dlna": [-0.8, 0.8]},
+              "Z": {"dt": [-1.1, 1.1], "dlna": [-0.8, 0.8]}}
+
+    comp_keep_flag = {"R": True, "T": True, "Z": True}
+    v, m = fw.filter_measurements_on_bounds(windows, measures, bounds,
+                                            comp_keep_flag)
+    assert v["II.AAK"]["II.AAK..BHR"] == windows["II.AAK"]["II.AAK..BHR"]
+    assert "II.AAK..BHT" not in v["II.AAK"]
+    assert len(v["II.AAK"]["II.AAK..BHZ"]) == 1
+    assert v["II.AAK"]["II.AAK..BHZ"] == [{"left_index": 1, "right_index": 2}]
+    assert len(v["IU.BCD"]["IU.BCD..BHZ"]) == 2
+    assert v["IU.BCD"]["IU.BCD..BHZ"] == [{"left_index": 1, "right_index": 2},
+                                          {"left_index": 2, "right_index": 3}]
+
+    assert m["II.AAK"] == {
+        "II.AAK..BHR": [{"dt": 1.0, "misfit_dt": 1.0,
+                         "dlna": 0.7, "misfit_dlna": 1.0},
+                        {"dt": -1.0, "misfit_dt": 1.0,
+                         "dlna": -0.7, "misfit_dlna": 1.0}],
+        "II.AAK..BHZ": [{"dt": 1.0, "misfit_dt": 1.0,
+                         "dlna": 0.6, "misfit_dlna": 1.0}]}
+    assert m["II.ABKT"] == {
+        "II.ABKT..BHR": [{"dt": 1.0, "misfit_dt": 1.5,
+                          "dlna": 0.6, "misfit_dlna": 0.5}]}
+    assert m["IU.BCD"] == {
+        "IU.BCD..BHT": [{"dt": 1.0, "misfit_dt": 2.0,
+                         "dlna": 0.3, "misfit_dlna": 0.2}],
+        "IU.BCD..BHZ": [{"dt": -0.2, "misfit_dt": 2.0,
+                         "dlna": -0.2, "misfit_dlna": 2.0},
+                        {"dt": 0.8, "misfit_dt": 3.0,
+                         "dlna": 0.8, "misfit_dlna": 0.6}]}
+
+    comp_keep_flag = {"R": False, "T": False, "Z": False}
+    v, m = fw.filter_measurements_on_bounds(
+        windows, measures, bounds, comp_keep_flag=comp_keep_flag)
+    assert len(v) == 0
+    assert len(m) == 0
+
+
+def test_filter_measurements_on_bounds_3():
+    bounds = {"R": {"dt": [-1.1, 1.1], "dlna": [-0.8, 0.8]},
+              "T": {"dt": [-1.1, 1.1], "dlna": [-0.8, 0.8]},
+              "Z": {"dt": [-1.1, 1.1], "dlna": [-0.8, 0.8]}}
+
+    comp_keep_flag = {"R": True, "T": True, "Z": False}
+    v, m = fw.filter_measurements_on_bounds(windows, measures, bounds,
+                                            comp_keep_flag)
+    assert v["II.AAK"]["II.AAK..BHR"] == windows["II.AAK"]["II.AAK..BHR"]
+    assert "II.AAK..BHT" not in v["II.AAK"]
+    assert "II.AAK..BHZ" not in v["II.AAK"]
+    assert len(v["IU.BCD"]["IU.BCD..BHT"]) == 1
+    assert "IU.BCD..BHZ" not in v["IU.BCD"]
+
+    assert m["II.AAK"] == {
+        "II.AAK..BHR": [{"dt": 1.0, "misfit_dt": 1.0,
+                         "dlna": 0.7, "misfit_dlna": 1.0},
+                        {"dt": -1.0, "misfit_dt": 1.0,
+                         "dlna": -0.7, "misfit_dlna": 1.0}]}
+    assert m["II.ABKT"] == {
+        "II.ABKT..BHR": [{"dt": 1.0, "misfit_dt": 1.5,
+                          "dlna": 0.6, "misfit_dlna": 0.5}]}
+    assert m["IU.BCD"] == {
+        "IU.BCD..BHT": [{"dt": 1.0, "misfit_dt": 2.0,
+                         "dlna": 0.3, "misfit_dlna": 0.2}]}
+
+
+def test_filter_measurements_on_bounds_4():
+    bounds = {"R": {"dt": [-1.1, 1.1], "dlna": [-0.8, 0.8]},
+              "T": {"dt": [-1.1, 1.1], "dlna": [-0.8, 0.8]},
+              "Z": {"dt": [-1.1, 1.1], "dlna": [-0.8, 0.8]}}
+
+    comp_keep_flag = {"R": False, "T": True, "Z": True}
+    v, m = fw.filter_measurements_on_bounds(windows, measures, bounds,
+                                            comp_keep_flag)
+    assert "II.AAK..BHR" not in v["II.AAK"]
+    assert "II.AAK..BHT" not in v["II.AAK"]
+    assert "II.ABKT" not in v
+    assert len(v["II.AAK"]["II.AAK..BHZ"]) == 1
+    assert v["II.AAK"]["II.AAK..BHZ"] == [{"left_index": 1, "right_index": 2}]
+    assert len(v["IU.BCD"]["IU.BCD..BHZ"]) == 2
+    assert v["IU.BCD"]["IU.BCD..BHZ"] == [{"left_index": 1, "right_index": 2},
+                                          {"left_index": 2, "right_index": 3}]
+
+    assert m["II.AAK"] == {
+        "II.AAK..BHZ": [{"dt": 1.0, "misfit_dt": 1.0,
+                         "dlna": 0.6, "misfit_dlna": 1.0}]}
+    assert "II.ABKT" not in m
+    assert m["IU.BCD"] == {
+        "IU.BCD..BHT": [{"dt": 1.0, "misfit_dt": 2.0,
+                         "dlna": 0.3, "misfit_dlna": 0.2}],
+        "IU.BCD..BHZ": [{"dt": -0.2, "misfit_dt": 2.0,
+                         "dlna": -0.2, "misfit_dlna": 2.0},
+                        {"dt": 0.8, "misfit_dt": 3.0,
+                         "dlna": 0.8, "misfit_dlna": 0.6}]}
+
+
+def test_get_component_keep_flag():
+    dt_means = {"R": 1.0, "T": -2.0, "Z": -0.5}
+    dt_stds = {"R": 1.0, "T": 2.0, "Z": 0.5}
+    dlna_means = {"R": 1.0, "T": -2.0, "Z": -0.5}
+    dlna_stds = {"R": 1.0, "T": 2.0, "Z": 0.5}
+
+    measure_config = {"R": {}, "T": {}, "Z": {}}
+    flags = fw.get_component_keep_flag(
+        dt_means, dt_stds, dlna_means, dlna_stds, measure_config)
+    assert flags == {"R": True, "T": True, "Z": True}
+
+    measure_config = {
+        "R": {"tshift_mean_range": [-1.5, 1.5], "tshift_std_level": 1.5,
+              "dlna_mean_range": [-1.5, 1.5], "dlna_std_level": 1.5},
+        "T": {"tshift_mean_range": [-3.0, 3.0], "tshift_std_level": 3.0,
+              "dlna_mean_range": [-3.0, 3.0], "dlna_std_level": 3.0},
+        "Z": {}}
+    flags = fw.get_component_keep_flag(
+        dt_means, dt_stds, dlna_means, dlna_stds, measure_config)
+    assert flags == {"R": True, "T": True, "Z": True}
+
+    measure_config = {
+        "R": {"tshift_mean_range": [-0.5, 0.5], "tshift_std_level": 1.5,
+              "dlna_mean_range": [-1.5, 1.5], "dlna_std_level": 1.5},
+        "T": {"tshift_mean_range": [-3.0, 3.0], "tshift_std_level": 1.5,
+              "dlna_mean_range": [-3.0, 3.0], "dlna_std_level": 3.0},
+        "Z": {"tshift_mean_range": [-1.5, 1.5], "tshift_std_level": 0.5,
+              "dlna_mean_range": [-0.25, 0.25], "dlna_std_level": 1.5}}
+    flags = fw.get_component_keep_flag(
+        dt_means, dt_stds, dlna_means, dlna_stds, measure_config)
+    assert flags == {"R": False, "T": False, "Z": False}
+
+    measure_config = {
+        "R": {"tshift_mean_range": [-1.5, 1.5], "tshift_std_level": 1.5,
+              "dlna_mean_range": [-1.5, 1.5], "dlna_std_level": 0.5},
+        "T": {}, "Z": {}}
+    flags = fw.get_component_keep_flag(
+        dt_means, dt_stds, dlna_means, dlna_stds, measure_config)
+    assert flags == {"R": False, "T": True, "Z": True}
+
+
+def test_get_component_keep_flag_2():
+    dt_means = {"R": 1.0, "T": -2.0, "Z": -0.5}
+    dt_stds = {"R": 1.0, "T": 2.0, "Z": 0.5}
+    dlna_means = {"R": 1.0, "T": -2.0, "Z": -0.5}
+    dlna_stds = {"R": 1.0, "T": 2.0, "Z": 0.5}
+
+    measure_config = {
+        "R": {"tshift_mean_range": [1.5, -1.5], "tshift_std_level": 1.5,
+              "dlna_mean_range": [-1.5, 1.5], "dlna_std_level": 0.5},
+        "T": {}, "Z": {}}
+    with pytest.raises(ValueError):
+        fw.get_component_keep_flag(
+            dt_means, dt_stds, dlna_means, dlna_stds, measure_config)
+
+    measure_config = {
+        "R": {"tshift_mean_range": [-1.5, 1.5], "tshift_std_level": -1.5,
+              "dlna_mean_range": [-1.5, 1.5], "dlna_std_level": 0.5},
+        "T": {}, "Z": {}}
+    with pytest.raises(ValueError):
+        fw.get_component_keep_flag(
+            dt_means, dt_stds, dlna_means, dlna_stds, measure_config)
+
+    measure_config = {
+        "R": {"tshift_mean_range": [-1.5, 1.5], "tshift_std_level": 1.5,
+              "dlna_mean_range": [1.5, -1.5], "dlna_std_level": 0.5},
+        "T": {}, "Z": {}}
+    with pytest.raises(ValueError):
+        fw.get_component_keep_flag(
+            dt_means, dt_stds, dlna_means, dlna_stds, measure_config)
+
+    measure_config = {
+        "R": {"tshift_mean_range": [-1.5, 1.5], "tshift_std_level": 1.5,
+              "dlna_mean_range": [-1.5, 1.5], "dlna_std_level": -0.5},
+        "T": {}, "Z": {}}
+    with pytest.raises(ValueError):
+        fw.get_component_keep_flag(
+            dt_means, dt_stds, dlna_means, dlna_stds, measure_config)
+
+
+def test_get_measurement_final_bounds():
+    dt_means = {"R": 1.0, "T": 0.0, "Z": 1.0}
+    dt_stds = {"R": 1.0, "T": 5.0, "Z": 2.0}
+    dlna_means = {"R": 0.5, "T": -1.0, "Z": -0.5}
+    dlna_stds = {"R": 1.0, "T": 2.0, "Z": 0.5}
+
+    comp_config = \
+        {"R": {"tshift_acceptance_level": 10.0, "tshift_reference": 0.0,
+               "dlna_acceptance_level": 5.0, "dlna_reference": 0.0,
+               "std_ratio": 4.0},
+         "T": {"tshift_acceptance_level": 1.0, "tshift_reference": 0.5,
+               "dlna_acceptance_level": 0.5, "dlna_reference": 0.5,
+               "std_ratio": 4.0},
+         "Z": {"tshift_acceptance_level": 8.0, "tshift_reference": 0.0,
+               "dlna_acceptance_level": 2.0, "dlna_reference": 0.0,
+               "std_ratio": 4.0}}
+
+    bounds = fw.get_measurement_final_bounds(
+        comp_config, dt_means, dt_stds, dlna_means, dlna_stds)
+    assert bounds == {"R": {"dt": [-3.0, 5.0], "dlna": [-3.5, 4.5]},
+                      "T": {"dt": [-0.5, 1.5], "dlna": [0.0, 1.0]},
+                      "Z": {"dt": [-7.0, 8.0], "dlna": [-2.0, 1.5]}}
 
 
 def assert_wins_and_meas_same_length(wins, meas):

@@ -15,6 +15,7 @@ and keep a copy of original windows as "***.origin.json"
 """
 from __future__ import (absolute_import, division, print_function)
 from pprint import pprint
+from copy import deepcopy
 import numpy as np
 
 
@@ -172,31 +173,33 @@ def get_std_bound(mean, std, std_ratio):
     return b
 
 
-def filter_measurements_on_bounds(windows, measurements, bounds):
+def filter_measurements_on_bounds(windows, measurements, bounds,
+                                  comp_keep_flag=None):
     """
     filter the windows based on its measurements
     """
-    def _filter_(chan_wins, chan_meas, bounds):
+    def _filter_(chan_wins, chan_meas, _bounds):
         """ filter one channel window and measurements """
+        print("_bounds: %s" % _bounds)
         new_wins = []
         new_meas = []
         if len(chan_wins) != len(chan_meas):
             raise ValueError("number of windows is not the same as number"
                              "measurements")
         for win, meas in zip(chan_wins, chan_meas):
-            # print("%.2f, %.2f, %.2f" % (meas["dt"], bounds[0], bounds[1]))
-            if (meas["dt"] >= bounds[0]) \
-                    and (meas["dt"] <= bounds[1]) \
-                    and (meas["dlna"] >= bounds[2]) \
-                    and (meas["dlna"] <= bounds[3]):
-                new_wins.append(win)
-                new_meas.append(meas)
+            if (meas["dt"] >= _bounds["dt"][0]) \
+                    and (meas["dt"] <= _bounds["dt"][1]) \
+                    and (meas["dlna"] >= _bounds["dlna"][0]) \
+                    and (meas["dlna"] <= _bounds["dlna"][1]):
+                new_wins.append(deepcopy(win))
+                new_meas.append(deepcopy(meas))
 
         if len(new_wins) != len(new_meas):
             raise ValueError("length of new_wins(%d) and new_meas(%d) not "
                              "the same!" % (len(new_wins), len(new_meas)))
         return new_wins, new_meas
 
+    print("bounds: %s" % bounds)
     new_wins = {}
     new_meas = {}
     for sta, sta_info in windows.iteritems():
@@ -206,9 +209,11 @@ def filter_measurements_on_bounds(windows, measurements, bounds):
             if len(chan_info) == 0:
                 continue
             comp = chan.split(".")[-1][-1]
+            if comp_keep_flag is not None and not comp_keep_flag[comp]:
+                # throw comp if not keep
+                continue
             m = measurements[sta][chan]
             w_f, m_f = _filter_(chan_info, m, bounds[comp])
-            # print(chan, ":", len(chan_info), ", ", len(w))
             if len(w_f) == 0:
                 continue
             new_sta_wins[chan] = w_f
@@ -221,22 +226,77 @@ def filter_measurements_on_bounds(windows, measurements, bounds):
     return new_wins, new_meas
 
 
-def filter_windows_on_measurements(windows, measurements, measure_config):
+def get_component_keep_flag(dt_means, dt_stds, dlna_means, dlna_stds,
+                            comp_config):
     """
-    Filter windows based on measurements and threshold specified by
-    the user.
+    Check if the mean and std of dt and dlna are within the range
+    provided by the user. The default values are true. If the user
+    doesn't provide any parameters, then all values will be kept
+    as true
     """
-    # calculate standard deviation for each component
-    pprint("Config:")
-    pprint(measure_config)
-    comp_config = measure_config['component']
+    def _check_all_parameters_valid(_config):
+        ts_range = _config["tshift_mean_range"]
+        if ts_range[0] >= ts_range[1]:
+            raise ValueError("tshift_mean_range error: %s" % ts_range)
+        ts_std_level = _config["tshift_std_level"]
+        if ts_std_level <= 0:
+            raise ValueError("tshift_std_level(%f) <= 0" % ts_std_level)
+        dlna_range = _config["dlna_mean_range"]
+        if dlna_range[0] >= dlna_range[1]:
+            raise ValueError("dlna_mean_range error: %s" % dlna_range)
+        dlna_std_level = _config["dlna_std_level"]
+        if dlna_std_level <= 0:
+            raise ValueError("dlna_std_level(%f) <= 0" % dlna_std_level)
 
-    if len(windows) == 0:
-        return {}, {}
+    def _check_in_range(v, vrange):
+        if v > vrange[0] and v < vrange[1]:
+            return True
+        else:
+            return False
 
-    dt_means, dt_stds, dlna_means, dlna_stds = \
-        get_measurements_std(measurements)
+    flags = {}
+    for comp in dt_means:
+        flags[comp] = True
 
+    for comp in dt_means:
+        if "tshift_mean_range" not in comp_config[comp]:
+            # skip if user does not provide the parameter
+            print("Not filtering on mean and std on component(%s) since"
+                  "no user parameter(tshift_mean_range) provided" % comp)
+            continue
+        _config = comp_config[comp]
+        _check_all_parameters_valid(_config)
+        if not _check_in_range(dt_means[comp], _config["tshift_mean_range"]):
+            print("Reject component(%s) due to dt mean(%f) out of range: %s"
+                  % (comp, dt_means[comp], _config["tshift_mean_range"]))
+            flags[comp] = False
+            continue
+
+        if dt_stds[comp] > _config["tshift_std_level"]:
+            print("Reject component(%s) due to dt std(%f) larger than "
+                  "threshold %f"
+                  % (comp, dt_stds[comp], _config["tshift_std_level"]))
+            flags[comp] = False
+            continue
+
+        if not _check_in_range(dlna_means[comp], _config["dlna_mean_range"]):
+            print("Reject component(%s) due to dlna mean(%f) out of range: %s"
+                  % (comp, dlna_means[comp], _config["dlna_mean_range"]))
+            flags[comp] = False
+            continue
+
+        if dlna_stds[comp] > _config["dlna_std_level"]:
+            print("Reject component(%s) due to dlna std(%f) larger than "
+                  "threshold %f"
+                  % (comp, dlna_stds[comp], _config["dlna_std_level"]))
+            flags[comp] = False
+            continue
+
+    return flags
+
+
+def get_measurement_final_bounds(
+        comp_config, dt_means, dt_stds, dlna_means, dlna_stds):
     # get the measurement bounds
     final_bounds = {}
     for comp in dt_means:
@@ -246,19 +306,44 @@ def filter_windows_on_measurements(windows, measurements, measure_config):
                                      comp_config[comp]["std_ratio"])
         dlna_std_bound = get_std_bound(dlna_means[comp], dlna_stds[comp],
                                        comp_config[comp]["std_ratio"])
-
-        bound = [max(dt_std_bound[0], user_bound[0]),
-                 min(dt_std_bound[1], user_bound[1]),
-                 max(dlna_std_bound[0], user_bound[2]),
-                 min(dlna_std_bound[1], user_bound[3])]
-        final_bounds[comp] = bound
+        dt_bound = [max(dt_std_bound[0], user_bound[0]),
+                    min(dt_std_bound[1], user_bound[1])]
+        dlna_bound = [max(dlna_std_bound[0], user_bound[2]),
+                      min(dlna_std_bound[1], user_bound[3])]
+        final_bounds[comp] = {"dt": dt_bound, "dlna": dlna_bound}
         print("user specified bound [dt_min, dt_max, dlna_min, dlna_max]: %s"
               % user_bound)
-        print("std bound dt dlna: %s %s" % (dt_std_bound, dlna_std_bound))
-        print("final bound: %s" % bound)
+        print("std bound dt: %s -- dlna: %s" % (dt_std_bound, dlna_std_bound))
+        print("final dt bound: %s" % dt_bound)
+        print("final dlna bound: %s" % dlna_bound)
+
+    return final_bounds
+
+
+def filter_windows_on_measurements(windows, measurements, measure_config):
+    """
+    Filter windows based on measurements and threshold specified by
+    the user.
+    """
+    # calculate standard deviation for each component
+    pprint("Config:")
+    pprint(measure_config)
+
+    if len(windows) == 0:
+        return {}, {}
+
+    dt_means, dt_stds, dlna_means, dlna_stds = \
+        get_measurements_std(measurements)
+
+    comp_config = measure_config['component']
+    comp_keep_flag = get_component_keep_flag(
+        dt_means, dt_stds, dlna_means, dlna_stds, comp_config)
+
+    final_bounds = get_measurement_final_bounds(
+        comp_config, dt_means, dt_stds, dlna_means, dlna_stds)
 
     new_wins, new_meas = filter_measurements_on_bounds(
-        windows, measurements, final_bounds)
+        windows, measurements, final_bounds, comp_keep_flag=comp_keep_flag)
 
     return new_wins, new_meas
 
