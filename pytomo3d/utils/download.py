@@ -120,7 +120,7 @@ def download_stationxml(stations, starttime, endtime, outputdir=None,
                 inv.write(filename, format="STATIONXML")
         except Exception as e:
             error_code = "Failed to download StationXML '%s' due to: %s" \
-                  % (station_id, str(e))
+                % (station_id, str(e))
             print(error_code)
 
         _status[station_id] = error_code
