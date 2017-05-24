@@ -36,7 +36,7 @@ def test_calculate_baz():
     npt.assert_almost_equal(pa.calculate_baz(0, 0, 10, 0), 180.0)
     npt.assert_almost_equal(pa.calculate_baz(0, 0, 0, 10), 270.0)
     npt.assert_almost_equal(pa.calculate_baz(0, 0, 0, -10), 90)
-    npt.assert_almost_equal(pa.calculate_baz(0, 0, -10, 0), 0)
+    npt.assert_almost_equal(pa.calculate_baz(0, 0, -10, 0), 360)
 
 
 def test_change_channel_name():
